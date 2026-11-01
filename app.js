@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-01-29';
+const APP_VERSIE = '2026-11-01-30';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -1551,6 +1551,20 @@ if (PARAMS.has('uitloggen')) uitloggen();
   });
 })();
 
-if ('serviceWorker' in navigator && location.protocol === 'https:') {
-  navigator.serviceWorker.register('sw.js').catch(() => {});
+// Service worker, en een melding als er een nieuwe versie klaarstaat.
+// Bij elke uitgave verandert VERSION in sw.js; de browser ziet dan een nieuwe service worker. Die neemt het
+// meteen over (skipWaiting), en de pagina die nog open staat krijgt een 'controllerchange'. Een app op het
+// beginscherm blijft vaak dagen in het geheugen, daarom kijken we ook bij terugkomen en elk half uur.
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  const hadAl = !!navigator.serviceWorker.controller; // bij de allereerste keer is er niets te vernieuwen
+  const melding = $('#updatemelding');
+  const toon = () => { melding.hidden = false; requestAnimationFrame(() => melding.classList.add('open')); };
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadAl) toon(); });
+  $('#vernieuwknop').addEventListener('click', () => location.reload());
+  $('#laterknop').addEventListener('click', () => { melding.classList.remove('open'); setTimeout(() => { melding.hidden = true; }, 250); });
+  navigator.serviceWorker.register('sw.js').then((reg) => {
+    const kijk = () => reg.update().catch(() => {});
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') kijk(); });
+    setInterval(kijk, 30 * 60 * 1000);
+  }).catch(() => {});
 }

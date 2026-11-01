@@ -9,9 +9,9 @@
 <title>Agenda</title>
 <meta name="description" content="Je week in één oogopslag: wat opvalt, alles, en waar je nog tijd hebt">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icon-512.png">
-<!-- iOS legt een afgeronde vierkant over het icoon heen; het maskable-icoon heeft daar marge voor -->
-<link rel="apple-touch-icon" href="icon-maskable-512.png">
+<link rel="icon" href="favicon-64.png">
+<!-- iOS rondt de hoeken zelf af: dit icoon is tot de rand gevuld, zonder extra marge -->
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -61,6 +61,12 @@
 </nav>
 
 <div id="lagen"></div>
+<!-- Melding als er een nieuwe versie van de app klaarstaat -->
+<div class="updatemelding glas" id="updatemelding" role="status" hidden>
+  <span>Nieuwe versie beschikbaar</span>
+  <button class="vernieuw" id="vernieuwknop">Vernieuwen</button>
+  <button class="later" id="laterknop" aria-label="Later">×</button>
+</div>
 <!-- Eigen agenda-bestand: wordt alleen op dit toestel bewaard, nooit verstuurd -->
 <input type="file" id="icsinvoer" accept=".ics,text/calendar" hidden>
 

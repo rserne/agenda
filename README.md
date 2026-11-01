@@ -112,4 +112,4 @@ python3 -m http.server 8080   # en open http://localhost:8080/
 
 ## Nieuwe versie online zetten
 
-Hoog `APP_VERSIE` in `app.js` en `VERSION` in `sw.js` op, commit en push. GitHub Pages en de Nhost-functie werken zichzelf bij.
+Hoog `APP_VERSIE` in `app.js` en `VERSION` in `sw.js` op, commit en push. GitHub Pages en de Nhost-functie werken zichzelf bij. Wie de app open heeft, krijgt onderin de melding 'Nieuwe versie beschikbaar' met **Vernieuwen**: de app kijkt bij het openen, bij terugkomen en elk half uur of `sw.js` is veranderd.

@@ -536,6 +536,22 @@ label.frij:focus-within .flabel { color: var(--accent); }
 .groteknop.vol { background: var(--accent); color: var(--onAccent); }
 .groteknop.uit, .groteknop:disabled { opacity: 0.45; pointer-events: none; }
 
+/* ================================================================ Melding nieuwe versie */
+.updatemelding {
+  position: fixed; z-index: 60; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + var(--barH) + 20px);
+  transform: translate(-50%, 12px); opacity: 0; transition: transform 0.25s ease, opacity 0.25s ease;
+  display: flex; align-items: center; gap: 10px; padding: 6px 6px 6px 16px; border-radius: 24px;
+  width: max-content; max-width: calc(100% - 32px); font-size: 14px; font-weight: 500; color: var(--label);
+}
+.updatemelding.open { transform: translate(-50%, 0); opacity: 1; }
+.updatemelding[hidden] { display: none; }
+.updatemelding .vernieuw { background: var(--accent); color: var(--onAccent); font-size: 14px; font-weight: 600; border-radius: 18px; padding: 8px 14px; }
+.updatemelding .later { width: 32px; height: 32px; border-radius: 16px; color: var(--secondary); font-size: 22px; line-height: 1; }
+@media (min-width: 1200px) {
+  .updatemelding { left: auto; right: 24px; bottom: 24px; transform: translateY(12px); }
+  .updatemelding.open { transform: translateY(0); }
+}
+
 /* ================================================================ Desktop (vanaf 1200): ontwerp A, in de stijl van Agenda op de Mac */
 .zijbalk { display: none; }
 @media (min-width: 1200px) {

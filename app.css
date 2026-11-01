@@ -217,15 +217,17 @@ main { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 100px); }
 .dagkop.voorbij .nr { color: var(--secondary); font-weight: 500; }
 
 .kaart { background: var(--card); border-radius: 18px; padding: 0 16px; overflow: hidden; border: 1px solid var(--cardBorder); }
+.kaart:has(> .rij) { padding: 4px; }
+/* Zoals op de desktop: een gekleurde streep per afspraak, geen lijnen ertussen */
 .rij {
-  display: flex; align-items: flex-start; gap: 10px; padding: 12px 0; min-height: 44px;
-  width: 100%; text-align: left;
+  display: flex; align-items: flex-start; gap: 10px; padding: 9px 12px 9px 10px; min-height: 44px;
+  width: 100%; text-align: left; border-radius: 12px;
 }
-.rij + .rij { border-top: 0.5px solid var(--separator); }
-button.rij:active { opacity: 0.6; }
+button.rij:active { background: var(--fill); }
 .stip { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; background: var(--regularDot); }
 .stip.ext { background: var(--externDot); }
 .stip.int { background: var(--internDot); }
+.rij > .stip { width: 3px; height: auto; align-self: stretch; border-radius: 2px; margin: 0; }
 .tijdkolom { flex-shrink: 0; min-width: 46px; }
 .tijd { font-size: 15px; line-height: 20px; font-weight: 500; font-variant-numeric: tabular-nums; }
 .eind { color: var(--secondary); font-size: 12px; line-height: 15px; font-variant-numeric: tabular-nums; }
@@ -241,14 +243,13 @@ button.rij:active { opacity: 0.6; }
 .badge { background: var(--badgeBg); color: var(--badgeText); border-radius: 6px; padding: 2px 7px; font-size: 12px; font-weight: 600; white-space: nowrap; }
 .badges .meer { color: var(--badgeText); font-size: 12px; font-weight: 600; }
 .badges .herhaal { width: 14px; height: 14px; color: var(--badgeText); }
-.rij.heledag { align-items: center; }
+.rij.heledag { align-items: center; min-height: 0; padding: 7px 12px; margin-bottom: 2px; background: rgb(120 120 128 / 0.1); }
 .rij.heledag .rijtitel { color: var(--regularText); font-weight: 400; -webkit-line-clamp: 1; flex: 1; }
 .hint { color: var(--secondary); font-size: 13px; flex-shrink: 0; }
 .rij.rest { align-items: center; color: var(--secondary); }
-.rij.rest .stip { margin-top: 0; }
-.rij.vrij { background: var(--freeBg); margin: 0 -16px; width: calc(100% + 32px); padding-left: 16px; padding-right: 16px; }
-.rij.vrij + .rij, .rij + .rij.vrij { border-top: 0.5px solid var(--separator); }
-.rij.vrij .stip { background: transparent; border: 1.5px solid var(--accent); }
+.rij.vrij { background: var(--freeBg); }
+.rij.vrij + .rij, .rij + .rij.vrij { margin-top: 2px; }
+.rij.vrij .stip { background: transparent; border: 1.5px dashed var(--accent); border-radius: 0; width: 0; }
 .rij.vrij .tijd { color: var(--accent); }
 .rij.vrij .eind { color: var(--accent); }
 .rij.vrij .rijtitel b { color: var(--accent); font-weight: 600; }
@@ -257,6 +258,7 @@ button.rij:active { opacity: 0.6; }
 .legenda { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 16px; padding-top: 30px; }
 .legenda span { display: flex; align-items: center; gap: 6px; color: var(--secondary); font-size: 12px; }
 .legenda .vlak { width: 12px; height: 12px; border-radius: 3px; }
+.legenda .stip { width: 3px; height: 13px; border-radius: 2px; }
 
 /* ---------------------------------------------------------------- Vooruitblik */
 .vb { display: flex; flex-direction: column; gap: 22px; padding-top: 8px; }

@@ -199,13 +199,20 @@ main { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 100px); }
   background: var(--bg);
   /* Ruimte tussen de dagen als marge, niet als opvulling: zo blijft de kop compact als hij bovenaan plakt */
   margin-top: 22px;
-  padding: 8px 16px 8px;
-  font-size: 16px; font-weight: 600; letter-spacing: -0.2px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  padding: 6px 16px 6px;
+  display: flex; align-items: baseline; gap: 8px;
+  font-size: 16px; font-weight: 500; color: var(--secondary);
+  white-space: nowrap; overflow: hidden;
 }
-.dagkop.eerste { margin-top: 0; padding-top: 10px; }
-.dagkop .datum { color: var(--secondary); font-weight: 400; }
-.dagkop .vandaag { color: var(--accent); }
+.dagkop.eerste { margin-top: 0; padding-top: 6px; }
+/* Groot dagnummer met de dag ernaast op dezelfde grondlijn, net als de kolomkoppen op de desktop */
+.dagkop .nr { color: var(--label); font-size: 26px; font-weight: 600; letter-spacing: -0.5px; line-height: 30px; }
+.dagkop .dow { overflow: hidden; text-overflow: ellipsis; }
+.dagkop .mnd { margin-left: -4px; font-weight: 400; }
+.dagkop.vandaag .nr, .dagkop.vandaag .dow { color: var(--accent); }
+.dagkop.vandaag .nr { font-weight: 700; }
+.dagkop.vandaag .dow { font-weight: 600; }
+.dagkop.voorbij .nr { color: var(--secondary); font-weight: 500; }
 
 .kaart { background: var(--card); border-radius: 18px; padding: 0 16px; overflow: hidden; border: 1px solid var(--cardBorder); }
 .rij {
@@ -442,10 +449,10 @@ button.drij:active { opacity: 0.6; }
 }
 
 /* ================================================================ Overlap: label onder de titel, oranje rand om de tegel */
-.overlaplabel { display: block; margin-top: 3px; color: var(--overlap); font-size: 12.5px; font-weight: 500; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.overlaplabel { margin-top: 3px; color: var(--overlap); font-size: 13px; line-height: 17px; font-weight: 500; min-width: 0; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .tegel.overlapt { box-shadow: 0 0 0 2px var(--overlapLijn); }
 @media (min-width: 1200px) {
-  .krij .overlaplabel { font-size: 11.5px; line-height: 15px; margin-top: 2px; white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+  .krij .overlaplabel { font-size: 11.5px; line-height: 15px; margin-top: 2px; }
 }
 
 /* ================================================================ Desktop (vanaf 1200): ontwerp A, in de stijl van Agenda op de Mac */

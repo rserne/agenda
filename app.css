@@ -369,10 +369,11 @@ button.rij:active { background: var(--fill); }
 .rond .icoon { width: 17px; height: 17px; }
 .detailinhoud { overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding: 8px 16px calc(env(safe-area-inset-bottom, 0px) + 30px); display: flex; flex-direction: column; gap: 20px; }
 /* Kop van het detail: dezelfde gekleurde streep als in de lijst, over titel en gegevens heen */
-.dkop { padding: 0 16px; display: flex; gap: 12px; }
+/* Streep op de linkerrand van de kaarten eronder, tekst gelijk met de kopjes van de secties */
+.dkop { padding: 0 16px 0 0; display: flex; gap: 12px; }
 .dkop > .stip { width: 4px; height: auto; align-self: stretch; border-radius: 2px; margin: 0; }
 .dkopinhoud { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
-.dher .icoon { display: inline-block; width: 15px; height: 15px; vertical-align: -2px; margin-right: 5px; }
+.dher .icoon { display: inline-block; width: 15px; height: 15px; vertical-align: -2px; margin-left: 8px; color: var(--secondary); }
 .dtitel { font-size: 24px; font-weight: 700; letter-spacing: -0.3px; line-height: 29px; margin: 0 0 4px; overflow-wrap: anywhere; }
 /* Dag, tijd, vorm en overlap: gewone regels met dezelfde hoogte, zonder iconen ertussen */
 .dmeta { color: var(--meta); font-size: 16px; line-height: 22px; }

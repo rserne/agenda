@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-01-25';
+const APP_VERSIE = '2026-11-01-26';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -1171,8 +1171,7 @@ function openDetail(e) {
           <h2 class="dtitel">${esc(e.title || '(geen titel)')}</h2>
           <div class="dmeta">
             <div>${dateLine}</div>
-            <div class="num">${timeLine}</div>
-            ${rec ? `<div class="dher">${I.herhaal}${esc(cap(rec))}</div>` : ''}
+            <div class="num">${timeLine}${rec ? `<span class="dher" role="img" aria-label="${esc(cap(rec))}" title="${esc(cap(rec))}">${I.herhaal}</span>` : ''}</div>
             ${e.mode !== 'none' ? `<div>${MODE_LABEL[e.mode]}</div>` : ''}
             ${ovLine ? `<div class="doverlap">${esc(ovLine)}</div>` : ''}
           </div>

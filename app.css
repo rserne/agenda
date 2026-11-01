@@ -341,7 +341,7 @@ button.rij:active { background: var(--fill); }
 .weekrij.gekozen { background: var(--selBg); }
 .weekrij .wk { text-align: center; color: var(--secondary); font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .weekrij.gekozen .wk { color: var(--selText); font-weight: 700; }
-.cel { display: flex; justify-content: center; }
+.cel { display: flex; justify-content: center; padding: 0 2px; min-width: 0; } /* altijd wat lucht tussen de vakjes van de heatmap */
 .dagcel {
   --tint: 120 120 128;
   position: relative; width: 100%; max-width: 44px; height: 36px; border-radius: 9px;
@@ -749,7 +749,7 @@ label.frij:focus-within .flabel { color: var(--accent); }
 /* ================================================================ iPad liggend: desktop-indeling, maar voor de vinger
    Grotere maandkalender en knoppen in de zijbalk en werkbalk; de muis-maten zijn op een aanraakscherm te priegelig */
 @media (min-width: 1200px) and (pointer: coarse) {
-  .shell { grid-template-columns: 288px minmax(0, 1fr); }
+  .shell { grid-template-columns: 316px minmax(0, 1fr); }
   .zbbinnen { padding: 14px 12px 20px; gap: 24px; }
   .minikal .kiezerkop { padding: 0 2px 8px 6px; }
   .minikal .kiezerkop h2 { font-size: 19px; }
@@ -757,9 +757,9 @@ label.frij:focus-within .flabel { color: var(--accent); }
   .maandpijlen .icoon { width: 17px; height: 17px; }
   .minikal .rasterkop, .minikal .weekrij { grid-template-columns: 26px repeat(7, minmax(0, 1fr)); }
   .minikal .rasterkop span { font-size: 12px; }
-  .minikal .weekrij { height: 42px; border-radius: 11px; margin-bottom: 2px; }
+  .minikal .weekrij { height: 40px; border-radius: 11px; margin-bottom: 3px; }
   .minikal .weekrij .wk { font-size: 12px; }
-  .minikal .dagcel { height: 36px; max-width: 38px; border-radius: 10px; }
+  .minikal .dagcel { height: 34px; max-width: 36px; border-radius: 10px; }
   .minikal .dagcel span { font-size: 15px; }
   .minikal .dagcel.vandaag span { width: 30px; height: 30px; border-radius: 15px; }
   .minikal .kiezerlegenda { padding: 10px 6px 0; font-size: 13px; gap: 6px 14px; }

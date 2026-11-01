@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-01-50';
+const APP_VERSIE = '2026-11-01-51';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */

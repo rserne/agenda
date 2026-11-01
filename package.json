@@ -1,0 +1,9 @@
+{
+  "name": "agenda",
+  "private": true,
+  "type": "module",
+  "description": "Agenda-PWA met een Nhost-functie die de iCal-feed ophaalt",
+  "dependencies": {
+    "ical.js": "1.5.0"
+  }
+}

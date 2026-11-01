@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-01-45';
+const APP_VERSIE = '2026-11-01-46';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -804,7 +804,8 @@ function render() {
   if (geenData && ST.laden) { main.innerHTML = '<div class="laden">Agenda laden…</div>'; return; }
   if (geenData && ST.fout) { main.innerHTML = meldingHtml('Agenda niet beschikbaar', ST.fout, 'Opnieuw proberen'); $('#inhoud .knop').onclick = () => laad({ vers: true }); return; }
   main.innerHTML = (ST.tab === 'week' ? weekHtml(events) : vooruitblikHtml(events)) +
-    (isDesktop() ? '' : bronHtml(''));
+    // Alleen bij voorbeeldgegevens nog een regel onderaan; kiezen doe je in de weekkiezer (tik op de titel)
+    (isDesktop() || !DEMO ? '' : bronHtml(''));
 }
 
 function meldingHtml(titel, tekst, knop) {
@@ -977,6 +978,8 @@ function openWeekkiezer() {
     // Verplaats raster en legenda uit de greep, zodat alleen de kop veegbaar is
     const greep = el.querySelector('.kiezergreep');
     [...greep.children].slice(2).forEach((n) => el.appendChild(n));
+    // Onder de kalender: welke agenda je ziet, en een eigen agenda inladen (zoals in de zijbalk op de desktop)
+    el.insertAdjacentHTML('beforeend', agendaSectieHtml());
     maakVeegbaar(el, greep, p.sluit);
     const rasterStart = startOfWeek(maand);
     const ditMaand = maand;
@@ -993,7 +996,12 @@ function openWeekkiezer() {
       return;
     }
     const rij = ev.target.closest('.weekrij');
-    if (rij) { p.sluit(); kiesWeek(new Date(Number(rij.dataset.ma))); }
+    if (rij) { p.sluit(); kiesWeek(new Date(Number(rij.dataset.ma))); return; }
+    const ics = ev.target.closest('[data-actie^="ics-"]');
+    if (ics) {
+      if (ics.dataset.actie === 'ics-openen') { $('#icsinvoer').click(); p.sluit(); }
+      else if (confirm('Het agenda-bestand van dit toestel wissen? De app toont dan weer voorbeeldgegevens.')) { p.sluit(); vergeetBestand(); }
+    }
   });
 }
 // Tinten bijwerken zodra de gegevens binnen zijn, zonder het raster te laten verspringen

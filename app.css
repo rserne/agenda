@@ -571,6 +571,18 @@ label.frij:focus-within .flabel { color: var(--accent); }
   .updatemelding.open { transform: translateY(0); }
 }
 
+/* ================================================================ Agenda kiezen in de weekkiezer (telefoon en tablet) */
+.kiezer .zbagenda { display: flex; flex-direction: column; margin-top: 16px; padding-top: 14px; border-top: 0.5px solid var(--separator); }
+.kiezer .zbagenda h3 { margin: 0 0 4px; padding: 0 4px; color: var(--secondary); font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.2px; }
+.zbbron { display: flex; align-items: center; gap: 12px; padding: 8px 4px; min-width: 0; }
+.zbbron .icoon { width: 20px; height: 20px; color: var(--secondary); flex-shrink: 0; }
+.zbbron > span { display: flex; flex-direction: column; min-width: 0; }
+.zbbron .t1 { font-size: 16px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.zbbron .t2 { font-size: 13px; color: var(--secondary); line-height: 17px; }
+.kiezer .zbagenda button { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 4px; color: var(--accent); font-size: 16px; font-weight: 500; text-align: left; border-radius: 10px; }
+.kiezer .zbagenda button:active { background: var(--fill); }
+.kiezer .zbagenda button .icoon { width: 20px; height: 20px; }
+
 /* ================================================================ Desktop (vanaf 1200): ontwerp A, in de stijl van Agenda op de Mac */
 .zijbalk { display: none; }
 @media (min-width: 1200px) {

@@ -602,7 +602,10 @@ label.frij:focus-within .flabel { color: var(--accent); }
   .minikal .kiezerlegenda i { width: 11px; height: 11px; border-radius: 3px; }
   .weekrij:hover { background: var(--fill); }
   .weekrij.gekozen, .weekrij.gekozen:hover { background: var(--selBg); }
-  .zblijst { display: flex; flex-direction: column; gap: 1px; }
+  /* Dunne lijn met wat extra ruimte tussen de maandkalender en de weergave, zoals in de zijbalk van de Mac */
+  .zblijst { display: flex; flex-direction: column; gap: 1px; margin: 0 6px; padding-top: 18px; border-top: 0.5px solid var(--separator); }
+  .zblijst h3 { padding: 0 4px; }
+  .zblijst button { margin: 0 -6px; }
   .zblijst h3, .zbsectie h3 { margin: 0 0 4px; padding: 0 10px; color: var(--secondary); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
   .zblijst button { display: flex; align-items: center; gap: 9px; height: 30px; padding: 0 10px; border-radius: 7px; font-size: 13px; text-align: left; }
   .zblijst button .icoon { width: 16px; height: 16px; color: var(--accent); }

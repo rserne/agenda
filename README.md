@@ -60,7 +60,7 @@ Een gratis Nhost-organisatie mag maar één actief project hebben. Daarom draait
    - `MIJN_EMAIL` = je werkadres zoals het in uitnodigingen staat. Daarmee herkent de app jou tussen de deelnemers ('(jij)', niet mailen naar jezelf).
    - `EIGEN_DOMEINEN` = je eigen maildomein(en), komma-gescheiden.
    - Optioneel `ALLOWED_ORIGINS`: adressen die de functie mogen aanroepen. Standaard `https://rserne.github.io` en `http://localhost:8080`.
-3. **Eerste deploy controleren:** deze repository heeft geen map `nhost/`, dus Nhost zet alleen de functie online en laat de database, Hasura en de instellingen van de AustralieApp met rust. Kijk na de eerste push even in Deployments of alles groen is.
+3. **Eerste deploy controleren:** deze repository heeft geen map `nhost/`, dus Nhost hoort alleen de functie online te zetten en de database, Hasura en de instellingen van de AustralieApp met rust te laten. Kijk na de eerste push in Deployments of alles groen is en of de AustralieApp het nog doet.
 4. Na de eerste deploy staat de functie op `https://gjqqtpteurwdbealgmqh.functions.eu-central-1.nhost.run/v1/agenda`. Zonder inloggen geeft die `401`, en dat is goed.
 
 ### 4. Op je iPhone en iPad

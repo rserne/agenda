@@ -527,7 +527,10 @@ label.frij:focus-within .flabel { color: var(--accent); }
 .ngeen { color: var(--secondary); font-size: 15px; line-height: 21px; }
 .link { color: var(--accent); font: inherit; font-weight: 600; padding: 0; }
 .chips.na { margin-top: 12px; }
-.eigeninvoer { flex: none; height: 34px; border-radius: 10px; border: 0; background: var(--fill); color: var(--label); font: inherit; font-size: 16px; padding: 0 10px; }
+/* Eigen tijd als chip direct naast Andere tijd; iOS geeft een tijdveld anders een brede standaardbreedte met de tijd gecentreerd */
+.frij .eigeninvoer { -webkit-appearance: none; appearance: none; flex: none; box-sizing: border-box; width: 92px; min-width: 0; height: 34px; border-radius: 17px; border: 1.5px solid var(--accent); background: transparent; color: var(--label); font: inherit; font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; padding: 0 10px; text-align: center; }
+.frij .eigeninvoer::-webkit-date-and-time-value { text-align: center; margin: 0; }
+.frij .eigeninvoer::-webkit-calendar-picker-indicator { display: none; }
 .nsamenvatting { text-align: center; font-size: 15px; font-weight: 600; padding: 2px 8px 4px; }
 .nsamenvatting .leeg { color: var(--secondary); font-weight: 500; }
 .nsamenvatting .doverlap { color: var(--overlap); font-weight: 500; font-size: 14px; margin-top: 3px; }

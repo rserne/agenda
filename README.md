@@ -42,6 +42,12 @@ De app bewaart de opgehaalde afspraken op het toestel (localStorage), zodat hij 
 | Intern, ad hoc | Alleen eigen domein en geen vast overleg | ijsblauw |
 | Intern, vast | Een herhaalreeks, of dezelfde titel in minstens twee verschillende weken | grijs |
 
+**Zonder organisator en deelnemers.** Een gepubliceerde Outlook-agenda bevat geen organisator en geen deelnemers. `functions/_verrijk.js` leidt daarom de organiserende organisatie af:
+- uit de Teams-link: een klassieke uitnodiging bevat de tenant van de organisator. De tenant die het vaakst voorkomt is je eigen organisatie; bij elke andere tenant leert de code welk maildomein erbij hoort (bijvoorbeeld tue.nl, dus TUE);
+- uit de titel: 'Vernieuwenderwijs / CACI' of 'CACI / SURF'.
+
+Het detailscherm toont dan 'Afgeleid uit de Teams-uitnodiging' of 'Afgeleid uit de titel'. Deelnemers en mailen zijn er dan niet; een overleg dat CACI zelf organiseert met externe gasten blijft intern, tenzij de titel de andere organisatie noemt.
+
 Je eigen domein komt uit `EIGEN_DOMEINEN` en `MIJN_EMAIL` bij Nhost. Staat daar niets, dan neemt de app het domein dat het vaakst onder de deelnemers voorkomt.
 
 **Vrij** toont de gaten tussen je afspraken, op werkdagen van 8:00 tot 18:00 en vanaf een half uur. Hele dagen, afgezegde afspraken en afspraken die op 'vrij' staan, tellen niet als bezet.
@@ -73,6 +79,12 @@ Een gratis Nhost-organisatie mag maar één actief project hebben. Daarom draait
 ### 4. Op je iPhone en iPad
 
 Open de app in Safari, tik op Delen, Zet op beginscherm. Log in met je AustralieApp-account.
+
+## Eigen .ics-bestand openen
+
+Onderaan de app (op de desktop in de zijbalk) staat **Eigen .ics openen**. De app leest het bestand in de browser, bewaart het in IndexedDB op dat toestel en toont je echte agenda, zonder Nhost en zonder inloggen. Het bestand wordt nergens naartoe gestuurd. Met **Wissen** gaat de app terug naar de voorbeeldgegevens.
+
+Zet een echt agenda-bestand nooit in deze repository: die is openbaar.
 
 ## Instellingen in app.js
 

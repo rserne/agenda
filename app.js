@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-01-2';
+const APP_VERSIE = '2026-11-01-3';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -35,7 +35,10 @@ const PARAMS = new URLSearchParams(location.search);
 // Formaat: telefoon (smal), tablet (vanaf 768) en desktop (vanaf 1200, met zijbalk en dagkolommen)
 const DESKTOP = window.matchMedia('(min-width: 1200px)');
 const isDesktop = () => DESKTOP.matches;
+// LOKAAL: geen inloggen; de afspraken komen uit voorbeeld.js of uit een .ics-bestand op dit toestel
 const DEMO = !NHOST_SUB || (BRON === 'voorbeeld' ? !PARAMS.has('echt') : PARAMS.has('demo'));
+let BESTAND = null; // { naam, datum, reeksen, kennis, omzetter, hintVoor } als je zelf een .ics hebt geopend
+const lokaal = () => DEMO || !!BESTAND;
 
 /* ------------------------------------------------------------------ */
 /*  Hulpjes                                                            */
@@ -234,6 +237,92 @@ function laadVoorbeeld(van, tot) {
   }
 }
 
+/* ------------------------------------------------------------------ */
+/*  Eigen .ics-bestand (blijft op dit toestel, in IndexedDB)           */
+/* ------------------------------------------------------------------ */
+
+const IDB = {
+  open() {
+    return new Promise((ok, fout) => {
+      const r = indexedDB.open('agenda', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('bestand');
+      r.onsuccess = () => ok(r.result);
+      r.onerror = () => fout(r.error);
+    });
+  },
+  async get(k) {
+    const db = await IDB.open();
+    return new Promise((ok, fout) => { const r = db.transaction('bestand').objectStore('bestand').get(k); r.onsuccess = () => ok(r.result); r.onerror = () => fout(r.error); });
+  },
+  async set(k, v) {
+    const db = await IDB.open();
+    return new Promise((ok, fout) => { const t = db.transaction('bestand', 'readwrite'); t.objectStore('bestand').put(v, k); t.oncomplete = () => ok(); t.onerror = () => fout(t.error); });
+  },
+  async del(k) {
+    const db = await IDB.open();
+    return new Promise((ok) => { const t = db.transaction('bestand', 'readwrite'); t.objectStore('bestand').delete(k); t.oncomplete = () => ok(); t.onerror = () => ok(); });
+  },
+};
+
+// ical.js en de omzetcode pas laden als je een bestand opent
+let _icalKlaar = null;
+function laadIcalCode() {
+  if (!_icalKlaar) {
+    _icalKlaar = (async () => {
+      if (!window.ICAL) {
+        await new Promise((ok, fout) => { const s = document.createElement('script'); s.src = 'vendor/ical.min.js'; s.onload = ok; s.onerror = () => fout(new Error('ical.js niet geladen')); document.head.appendChild(s); });
+      }
+      const [{ maakOmzetter }, { leerUitIcal, hintVoor }] = await Promise.all([import('./functions/_ical.js'), import('./functions/_verrijk.js')]);
+      return { omzetter: maakOmzetter(window.ICAL), leerUitIcal, hintVoor };
+    })();
+  }
+  return _icalKlaar;
+}
+
+async function gebruikBestand(b) {
+  const code = await laadIcalCode();
+  BESTAND = {
+    naam: b.naam, datum: b.datum, hintVoor: code.hintVoor, omzetter: code.omzetter,
+    reeksen: code.omzetter.voorbereid(b.tekst),
+    kennis: code.leerUitIcal(b.tekst, OWN_DOMAINS_EXTRA),
+  };
+  DATA.ruw.clear(); DATA.weken.clear();
+  DATA.me = null; DATA.ownDomains = BESTAND.kennis.eigenDomeinen; DATA.opgehaald = Date.now();
+}
+function laadUitBestand(van, tot) {
+  for (let w = startOfWeek(van); w < tot; w = addDays(w, 7)) {
+    if (DATA.weken.has(w.getTime())) continue;
+    BESTAND.omzetter.uitrollen(BESTAND.reeksen, w, addDays(w, 7)).forEach((e) => {
+      const hint = e.organizer || e.attendees.length ? null : BESTAND.hintVoor(e, BESTAND.kennis, OWN_ORG_NAME);
+      DATA.ruw.set(e.id, hint ? { ...e, hint } : e);
+    });
+    DATA.weken.add(w.getTime());
+  }
+}
+async function openBestand(file) {
+  if (!file) return;
+  const tekst = await file.text();
+  if (!/BEGIN:VCALENDAR/.test(tekst)) { alert('Dit is geen agenda-bestand (.ics).'); return; }
+  const b = { naam: file.name, datum: Date.now(), tekst };
+  try { await IDB.set('ics', b); } catch (e) { /* privévenster: dan alleen voor deze sessie */ }
+  await gebruikBestand(b);
+  laad();
+}
+async function vergeetBestand() {
+  await IDB.del('ics').catch(() => {});
+  BESTAND = null;
+  DATA.ruw.clear(); DATA.weken.clear();
+  laad();
+}
+function bronHtml(klasse) {
+  if (BESTAND) {
+    const d = new Date(BESTAND.datum);
+    return `<p class="voorbeeld ${klasse}">Je eigen agenda uit ${esc(BESTAND.naam)} (${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}), alleen op dit toestel · <button class="link" data-actie="ics-openen">Ander bestand</button> · <button class="link" data-actie="ics-wissen">Wissen</button></p>`;
+  }
+  if (DEMO) return `<p class="voorbeeld ${klasse}">Voorbeeldgegevens met verzonnen namen · <button class="link" data-actie="ics-openen">Eigen .ics openen</button></p>`;
+  return '';
+}
+
 class NietIngelogd extends Error {}
 
 async function haalOp(van, tot) {
@@ -268,6 +357,7 @@ async function haalOp(van, tot) {
 // Zorg dat de weken van van t/m tot er zijn. Ontbreekt er iets, dan halen we meteen een flink blok op.
 const _bezig = new Map();
 async function zorgVoor(van, tot, { vers = false } = {}) {
+  if (BESTAND) return laadUitBestand(van, tot);
   if (DEMO) return laadVoorbeeld(van, tot);
   const wekenNodig = [];
   for (let w = startOfWeek(van); w < tot; w = addDays(w, 7)) wekenNodig.push(w.getTime());
@@ -356,7 +446,10 @@ function verrijk(r, wekenPerTitel) {
   const org = r.organizer && (r.organizer.email || r.organizer.name) ? r.organizer : null;
   const organizerDomain = org && !isMe(org) ? domainOf(org.email) : null;
   const attendeeDomains = attendees.filter((a) => !isMe(a) && !isRoom(a)).map((a) => domainOf(a.email));
-  const orgs = pickOrgs(organizerDomain, attendeeDomains, own);
+  let orgs = pickOrgs(organizerDomain, attendeeDomains, own);
+  // Gepubliceerde agenda zonder organisator en deelnemers: de afgeleide organisatie (zie functions/_verrijk.js)
+  const afgeleid = !org && !attendees.length && r.hint && r.hint.orgs ? r.hint : null;
+  if (afgeleid) orgs = afgeleid.orgs;
   const weken = wekenPerTitel[titleKey(r.title)];
   const regular = !!(r.recurring || r.detached || (weken && weken.size >= 2));
   const external = orgs.length > 0;
@@ -366,7 +459,7 @@ function verrijk(r, wekenPerTitel) {
   const physical = places.length > 0 || /fysiek|op locatie/i.test(r.title || '');
   const mode = physical && link ? 'hybrid' : physical ? 'physical' : link ? 'online' : 'none';
   return {
-    ...r, start, end, organizer: org, attendees, orgs, external, regular,
+    ...r, start, end, organizer: org, attendees, orgs, external, regular, afgeleid,
     notable: external || !regular,
     kind: external ? 'ext' : regular ? 'reg' : 'int',
     link, places, roomNames, mode,
@@ -398,7 +491,10 @@ function afsprakenTussen(van, tot) {
     if (s < tot.getTime() && (e > van.getTime() || s >= van.getTime())) binnen.push(r);
   });
   const wpt = wekenPerTitel(rond);
-  return binnen.map((r) => verrijk(r, wpt)).sort((a, b) => a.start - b.start || b.end - a.end);
+  const gezien = new Set();
+  return binnen
+    .filter((r) => { const k = `${titleKey(r.title)}|${r.start}|${r.end}`; if (gezien.has(k)) return false; gezien.add(k); return true; })
+    .map((r) => verrijk(r, wpt)).sort((a, b) => a.start - b.start || b.end - a.end);
 }
 
 function eventsForDay(events, day) {
@@ -672,11 +768,11 @@ function render() {
   const events = afsprakenTussen(start, eind);
   zichtbaar.clear();
   events.forEach((e) => zichtbaar.set(e.id, e));
-  const geenData = !DEMO && !DATA.weken.has(startOfWeek(start).getTime());
+  const geenData = !lokaal() && !DATA.weken.has(startOfWeek(start).getTime());
   if (geenData && ST.laden) { main.innerHTML = '<div class="laden">Agenda laden…</div>'; return; }
   if (geenData && ST.fout) { main.innerHTML = meldingHtml('Agenda niet beschikbaar', ST.fout, 'Opnieuw proberen'); $('#inhoud .knop').onclick = () => laad({ vers: true }); return; }
   main.innerHTML = (ST.tab === 'week' ? weekHtml(events) : vooruitblikHtml(events)) +
-    (DEMO && !isDesktop() ? '<p class="voorbeeld">Voorbeeldgegevens met verzonnen namen</p>' : '');
+    (isDesktop() ? '' : bronHtml(''));
 }
 
 function meldingHtml(titel, tekst, knop) {
@@ -888,7 +984,7 @@ function renderZijbalk() {
       <span><i class="vlak" style="background:var(--regularTile)"></i>Intern, vast</span>
       <span><i class="vlak vrijvlak"></i>Vrij, vanaf ${FREE_MIN} minuten</span>
     </div></div>
-    ${DEMO ? '<p class="voorbeeld zbvoet">Voorbeeldgegevens met verzonnen namen</p>' : ''}
+    ${bronHtml('zbvoet')}
   </div>`;
   const rasterStart = startOfWeek(zijMaand);
   const ditMaand = zijMaand;
@@ -1003,6 +1099,10 @@ function openDetail(e) {
       return { ...g, shown: g.people.slice(0, take) };
     }).filter((g) => g.shown.length);
 
+    const afgeleidHtml = !org && e.afgeleid ? `<section class="sectie"><h3>Organisator</h3><div class="kaart"><div class="drij persoon">
+      <span class="avatar ext">${esc(initialsOf(e.afgeleid.orgs[0]))}</span>
+      <span class="tekst"><div class="t1">${esc(e.afgeleid.orgs[0] === 'Extern' ? 'Externe organisatie' : e.afgeleid.orgs[0])}</div><div class="t2">${e.afgeleid.bron === 'teams' ? 'Afgeleid uit de Teams-uitnodiging' : 'Afgeleid uit de titel'}</div></span>
+    </div></div></section>` : '';
     const orgHtml = org ? `<section class="sectie"><h3>Organisator</h3><div class="kaart">${persoonRij(org, {
       idx: kaartje(org, { org: orgDomain ? (orgExternal ? orgLabel(orgDomain) : OWN_ORG_NAME) : null, external: orgExternal, role: 'Organisator' }),
       external: orgExternal, badge: orgExternal ? orgLabel(orgDomain) : null,
@@ -1030,7 +1130,7 @@ function openDetail(e) {
           ${e.external ? `<div class="dbadges">${e.orgs.map((o) => `<span>${esc(o)}</span>`).join('')}</div>` : ''}
         </div>
         ${plekken.length ? `<section class="sectie"><h3>Locatie</h3><div class="kaart">${plekken.join('')}</div></section>` : ''}
-        ${orgHtml}
+        ${orgHtml || afgeleidHtml}
         ${deelnHtml}
         ${notes ? `<section class="sectie"><h3>Notities</h3><div class="kaart"><div class="notities"><p class="${lang && !meerNotities ? 'kort' : ''}">${esc(notes)}</p>${lang ? `<button data-actie="notities">${meerNotities ? 'Minder tonen' : 'Meer tonen'}</button>` : ''}</div></div></section>` : ''}
         <div class="dvoet">
@@ -1100,6 +1200,7 @@ function verschuif(n, tab) {
 function koppel() {
   $('#capsule').innerHTML = capsuleHtml('Week terug', 'Week verder');
   $('#titelknop').addEventListener('click', openWeekkiezer);
+  $('#icsinvoer').addEventListener('change', (ev) => { openBestand(ev.target.files[0]).catch((e) => alert(`Inlezen mislukt: ${e.message}`)); ev.target.value = ''; });
   $('#datumregel').addEventListener('click', () => verschuif(0));
 
   // Eén luisteraar voor alle knoppen in kop, zijbalk, tabbalk en inhoud
@@ -1107,6 +1208,12 @@ function koppel() {
     if (ev.target.closest('#lagen')) return; // panelen regelen hun eigen knoppen
     const nav = ev.target.closest('[data-nav]');
     if (nav) { verschuif(Number(nav.dataset.nav)); return; }
+    const actie = ev.target.closest('[data-actie^="ics-"]');
+    if (actie) {
+      if (actie.dataset.actie === 'ics-openen') $('#icsinvoer').click();
+      else if (confirm('Het agenda-bestand van dit toestel wissen? De app toont dan weer voorbeeldgegevens.')) vergeetBestand();
+      return;
+    }
     const f = ev.target.closest('[data-filter]');
     if (f) {
       if (f.dataset.filter !== ST.filter) { ST.filter = f.dataset.filter; LS.set('ag_filter', ST.filter); render(); }
@@ -1145,10 +1252,10 @@ function koppel() {
     if (document.visibilityState !== 'visible') return;
     const t = vandaag();
     if (!sameDay(t, ST.dag)) { ST.dag = t; ST.anker = defaultWeekAnchor(t); ST.fcStart = t; zijMaand = null; }
-    if (!DEMO && Date.now() - DATA.opgehaald > VERS_MS) laad({ vers: true });
+    if (!lokaal() && Date.now() - DATA.opgehaald > VERS_MS) laad({ vers: true });
     else render();
   });
-  window.addEventListener('online', () => { if (!DEMO) laad({ vers: true }); });
+  window.addEventListener('online', () => { if (!lokaal()) laad({ vers: true }); });
 }
 
 // Uitloggen: ?uitloggen achter het adres
@@ -1160,10 +1267,17 @@ if (PARAMS.has('uitloggen')) uitloggen();
   const t = LS.get('ag_tab');
   if (['week', 'forecast'].includes(t)) ST.tab = t;
   koppel();
-  if (!DEMO && !SES.refresh) { ST.login = true; render(); return; }
-  // Eerst tonen wat er bewaard is, daarna de nieuwe stand ophalen
-  render();
-  laad({ vers: !DEMO });
+  // Een eerder geopend .ics-bestand gaat voor (behalve met ?echt of ?demo)
+  IDB.get('ics').catch(() => null).then(async (b) => {
+    if (b && b.tekst && !PARAMS.has('echt') && !PARAMS.has('demo')) {
+      $('#inhoud').innerHTML = '<div class="laden">Agenda-bestand inlezen…</div>';
+      try { await gebruikBestand(b); } catch (e) { BESTAND = null; }
+    }
+    if (!lokaal() && !SES.refresh) { ST.login = true; render(); return; }
+    // Eerst tonen wat er bewaard is, daarna de nieuwe stand ophalen
+    render();
+    laad({ vers: !lokaal() });
+  });
 })();
 
 if ('serviceWorker' in navigator && location.protocol === 'https:') {

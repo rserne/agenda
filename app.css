@@ -407,7 +407,9 @@ button.drij:active { opacity: 0.6; }
 .melding input { font: inherit; font-size: 16px; color: var(--label); background: var(--fill); border: 0; border-radius: 12px; height: 46px; padding: 0 14px; width: 100%; }
 .melding .fout { color: var(--statusNo); font-size: 14px; }
 .melding .knop { height: 48px; border-radius: 24px; background: var(--accent); color: var(--onAccent); font-weight: 600; font-size: 16px; }
-.voorbeeld { text-align: center; color: var(--secondary); font-size: 12px; padding: 4px 0 0; }
+.voorbeeld { text-align: center; color: var(--secondary); font-size: 12px; padding: 4px 0 0; line-height: 1.6; }
+.voorbeeld .link { color: var(--accent); font-size: 12px; font-weight: 600; }
+.voorbeeld .link:hover { text-decoration: underline; }
 .laden { display: flex; justify-content: center; padding: 60px 0; color: var(--secondary); }
 
 @media (prefers-reduced-motion: reduce) {

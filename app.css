@@ -335,16 +335,16 @@ button.rij:active { background: var(--fill); }
 .kiezer .capsule { background: var(--fill); border: 0; box-shadow: none; }
 .rasterkop, .weekrij { display: grid; grid-template-columns: 28px repeat(7, minmax(0, 1fr)); align-items: center; padding: 0 4px; }
 .rasterkop { padding-bottom: 8px; }
-.rasterkop span { text-align: center; color: var(--secondary); font-size: 12px; font-weight: 600; }
+.rasterkop span { text-align: center; color: var(--secondary); font-size: 13px; font-weight: 600; }
 .weekrij { height: 48px; border-radius: 12px; margin-bottom: 2px; width: 100%; }
 .weekrij:active { background: var(--fill); }
 .weekrij.gekozen { background: var(--selBg); }
-.weekrij .wk { text-align: center; color: var(--secondary); font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.weekrij .wk { text-align: center; color: var(--secondary); font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .weekrij.gekozen .wk { color: var(--selText); font-weight: 700; }
 .cel { display: flex; justify-content: center; padding: 0 2px; min-width: 0; } /* altijd wat lucht tussen de vakjes van de heatmap */
 .dagcel {
   --tint: 120 120 128;
-  position: relative; width: 100%; max-width: 44px; height: 36px; border-radius: 9px;
+  position: relative; width: 100%; max-width: 40px; height: 33px; border-radius: 9px;
   display: flex; align-items: center; justify-content: center;
   background: rgb(var(--tint) / calc(var(--a, 0) * var(--hm, 1)));
 }
@@ -601,13 +601,13 @@ label.frij:focus-within .flabel { color: var(--accent); }
   .maandpijlen .icoon { width: 14px; height: 14px; }
   .minikal .rasterkop, .minikal .weekrij { grid-template-columns: 22px repeat(7, minmax(0, 1fr)); padding: 0 2px; }
   .minikal .rasterkop { padding-bottom: 4px; }
-  .minikal .rasterkop span { font-size: 10px; font-weight: 500; }
+  .minikal .rasterkop span { font-size: 11.5px; font-weight: 500; }
   .minikal .weekrij { height: 32px; border-radius: 8px; margin-bottom: 1px; }
-  .minikal .weekrij .wk { font-size: 10px; font-weight: 500; }
-  .minikal .dagcel { height: 28px; max-width: 30px; border-radius: 7px; }
+  .minikal .weekrij .wk { font-size: 11px; font-weight: 500; }
+  .minikal .dagcel { height: 26px; max-width: 27px; border-radius: 7px; }
   .minikal { --celBg: var(--zbBg); }
   .minikal .dagcel span { font-size: 11.5px; }
-  .minikal .dagcel.vandaag span { width: 22px; height: 22px; border-radius: 11px; }
+  .minikal .dagcel.vandaag span { width: 21px; height: 21px; border-radius: 11px; }
   .minikal .kiezerlegenda { padding: 8px 6px 0; font-size: 11px; gap: 4px 10px; }
   .minikal .kiezerlegenda span { gap: 5px; }
   .minikal .kiezerlegenda i { width: 11px; height: 11px; border-radius: 3px; }
@@ -758,12 +758,12 @@ label.frij:focus-within .flabel { color: var(--accent); }
   .maandpijlen button { width: 36px; height: 36px; border-radius: 18px; }
   .maandpijlen .icoon { width: 17px; height: 17px; }
   .minikal .rasterkop, .minikal .weekrij { grid-template-columns: 26px repeat(7, minmax(0, 1fr)); }
-  .minikal .rasterkop span { font-size: 12px; }
+  .minikal .rasterkop span { font-size: 13.5px; }
   .minikal .weekrij { height: 40px; border-radius: 11px; margin-bottom: 3px; }
-  .minikal .weekrij .wk { font-size: 12px; }
-  .minikal .dagcel { height: 34px; max-width: 36px; border-radius: 10px; }
+  .minikal .weekrij .wk { font-size: 13px; }
+  .minikal .dagcel { height: 31px; max-width: 32px; border-radius: 9px; }
   .minikal .dagcel span { font-size: 13.5px; }
-  .minikal .dagcel.vandaag span { width: 30px; height: 30px; border-radius: 15px; }
+  .minikal .dagcel.vandaag span { width: 27px; height: 27px; border-radius: 14px; }
   .minikal .kiezerlegenda { padding: 10px 6px 0; font-size: 13px; gap: 6px 14px; }
   .minikal .kiezerlegenda i { width: 13px; height: 13px; border-radius: 4px; }
   .zblijst h3, .zbsectie h3 { font-size: 12px; }

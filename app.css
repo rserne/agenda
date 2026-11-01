@@ -43,6 +43,7 @@
   --statusMaybe: #C93400;
   --tileText: #1E1D24;
   --tileBadgeBg: rgba(0, 0, 0, 0.08);
+  --tileBadgeLijn: rgba(0, 0, 0, 0.32);
   --onAccent: #FFFFFF;
   --ringFull: #D04F42;
   --volRgb: 208 79 66;
@@ -103,6 +104,7 @@
     --statusMaybe: #FF9F0A;
     --tileText: #1E1D24;
     --tileBadgeBg: rgba(0, 0, 0, 0.12);
+    --tileBadgeLijn: rgba(0, 0, 0, 0.4);
     --onAccent: #1E1D24;
     --ringFull: #EB8479;
     --volRgb: 235 132 121;
@@ -450,7 +452,17 @@ button.drij:active { opacity: 0.6; }
 
 /* ================================================================ Overlap: label onder de titel, oranje rand om de tegel */
 .overlaplabel { margin-top: 3px; color: var(--overlap); font-size: 13px; line-height: 17px; font-weight: 500; min-width: 0; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
-.tegel.overlapt { box-shadow: 0 0 0 2px var(--overlapLijn); }
+/* In de Vooruitblik een badge in de kleur van de tegel zelf, links naast de eindtijd */
+.tegelvoet { margin-top: auto; display: flex; align-items: center; justify-content: flex-end; gap: 4px; min-width: 0; }
+.tegel .orgregel + .tegelvoet { margin-top: 2px; }
+.ovbadge { margin-right: auto; border: 1px solid var(--tileBadgeLijn); border-radius: 5px; padding: 0 4px; font-size: 11px; font-weight: 700; line-height: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+/* Op de telefoon is de tegel smal: de badge op een eigen regel, de titel dan hoogstens twee regels */
+@media (max-width: 767px) {
+  .ovtijd { display: none; }
+  .tegel.overlapt .tegelvoet { flex-direction: column; align-items: flex-start; gap: 2px; }
+  .tegel.overlapt .tegelvoet .te { align-self: flex-end; }
+  .tegel.overlapt .tit { -webkit-line-clamp: 2; max-height: 34px; }
+}
 @media (min-width: 1200px) {
   .krij .overlaplabel { font-size: 11.5px; line-height: 15px; margin-top: 2px; }
 }

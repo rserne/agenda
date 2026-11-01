@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-01-15';
+const APP_VERSIE = '2026-11-01-16';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -566,12 +566,12 @@ function overlapVan(lijst) {
     if (!andere.length) return;
     const eerste = andere[0];
     const tijd = eerste.start > e.start ? ` om ${hhmm(eerste.start)}` : '';
-    tekst.set(e, `Overlap met ${naam(eerste)}${tijd}${andere.length > 1 ? ` en nog ${andere.length - 1}` : ''}`);
+    tekst.set(e, { lang: `Overlap met ${naam(eerste)}${tijd}${andere.length > 1 ? ` en nog ${andere.length - 1}` : ''}`, tijd: tijd ? hhmm(eerste.start) : '' });
   });
   return tekst;
 }
 const overlapt = (e, ov) => !!(ov && ov.has(e));
-const overlapLabel = (e, ov) => (overlapt(e, ov) ? `<span class="overlaplabel">${esc(ov.get(e))}</span>` : '');
+const overlapLabel = (e, ov) => (overlapt(e, ov) ? `<span class="overlaplabel">${esc(ov.get(e).lang)}</span>` : '');
 
 /* ------------------------------------------------------------------ */
 /*  Toestand                                                           */
@@ -713,11 +713,12 @@ function weekHtml(events) {
 function tegel(e, dag, ov) {
   const onSite = e.mode === 'physical' || e.mode === 'hybrid';
   const vervolg = e.start < startOfDay(dag);
-  return `<button class="tegel ${e.kind}${overlapt(e, ov) ? ' overlapt' : ''}" data-id="${esc(e.id)}"${overlapt(e, ov) ? ` title="${esc(ov.get(e))}"` : ''}>
+  const o = overlapt(e, ov) ? ov.get(e) : null;
+  return `<button class="tegel ${e.kind}${o ? ' overlapt' : ''}" data-id="${esc(e.id)}"${o ? ` title="${esc(o.lang)}"` : ''}>
     <span class="tegelkop"><span class="tt">${vervolg ? 'vervolg' : hhmm(e.start)}</span><span class="iconen">${onSite ? I.speld : ''}${e.external && e.regular ? I.herhaal : ''}</span></span>
     <span class="tit">${esc(e.title || '(geen titel)')}</span>
     ${e.external ? `<span class="orgregel"><span class="b">${esc(e.orgs[0])}</span>${e.orgs.length > 1 ? `<span class="m">+${e.orgs.length - 1}</span>` : ''}</span>` : ''}
-    <span class="tt te">${hhmm(e.end)}</span>
+    <span class="tegelvoet">${o ? `<span class="ovbadge">Overlap${o.tijd ? `<span class="ovtijd"> ${o.tijd}</span>` : ''}</span>` : ''}<span class="tt te">${hhmm(e.end)}</span></span>
   </button>`;
 }
 function vrijeTegel(f) {

@@ -494,6 +494,7 @@ button.drij:active { opacity: 0.6; }
 /* ================================================================ Nieuwe afspraak */
 /* Telefoon en tablet: de plusknop staat naast de tabbalk; op de desktop de knop Nieuw in de werkbalk */
 .nieuwknop { display: none; }
+.zijbalkknop { display: none; }
 .tabbalk .kolom { gap: 10px; }
 .tabbalk .plusknop { flex: 0 0 var(--barH); padding: 0; width: var(--barH); height: var(--barH); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--accent); pointer-events: auto; }
 .tabbalk .plusknop .icoon { width: 22px; height: 22px; }
@@ -805,4 +806,42 @@ label.frij:focus-within .flabel { color: var(--accent); }
   .vbleeg { height: 44px; }
   body.desktop main.kolom > .legenda span { font-size: 14px; }
   .tegel.vrij .plus, .krij.vrij .plus { opacity: 0.8; }
+}
+
+/* ================================================================ iPad liggend: zoals op de iPhone
+   Inklapbare zijbalk (alleen maandkalender en agenda), Week en Vooruitblik als glazen tabbalk onderin met de plusknop,
+   en de knoppen in de werkbalk als glazen pillen in plaats van de compacte knoppen van de Mac */
+@media (min-width: 1200px) and (pointer: coarse) {
+  :root { --zbW: 316px; --barH: 52px; }
+  .shell { grid-template-columns: var(--zbW) minmax(0, 1fr); transition: grid-template-columns 0.25s ease; }
+  body.zbdicht .shell { grid-template-columns: 0 minmax(0, 1fr); }
+  body.zbdicht .zijbalk { visibility: hidden; border-right: 0; }
+  .zbweergave { display: none; }
+  .zbagenda { border-top: 0.5px solid var(--separator); padding-top: 18px; margin: 0 6px; }
+  .zbagenda h3 { padding: 0 4px; }
+  .zbagenda button { margin: 0 -6px; }
+
+  .zijbalkknop { display: flex; order: 0; width: 40px; height: 40px; border-radius: 20px; align-items: center; justify-content: center; color: var(--accent); flex-shrink: 0; margin-left: -6px; }
+  .zijbalkknop .icoon { width: 22px; height: 22px; }
+  .zijbalkknop:active { background: var(--fill); }
+
+  /* Werkbalk: glazen pillen */
+  .kop .kolom { height: 64px; }
+  .kop #schakelaar { height: 42px; padding: 4px; border-radius: 21px; background: var(--glass); border: 0.5px solid var(--glassBorder); box-shadow: var(--glassShadow); -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%); }
+  .kop #schakelaar button { padding: 0 18px; border-radius: 17px; font-size: 15px; font-weight: 600; color: var(--tabText); }
+  .kop #schakelaar button.aan { background: var(--selBg); color: var(--selText); font-weight: 700; box-shadow: none; }
+  #capsule { height: 42px; border-radius: 21px; padding: 0 3px; background: var(--glass); border: 0.5px solid var(--glassBorder); box-shadow: var(--glassShadow); -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%); }
+  #capsule button, #capsule button[data-nav="0"] { width: 40px; height: 40px; padding: 0; border: 0; border-radius: 20px; }
+  #capsule button[data-nav="0"] .icoon { display: block; }
+  #capsule .vandaagtekst { display: none; }
+  #capsule .icoon { width: 19px; height: 19px; }
+  .nieuwknop { display: none; }
+
+  /* Tabbalk onderin, gecentreerd onder de afspraken */
+  .tabbalk { display: block; left: var(--zbW); transition: left 0.25s ease; }
+  body.zbdicht .tabbalk { left: 0; }
+  .tabbalk .kolom { max-width: 480px; margin: 0 auto; padding: 0 16px; }
+  .tabbalk .pil button { font-size: 15px; }
+  body.desktop main.kolom { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--barH) + 28px); }
+  body.desktop main.kolom > .legenda { position: static; background: none; padding: 28px 2px 0; }
 }

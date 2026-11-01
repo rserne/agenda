@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-01-51';
+const APP_VERSIE = '2026-11-01-52';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -1039,7 +1039,7 @@ function renderZijbalk() {
   const item = (tab, icoon, tekst) => `<button data-tab="${tab}" class="${ST.tab === tab ? 'aan' : ''}" aria-selected="${ST.tab === tab}">${icoon}<span>${tekst}</span></button>`;
   z.innerHTML = `<div class="zbbinnen">
     <div class="minikal">${maandRasterHtml(zijMaand, gekozenMaandag(), 'zijbalk')}</div>
-    <nav class="zblijst" aria-label="Weergave"><h3>Weergave</h3>${item('week', I.week, 'Week')}${item('forecast', I.vooruit, 'Vooruitblik')}</nav>
+    <nav class="zblijst zbweergave" aria-label="Weergave"><h3>Weergave</h3>${item('week', I.week, 'Week')}${item('forecast', I.vooruit, 'Vooruitblik')}</nav>
     ${agendaSectieHtml()}
   </div>`;
   const rasterStart = startOfWeek(zijMaand);
@@ -1485,6 +1485,10 @@ function koppel() {
   $('#titelknop').addEventListener('click', openWeekkiezer);
   $('#icsinvoer').addEventListener('change', (ev) => { openBestand(ev.target.files[0]).catch((e) => alert(`Inlezen mislukt: ${e.message}`)); ev.target.value = ''; });
   $('#datumregel').addEventListener('click', () => verschuif(0));
+  // iPad: de zijbalk in- en uitklappen; de keuze blijft bewaard
+  const zetZijbalk = (dicht) => { document.body.classList.toggle('zbdicht', dicht); $('#zijbalkknop').setAttribute('aria-expanded', String(!dicht)); };
+  zetZijbalk(LS.get('ag_zijbalk') === 'dicht');
+  $('#zijbalkknop').addEventListener('click', () => { const dicht = !document.body.classList.contains('zbdicht'); zetZijbalk(dicht); LS.set('ag_zijbalk', dicht ? 'dicht' : 'open'); });
 
   // Eén luisteraar voor alle knoppen in kop, zijbalk, tabbalk en inhoud
   document.addEventListener('click', (ev) => {

@@ -295,7 +295,7 @@ button.rij:active { opacity: 0.6; }
 .tegel .orgregel .b { background: var(--tileBadgeBg); border-radius: 5px; padding: 1px 5px; font-size: 11px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .tegel .orgregel .m { font-size: 11px; font-weight: 700; }
 .tegel .te { align-self: flex-end; }
-.tegel.vrij { background: var(--freeTileBg); border: 1.5px dashed var(--freeTileBorder); color: var(--accent); cursor: default; }
+.tegel.vrij { background: var(--freeTileBg); border: 1.5px dashed var(--freeTileBorder); color: var(--accent); cursor: pointer; }
 .tegel.vrij .tit { font-weight: 600; }
 .tegel.vrij .duur { color: var(--secondary); font-size: 12px; }
 .tegel.vrij .duur + .te { margin-top: auto; }
@@ -470,6 +470,47 @@ button.drij:active { opacity: 0.6; }
   .krij .overlaplabel { font-size: 11.5px; line-height: 15px; margin-top: 2px; }
 }
 
+/* ================================================================ Nieuwe afspraak */
+.nieuwknop { width: 36px; height: 36px; border-radius: 18px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: var(--accent); }
+.nieuwknop .icoon { width: 19px; height: 19px; }
+.nieuwknop span { display: none; }
+.nieuwknop:active { background: var(--fill); }
+/* Vrije blokken zijn aan te tikken: een plusje rechts */
+.plus { display: inline-flex; margin-left: auto; color: var(--accent); flex-shrink: 0; opacity: 0.8; }
+.plus .icoon { width: 18px; height: 18px; }
+.rij.vrij { align-items: center; }
+.rij.vrij:active, .tegel.vrij:active { filter: brightness(0.96); }
+.tegel.vrij .tegelkop .plus .icoon { width: 14px; height: 14px; }
+
+.nieuw .dkop { padding-top: 6px; }
+.velden { padding: 0 16px; }
+.veld { display: block; width: 100%; border: 0; background: transparent; color: var(--label); font: inherit; font-size: 17px; line-height: 22px; padding: 13px 0; outline: none; resize: none; }
+.veld + .veld { border-top: 0.5px solid var(--separator); }
+.veld.groot { font-size: 20px; font-weight: 600; padding: 15px 0; }
+.veld::placeholder { color: var(--secondary); font-weight: 400; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.sectie > .chips, .sectie > .datumrij, .sectie > #ntijden { padding: 0 4px; }
+.chip { height: 36px; padding: 0 14px; border-radius: 18px; background: var(--card); color: var(--label); font-size: 15px; font-weight: 500; display: inline-flex; align-items: center; box-shadow: 0 0 0 0.5px var(--cardBorder); }
+.chip.num { font-variant-numeric: tabular-nums; min-width: 66px; justify-content: center; }
+.chip.aan { background: var(--accent); color: var(--onAccent); box-shadow: none; font-weight: 600; }
+#nduur { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+#nduur .chip { justify-content: center; padding: 0 4px; }
+.datumrij { display: flex; align-items: center; gap: 8px; }
+.rond.zacht { background: var(--card); color: var(--accent); box-shadow: 0 0 0 0.5px var(--cardBorder); flex-shrink: 0; }
+.datumlabel { position: relative; flex: 1; height: 36px; border-radius: 18px; background: var(--card); box-shadow: 0 0 0 0.5px var(--cardBorder); display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 600; cursor: pointer; overflow: hidden; }
+.datumlabel input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
+.tijdblok + .tijdblok { margin-top: 14px; }
+.bloklabel { color: var(--secondary); font-size: 13px; margin: 0 2px 7px; }
+.ngeen { color: var(--secondary); font-size: 15px; line-height: 21px; padding: 2px 2px 0; }
+.link { color: var(--accent); font: inherit; font-weight: 600; padding: 0; }
+.eigentijd { display: flex; align-items: center; gap: 10px; margin-top: 14px; }
+.eigentijd input { height: 36px; border-radius: 10px; border: 0; background: var(--card); color: var(--label); font: inherit; font-size: 16px; padding: 0 10px; box-shadow: 0 0 0 0.5px var(--cardBorder); }
+.nsamenvatting { text-align: center; font-size: 15px; font-weight: 600; padding: 2px 8px 4px; }
+.nsamenvatting .leeg { color: var(--secondary); font-weight: 500; }
+.nsamenvatting .doverlap { color: var(--overlap); font-weight: 500; font-size: 14px; margin-top: 3px; }
+.groteknop.vol { background: var(--accent); color: var(--onAccent); }
+.groteknop.uit, .groteknop:disabled { opacity: 0.45; pointer-events: none; }
+
 /* ================================================================ Desktop (vanaf 1200): ontwerp A, in de stijl van Agenda op de Mac */
 .zijbalk { display: none; }
 @media (min-width: 1200px) {
@@ -604,6 +645,19 @@ button.drij:active { opacity: 0.6; }
   .paneel.detail.dialoog .greep { display: none; }
   .paneel.detail.dialoog .detailnav { padding-top: 14px; }
   .paneel.detail.dialoog .dkop { padding-top: 2px; }
+  /* Nieuwe afspraak: knop in de werkbalk, vrije blokken met hover */
+  .nieuwknop { order: 5; width: auto; height: 26px; border-radius: 7px; padding: 0 10px 0 7px; gap: 4px; background: var(--accent); color: var(--onAccent); border: 0; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; font-size: 12px; font-weight: 600; }
+  .nieuwknop .icoon { width: 13px; height: 13px; }
+  .nieuwknop span { display: inline; }
+  .nieuwknop:hover { filter: brightness(1.08); }
+  .krij.vrij .plus { align-self: center; }
+  .krij.vrij .plus { opacity: 0; transition: opacity 0.12s; }
+  .krij.vrij .plus .icoon { width: 14px; height: 14px; }
+  .krij.vrij:hover .plus, .tegel.vrij:hover .plus { opacity: 0.9; }
+  .tegel.vrij .plus { opacity: 0; transition: opacity 0.12s; }
+  .tegel.vrij:hover { filter: brightness(0.97); }
+  .chip:hover { filter: brightness(0.97); }
+  .nieuw .detailinhoud { gap: 18px; }
   button.drij:hover .t1 { color: var(--accent); }
   .groteknop:hover { filter: brightness(0.97); }
 }

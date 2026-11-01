@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-01-39';
+const APP_VERSIE = '2026-11-01-40';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -936,9 +936,9 @@ function maandRasterHtml(maand, gekozen, soort = 'paneel') {
       const weekend = i >= 5;
       const anders = d.getMonth() !== maand.getMonth();
       const voorbij = d < t;
-      // Dagen van de maand ervoor of erna en dagen die al voorbij zijn: alleen het cijfer, gedempt.
-      // Hoe druk een dag was, doet er niet meer toe; zo valt op waar je nog ruimte hebt.
-      const h = weekend || anders || voorbij ? 0 : uren[d.getTime()] || 0;
+      // Dagen die al voorbij zijn: alleen het cijfer, gedempt. Hoe druk een dag was, doet er niet meer toe.
+      // Dagen van de volgende maand die al in beeld zijn, krijgen wel hun kleur.
+      const h = weekend || voorbij ? 0 : uren[d.getTime()] || 0;
       const klasse = ['dagcel', weekend ? 'weekend' : '', anders ? 'anders' : '', voorbij ? 'voorbij' : '', sameDay(d, t) ? 'vandaag' : '', niveau(h), h ? 'gevuld' : ''].join(' ');
       cellen += `<span class="cel"><span class="${klasse}" style="--a:${tint(h).toFixed(3)}"><span>${d.getDate()}</span></span></span>`;
     }
@@ -1000,7 +1000,7 @@ function tekenRingen(el, maand) {
   el.querySelectorAll('.weekrij').forEach((rij) => {
     const ma = new Date(Number(rij.dataset.ma));
     rij.querySelectorAll('.dagcel').forEach((cel, i) => {
-      if (i >= 5 || cel.classList.contains('anders') || cel.classList.contains('voorbij')) return;
+      if (i >= 5 || cel.classList.contains('voorbij')) return;
       const h = uren[addDays(ma, i).getTime()] || 0;
       cel.style.setProperty('--a', tint(h).toFixed(3));
       cel.classList.toggle('vol', niveau(h) === 'vol');

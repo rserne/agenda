@@ -592,6 +592,23 @@ label.frij:focus-within .flabel { color: var(--accent); }
 .chip.keuze { gap: 8px; background: var(--card); box-shadow: 0 0 0 0.5px var(--cardBorder); font-size: 14px; }
 .chip.keuze span { color: var(--secondary); font-size: 16px; line-height: 1; }
 .nieuw .fout { color: var(--badgeText); font-size: 14px; text-align: center; }
+.prikbalk { display: flex; align-items: center; gap: 10px; padding-bottom: 12px; margin-bottom: 4px; border-bottom: 0.5px solid var(--separator); font-size: 15px; }
+.prikbalk > span:first-child { color: var(--secondary); }
+.prikbalk .stapper { display: flex; align-items: center; gap: 6px; }
+.prikbalk .stapper .num { min-width: 64px; text-align: center; font-weight: 600; }
+.prikbalk .link { margin-left: auto; font-size: 14px; }
+.prikdag { display: flex; align-items: center; gap: 10px; padding: 7px 0; }
+.prikdag + .prikdag { border-top: 0.5px solid var(--separator); }
+.prikdagkop { flex: 0 0 64px; display: flex; flex-direction: column; line-height: 17px; position: relative; }
+.prikdagkop .dg { font-size: 12px; font-weight: 600; color: var(--secondary); text-transform: uppercase; letter-spacing: 0.3px; }
+.prikdagkop .nr { font-size: 15px; font-weight: 600; }
+.prikdag.heeft .prikdagkop .dg, .prikdag.heeft .prikdagkop .nr { color: var(--accent); }
+.prikdagkop .tel { position: absolute; right: 2px; top: 1px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--accent); color: var(--onAccent); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
+/* Eén rij per dag, horizontaal te vegen; de rand vervaagt zodat je ziet dat er meer is */
+.chips.rij { flex: 1; min-width: 0; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding: 2px 0; -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent); padding-right: 20px; }
+.chips.rij::-webkit-scrollbar { display: none; }
+.chips.rij .chip { flex-shrink: 0; min-width: 62px; }
+@media (min-width: 768px) { .chips.rij { flex-wrap: wrap; overflow: visible; -webkit-mask-image: none; mask-image: none; padding-right: 0; } }
 .prikklaar { background: var(--card); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 6px; }
 .prikklaar .t1 { font-size: 17px; font-weight: 700; }
 .prikklaar .t2 { color: var(--secondary); font-size: 14px; line-height: 19px; }

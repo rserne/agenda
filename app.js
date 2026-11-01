@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-01-58';
+const APP_VERSIE = '2026-11-01-60';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -1296,6 +1296,52 @@ function downloadIcs(v) {
 
 // dag: de gekozen dag (of null: eerste werkdag met ruimte).
 // blok: het vrije blok waarop is geklikt ({ start, end } in ms). Dan blijven dag en tijd binnen dat blok.
+// Voorstel voor de datumprikker: zoveel mogelijk verschillende dagen, gelijkmatig verspreid over de periode,
+// om en om ochtend en middag, op hele of halve uren, en liefst met wat lucht rond andere afspraken.
+function voorstelTijden(dagen, duur, aantal) {
+  const metRuimte = dagen.filter((g) => g.tijden.length);
+  if (!metRuimte.length) return [];
+  const score = (g, t) => {
+    const a = t, b = t + duur * 6e4;
+    let s = 0;
+    const d = new Date(t);
+    if (d.getMinutes() === 0) s += 2; else if (d.getMinutes() === 30) s += 1;
+    const krap = g.lijst.some((e) => !e.allDay && !e.free && (Math.abs(e.end.getTime() - a) < 15 * 6e4 || Math.abs(e.start.getTime() - b) < 15 * 6e4));
+    if (!krap) s += 3;
+    if (d.getHours() < 9) s -= 5; // vroeg in de ochtend liever niet
+    else if (d.getHours() >= 16) s -= 4; // en ook niet aan het eind van de dag
+    if (d.getHours() === 12) s -= 1; // lunch
+    return s;
+  };
+  // Telkens de beste tijd kiezen, met strafpunten voor een dag die al een tijd heeft of ernaast ligt,
+  // en een bonus voor afstand tot de al gekozen dagen en voor een evenwicht tussen ochtend en middag
+  const kand = [];
+  metRuimte.forEach((g, di) => g.tijden.forEach((t) => kand.push({ g, di, t, s: score(g, t) })));
+  const gekozen = [], bezet = [];
+  let ochtend = 0, middag = 0;
+  while (gekozen.length < aantal) {
+    let best = null, bestS = -Infinity;
+    kand.forEach((c) => {
+      if (gekozen.some((x) => Math.abs(x - c.t) < duur * 6e4)) return;
+      let w = c.s;
+      const zelfde = bezet.filter((d) => d === c.di).length;
+      w -= zelfde * 8;
+      if (bezet.length) {
+        const afstand = Math.min(...bezet.map((d) => Math.abs(d - c.di)));
+        w += Math.min(afstand, 4) * 1.2;
+        if (afstand === 1) w -= 3;
+      }
+      const isOchtend = new Date(c.t).getHours() < 12;
+      if ((isOchtend && ochtend <= middag) || (!isOchtend && middag <= ochtend)) w += 1.5;
+      if (w > bestS) { bestS = w; best = c; }
+    });
+    if (!best) break;
+    gekozen.push(best.t); bezet.push(best.di);
+    if (new Date(best.t).getHours() < 12) ochtend++; else middag++;
+  }
+  return gekozen.sort((a, b) => a - b);
+}
+
 async function openNieuw({ dag = null, blok = null, prik = false } = {}) {
   // prik: datumprikker in plaats van één afspraak; keuzes: de begintijden die genodigden voorgelegd krijgen
   const v = { titel: '', locatie: '', deelnemers: '', notitie: '', duur: 60, start: null, eigen: false, dag: null, blok, prik: !!prik, keuzes: new Set() };
@@ -1326,7 +1372,7 @@ async function openNieuw({ dag = null, blok = null, prik = false } = {}) {
         <label class="frij"><span class="flabel">Locatie</span><input name="locatie" placeholder="Ruimte, adres of Teams" autocomplete="off" enterkeyhint="next"></label>
       </div>
       <div class="formkaart">
-        <div class="frij"><span class="flabel">Dag</span>${blok
+        <div class="frij alleenafspraak"><span class="flabel">Dag</span>${blok
           ? `<span class="fwaarde"><span>${dagTekst(v.dag)}</span><span class="fsub num">Vrij ${hhmm(new Date(blok.start))} – ${hhmm(new Date(blok.end))}</span></span>`
           : `<span class="fwaarde dagkeuze">
               <button class="mini" data-dag="-1" aria-label="Dag eerder">${I.terug}</button>
@@ -1396,7 +1442,45 @@ async function openNieuw({ dag = null, blok = null, prik = false } = {}) {
     $('#nsamen', el).innerHTML = `<div class="${ok ? '' : 'leeg'}">${esc(tekst)}</div>${ov}`;
   };
   const chip = (t) => `<button class="chip num${(v.prik ? v.keuzes.has(t) : !v.eigen && t === v.start) ? ' aan' : ''}" data-start="${t}"${v.prik ? ` aria-pressed="${v.keuzes.has(t)}"` : ''}>${hhmm(new Date(t))}</button>`;
+  // Datumprikker: de werkdagen van de komende twee weken onder elkaar, per dag één rij begintijden.
+  // Het scherm begint met een voorstel van de app (verspreid over dagen, ochtend en middag); jij past het aan.
+  v.aantal = 5;
+  v.handmatig = false;
+  let prikDagen = [];
+  const laadPrikDagen = async () => {
+    const t = vandaag();
+    const week = ST.tab === 'week' ? startOfWeek(ST.anker) : ST.fcStart;
+    const van = blok ? startOfDay(new Date(blok.start)) : (week > t ? week : t);
+    const tot = addDays(van, 15);
+    try { await zorgVoor(startOfWeek(van), addDays(startOfWeek(tot), 7)); } catch (e) { /* zonder verbinding: wat er al is */ }
+    prikDagen = [];
+    for (let d = van; d < tot && prikDagen.length < 10; d = addDays(d, 1)) {
+      if (d.getDay() === 0 || d.getDay() === 6) continue;
+      const lijstDag = afsprakenTussen(d, addDays(d, 1));
+      prikDagen.push({ d, lijst: lijstDag, tijden: startTijden(lijstDag, d, v.duur).flatMap((b) => b.tijden) });
+    }
+  };
+  const tekenPrik = async () => {
+    const ditDuur = v.duur;
+    await laadPrikDagen();
+    if (ditDuur !== v.duur || !v.prik) return;
+    const alle = new Set(prikDagen.flatMap((g) => g.tijden));
+    [...v.keuzes].forEach((k) => { if (!alle.has(k)) v.keuzes.delete(k); }); // past niet meer bij de nieuwe duur
+    if (!v.handmatig) v.keuzes = new Set(voorstelTijden(prikDagen, v.duur, v.aantal));
+    const metRuimte = prikDagen.filter((g) => g.tijden.length);
+    $('#ntijden', el).innerHTML = `
+      <div class="prikbalk"><span>Voorstel</span>
+        <span class="stapper"><button class="mini" data-aantal="-1" aria-label="Minder tijden"${v.aantal <= 1 ? ' disabled' : ''}>${I.min}</button><span class="num">${v.aantal} tijden</span><button class="mini" data-aantal="1" aria-label="Meer tijden"${v.aantal >= 10 ? ' disabled' : ''}>${I.plus}</button></span>
+        <button class="link" data-actie="opnieuw">${v.handmatig ? 'Opnieuw voorstellen' : 'Wissen'}</button></div>
+      ${metRuimte.length ? metRuimte.map((g) => {
+        const n = g.tijden.filter((x) => v.keuzes.has(x)).length;
+        return `<div class="prikdag${n ? ' heeft' : ''}"><div class="prikdagkop"><span class="dg">${sameDay(g.d, vandaag()) ? 'Vandaag' : cap(DAYS_SHORT[g.d.getDay()])}</span><span class="nr num">${g.d.getDate()} ${MONTHS_SHORT[g.d.getMonth()]}</span>${n ? `<span class="tel">${n}</span>` : ''}</div>
+          <div class="chips rij">${g.tijden.map(chip).join('')}</div></div>`;
+      }).join('') : `<div class="ngeen">Geen vrije blokken van ${duurKort(v.duur)} in de komende twee weken.</div>`}`;
+    tekenSamen();
+  };
   const tekenTijden = async () => {
+    if (v.prik) return tekenPrik();
     const d = v.dag;
     if (!blok) {
       // Op een smal scherm de korte vorm, anders past hij niet tussen de pijltjes
@@ -1481,10 +1565,13 @@ async function openNieuw({ dag = null, blok = null, prik = false } = {}) {
     const soort = t.closest('[data-soort]');
     if (soort) { v.prik = soort.dataset.soort === 'prik'; tekenSoort(); tekenTijden(); return; }
     const st = t.closest('[data-start]');
-    if (st && v.prik) { const n = Number(st.dataset.start); if (v.keuzes.has(n)) v.keuzes.delete(n); else v.keuzes.add(n); tekenTijden(); return; }
+    if (st && v.prik) { const n = Number(st.dataset.start); if (v.keuzes.has(n)) v.keuzes.delete(n); else v.keuzes.add(n); v.handmatig = true; tekenTijden(); return; }
+    const aantal = t.closest('[data-aantal]');
+    if (aantal) { v.aantal = Math.min(10, Math.max(1, v.aantal + Number(aantal.dataset.aantal))); v.handmatig = false; tekenTijden(); return; }
+    if (t.closest('[data-actie="opnieuw"]')) { if (v.handmatig) v.handmatig = false; else { v.keuzes.clear(); v.handmatig = true; } tekenTijden(); return; }
     if (st) { v.start = Number(st.dataset.start); v.eigen = false; tekenTijden(); return; }
     const weg = t.closest('[data-weg]');
-    if (weg) { v.keuzes.delete(Number(weg.dataset.weg)); tekenTijden(); return; }
+    if (weg) { v.keuzes.delete(Number(weg.dataset.weg)); v.handmatig = true; tekenTijden(); return; }
     if (t.closest('#nprik')) { maakPeiling(); return; }
     if (t.closest('[data-actie="delen"]') && v.gemaakt) { deelLink(v.gemaakt); return; }
     if (t.closest('[data-actie="eigen"]')) { v.eigen = !v.eigen; if (!v.eigen) v.start = null; tekenTijden().then(() => { const i = $('#neigen', el); if (i) i.focus(); }); return; }

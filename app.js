@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-01-46';
+const APP_VERSIE = '2026-11-01-47';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -318,15 +318,6 @@ async function vergeetBestand() {
   DATA.ruw.clear(); DATA.weken.clear();
   laad();
 }
-function bronHtml(klasse) {
-  if (BESTAND) {
-    const d = new Date(BESTAND.datum);
-    return `<p class="voorbeeld ${klasse}">Je eigen agenda uit ${esc(BESTAND.naam)} (${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}), alleen op dit toestel · <button class="link" data-actie="ics-openen">Ander bestand</button> · <button class="link" data-actie="ics-wissen">Wissen</button></p>`;
-  }
-  if (DEMO) return `<p class="voorbeeld ${klasse}">Voorbeeldgegevens met verzonnen namen · <button class="link" data-actie="ics-openen">Eigen .ics openen</button></p>`;
-  return '';
-}
-
 class NietIngelogd extends Error {}
 
 async function haalOp(van, tot) {
@@ -803,9 +794,8 @@ function render() {
   const geenData = !lokaal() && !DATA.weken.has(startOfWeek(start).getTime());
   if (geenData && ST.laden) { main.innerHTML = '<div class="laden">Agenda laden…</div>'; return; }
   if (geenData && ST.fout) { main.innerHTML = meldingHtml('Agenda niet beschikbaar', ST.fout, 'Opnieuw proberen'); $('#inhoud .knop').onclick = () => laad({ vers: true }); return; }
-  main.innerHTML = (ST.tab === 'week' ? weekHtml(events) : vooruitblikHtml(events)) +
-    // Alleen bij voorbeeldgegevens nog een regel onderaan; kiezen doe je in de weekkiezer (tik op de titel)
-    (isDesktop() || !DEMO ? '' : bronHtml(''));
+  // De agenda kies je in de weekkiezer (tik op de titel) of op de desktop in de zijbalk
+  main.innerHTML = ST.tab === 'week' ? weekHtml(events) : vooruitblikHtml(events);
 }
 
 function meldingHtml(titel, tekst, knop) {

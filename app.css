@@ -459,9 +459,6 @@ button.drij:active { opacity: 0.6; }
 .melding input { font: inherit; font-size: 16px; color: var(--label); background: var(--fill); border: 0; border-radius: 12px; height: 46px; padding: 0 14px; width: 100%; }
 .melding .fout { color: var(--statusNo); font-size: 14px; }
 .melding .knop { height: 48px; border-radius: 24px; background: var(--accent); color: var(--onAccent); font-weight: 600; font-size: 16px; }
-.voorbeeld { text-align: center; color: var(--secondary); font-size: 12px; padding: 4px 0 0; line-height: 1.6; }
-.voorbeeld .link { color: var(--accent); font-size: 12px; font-weight: 600; }
-.voorbeeld .link:hover { text-decoration: underline; }
 .laden { display: flex; justify-content: center; padding: 60px 0; color: var(--secondary); }
 
 @media (prefers-reduced-motion: reduce) {
@@ -623,7 +620,6 @@ label.frij:focus-within .flabel { color: var(--accent); }
   .zblijst button .icoon { width: 16px; height: 16px; color: var(--accent); }
   .zblijst button:hover { background: var(--fill); }
   .zblijst button.aan { background: rgb(120 120 128 / 0.18); font-weight: 600; }
-  .zbvoet { text-align: left; padding: 0 10px; margin: auto 0 0; font-size: 11px; }
   /* Kopje Agenda: de bron van de afspraken en een eigen .ics inladen */
   .zbagenda { border-top: 0; padding-top: 0; }
   .zbbron { display: flex; align-items: center; gap: 9px; padding: 4px 4px 6px; min-width: 0; }

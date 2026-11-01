@@ -678,7 +678,7 @@ label.frij:focus-within .flabel { color: var(--accent); }
   .krij .rijtekst { gap: 1px; }
   .ktijd { display: flex; align-items: center; gap: 4px; color: var(--secondary); font-size: 11px; font-weight: 500; font-variant-numeric: tabular-nums; }
   .ktijd .speld { width: 11px; height: 11px; margin: 0; }
-  .krij .rijtitel { font-size: 12.5px; line-height: 16px; -webkit-line-clamp: 3; }
+  .krij .rijtitel { font-size: 12.5px; line-height: 16px; -webkit-line-clamp: 3; overflow-wrap: break-word; -webkit-hyphens: auto; hyphens: auto; }
   .krij .badges { margin-top: 4px; }
   .krij .badge { font-size: 10.5px; padding: 1px 6px; border-radius: 4px; }
   .krij .badges .herhaal { width: 12px; height: 12px; }
@@ -744,4 +744,65 @@ label.frij:focus-within .flabel { color: var(--accent); }
   .shell { grid-template-columns: 284px minmax(0, 1fr); }
   .kop .kolom { padding: 0 28px; }
   main.kolom { padding: 20px 28px 48px; }
+}
+
+/* ================================================================ iPad liggend: desktop-indeling, maar voor de vinger
+   Grotere maandkalender en knoppen in de zijbalk en werkbalk; de muis-maten zijn op een aanraakscherm te priegelig */
+@media (min-width: 1200px) and (pointer: coarse) {
+  .shell { grid-template-columns: 288px minmax(0, 1fr); }
+  .zbbinnen { padding: 14px 12px 20px; gap: 24px; }
+  .minikal .kiezerkop { padding: 0 2px 8px 6px; }
+  .minikal .kiezerkop h2 { font-size: 19px; }
+  .maandpijlen button { width: 36px; height: 36px; border-radius: 18px; }
+  .maandpijlen .icoon { width: 17px; height: 17px; }
+  .minikal .rasterkop, .minikal .weekrij { grid-template-columns: 26px repeat(7, minmax(0, 1fr)); }
+  .minikal .rasterkop span { font-size: 12px; }
+  .minikal .weekrij { height: 42px; border-radius: 11px; margin-bottom: 2px; }
+  .minikal .weekrij .wk { font-size: 12px; }
+  .minikal .dagcel { height: 36px; max-width: 38px; border-radius: 10px; }
+  .minikal .dagcel span { font-size: 15px; }
+  .minikal .dagcel.vandaag span { width: 30px; height: 30px; border-radius: 15px; }
+  .minikal .kiezerlegenda { padding: 10px 6px 0; font-size: 13px; gap: 6px 14px; }
+  .minikal .kiezerlegenda i { width: 13px; height: 13px; border-radius: 4px; }
+  .zblijst h3, .zbsectie h3 { font-size: 12px; }
+  .zblijst button { height: 44px; font-size: 16px; gap: 11px; border-radius: 10px; }
+  .zblijst button .icoon { width: 19px; height: 19px; }
+  .zbbron { gap: 11px; padding: 6px 4px 8px; }
+  .zbbron .icoon { width: 19px; height: 19px; }
+  .zbbron .t1 { font-size: 16px; }
+  .zbbron .t2 { font-size: 13px; line-height: 17px; }
+  .weekrij:hover { background: none; }
+  /* Werkbalk */
+  .kop .kolom { height: 60px; gap: 16px; }
+  .titel { font-size: 20px; line-height: 26px; }
+  .datumregel { font-size: 17px; line-height: 26px; }
+  .kop #schakelaar { height: 36px; border-radius: 10px; padding: 3px; }
+  .kop #schakelaar button { padding: 0 16px; font-size: 15px; border-radius: 8px; }
+  #capsule { height: 36px; border-radius: 10px; }
+  #capsule button { height: 36px; padding: 0 12px; }
+  #capsule .vandaagtekst { font-size: 15px; }
+  #capsule .icoon { width: 17px; height: 17px; }
+  .nieuwknop { height: 36px; border-radius: 10px; padding: 0 14px 0 11px; font-size: 15px; }
+  .nieuwknop .icoon { width: 16px; height: 16px; }
+  /* Inhoud: iets groter lettertype, op armlengte goed leesbaar */
+  .krij { padding: 8px 8px; }
+  .krij .ktijd { font-size: 13px; }
+  .krij .rijtitel { font-size: 13.5px; line-height: 18px; }
+  .krij .overlaplabel { font-size: 13px; line-height: 17px; }
+  .krij .badge { font-size: 12px; }
+  .heledagbalk { font-size: 14px; padding: 6px 10px; }
+  .vbdatum { width: 48px; }
+  .vbdatum .dow { font-size: 12px; }
+  .vbdatum .nr { font-size: 22px; line-height: 26px; }
+  .vbdatum .mnd { font-size: 12px; }
+  .tegels { grid-template-columns: repeat(auto-fill, minmax(176px, 1fr)); gap: 8px; }
+  .tegel { height: 100px; border-radius: 12px; padding: 8px 10px 7px; }
+  .tegel .tt { font-size: 14px; line-height: 17px; }
+  .tegel .tit { font-size: 15px; line-height: 19px; max-height: 38px; }
+  .tegel.ext .tit { max-height: 19px; }
+  .tegel .iconen .icoon { width: 14px; height: 14px; }
+  .vbleeg, .vbheledag .t { font-size: 15px; }
+  .vbleeg { height: 44px; }
+  body.desktop main.kolom > .legenda span { font-size: 14px; }
+  .tegel.vrij .plus, .krij.vrij .plus { opacity: 0.8; }
 }

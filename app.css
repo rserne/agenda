@@ -603,7 +603,7 @@ label.frij:focus-within .flabel { color: var(--accent); }
   .weekrij:hover { background: var(--fill); }
   .weekrij.gekozen, .weekrij.gekozen:hover { background: var(--selBg); }
   .zblijst { display: flex; flex-direction: column; gap: 1px; }
-  .zblijst h3, .zbsectie h3 { margin: 0 0 4px; padding: 0 10px; color: var(--secondary); font-size: 11px; font-weight: 600; }
+  .zblijst h3, .zbsectie h3 { margin: 0 0 4px; padding: 0 10px; color: var(--secondary); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
   .zblijst button { display: flex; align-items: center; gap: 9px; height: 30px; padding: 0 10px; border-radius: 7px; font-size: 13px; text-align: left; }
   .zblijst button .icoon { width: 16px; height: 16px; color: var(--accent); }
   .zblijst button:hover { background: var(--fill); }

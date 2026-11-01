@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-01-17';
+const APP_VERSIE = '2026-11-01-18';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -132,7 +132,6 @@ const I = {
   herhaal: lijn('<path d="M17 2.5l3.5 3.5L17 9.5"/><path d="M3.5 11V9.5A3.5 3.5 0 0 1 7 6h13.5"/><path d="M7 21.5L3.5 18 7 14.5"/><path d="M20.5 13v1.5A3.5 3.5 0 0 1 17 18H3.5"/>', 2),
   video: vol('<rect x="2" y="6" width="14" height="12" rx="3"/><path d="M17.5 10.2l4.5-2.7v9l-4.5-2.7z"/>'),
   kruis: lijn('<path d="M18 6L6 18M6 6l12 12"/>', 2.4),
-  puntjes: vol('<circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>'),
   mail: lijn('<rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="M3.5 7l8.5 6 8.5-6"/>', 1.9),
   mailVol: vol('<path d="M5 5h14a3 3 0 0 1 3 3v.4l-10 6.3L2 8.4V8a3 3 0 0 1 3-3z"/><path d="M2 10.7l9.5 6a1 1 0 0 0 1 0l9.5-6V16a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3z"/>'),
   persoon: vol('<circle cx="12" cy="8" r="4.2"/><path d="M3.5 20.5c.8-4.2 4.3-6.8 8.5-6.8s7.7 2.6 8.5 6.8z"/>'),
@@ -1161,7 +1160,7 @@ function openDetail(e) {
 
     const lang = notes.split('\n').length > 6 || notes.length > 280;
     el.innerHTML = `<div class="detailgreep"><div class="greep"></div>
-      <div class="detailnav"><button class="rond glas" data-actie="sluit" aria-label="Sluiten">${I.kruis}</button><a class="rond glas" href="${OUTLOOK_URL}" target="_blank" rel="noopener" aria-label="Openen in Outlook">${I.puntjes}</a></div></div>
+      <div class="detailnav"><button class="rond glas" data-actie="sluit" aria-label="Sluiten">${I.kruis}</button></div></div>
       <div class="detailinhoud">
         <div class="dkop">
           <div class="dsoort"><span class="stip ${e.kind}"></span><span style="color:${kindKleur}">${kindLabel}</span>${rec ? `<span class="her">${I.herhaal}${esc(rec)}</span>` : ''}</div>

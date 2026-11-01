@@ -358,7 +358,9 @@ button.rij:active { opacity: 0.6; }
 
 /* Detailscherm */
 .detail { background: var(--sheetBg); max-width: 680px; }
-.detailnav { display: flex; justify-content: space-between; padding: 6px 16px; flex-shrink: 0; touch-action: none; }
+/* Alleen een sluitknop, rechts naast de eerste regel: de rij zelf neemt geen hoogte in */
+.detailnav { display: flex; justify-content: flex-end; align-items: flex-start; height: 0; overflow: visible; padding: 6px 16px 0; flex-shrink: 0; position: relative; z-index: 2; touch-action: none; }
+.detail .dkop { padding-top: 3px; padding-right: 52px; }
 .rond { width: 36px; height: 36px; border-radius: 18px; display: flex; align-items: center; justify-content: center; color: var(--label); }
 .rond .icoon { width: 17px; height: 17px; }
 .detailinhoud { overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding: 8px 16px calc(env(safe-area-inset-bottom, 0px) + 30px); display: flex; flex-direction: column; gap: 20px; }
@@ -601,6 +603,7 @@ button.drij:active { opacity: 0.6; }
   .paneel.detail.dialoog.open { transform: translate(-50%, -50%) scale(1); opacity: 1; }
   .paneel.detail.dialoog .greep { display: none; }
   .paneel.detail.dialoog .detailnav { padding-top: 14px; }
+  .paneel.detail.dialoog .dkop { padding-top: 2px; }
   button.drij:hover .t1 { color: var(--accent); }
   .groteknop:hover { filter: brightness(0.97); }
 }

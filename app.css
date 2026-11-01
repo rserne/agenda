@@ -607,6 +607,7 @@ label.frij:focus-within .flabel { color: var(--accent); }
 /* Eén rij per dag, horizontaal te vegen; de rand vervaagt zodat je ziet dat er meer is */
 .chips.rij { flex: 1; min-width: 0; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding: 2px 0; -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent); padding-right: 20px; }
 .chips.rij::-webkit-scrollbar { display: none; }
+.chips.rij.links { -webkit-mask-image: linear-gradient(to right, transparent, #000 28px, #000 calc(100% - 24px), transparent); mask-image: linear-gradient(to right, transparent, #000 28px, #000 calc(100% - 24px), transparent); }
 .chips.rij .chip { flex-shrink: 0; min-width: 62px; }
 @media (min-width: 768px) { .chips.rij { flex-wrap: wrap; overflow: visible; -webkit-mask-image: none; mask-image: none; padding-right: 0; } }
 .prikklaar { background: var(--card); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 6px; }

@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-01-61';
+const APP_VERSIE = '2026-11-01-62';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -1478,7 +1478,12 @@ async function openNieuw({ dag = null, blok = null, prik = false } = {}) {
           <div class="chips rij">${g.tijden.map(chip).join('')}</div></div>`;
       }).join('') : `<div class="ngeen">Geen vrije blokken van ${duurKort(v.duur)} in de komende twee weken.</div>`}`;
     // Op de telefoon schuift elke rij zo dat de aangevinkte tijd in beeld staat
-    el.querySelectorAll('.chips.rij').forEach((r) => { const a = r.querySelector('.aan'); if (a && a.offsetLeft + a.offsetWidth > r.clientWidth - 24) r.scrollLeft = a.offsetLeft - r.clientWidth / 2 + a.offsetWidth / 2; });
+    el.querySelectorAll('.chips.rij').forEach((r) => {
+      const a = r.querySelector('.aan');
+      if (a && a.offsetLeft + a.offsetWidth > r.clientWidth - 24) r.scrollLeft = a.offsetLeft - r.offsetLeft - 48;
+      const rand = () => r.classList.toggle('links', r.scrollLeft > 2);
+      rand(); r.addEventListener('scroll', rand, { passive: true });
+    });
     tekenSamen();
   };
   const tekenTijden = async () => {

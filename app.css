@@ -46,6 +46,7 @@
   --onAccent: #FFFFFF;
   --ringFull: #D04F42;
   --volRgb: 208 79 66;
+  --midRgb: 232 170 20;
   --freeBg: rgba(44, 134, 184, 0.09);
   --freeTileBg: rgba(44, 134, 184, 0.1);
   --freeTileBorder: rgba(44, 134, 184, 0.55);
@@ -103,6 +104,7 @@
     --onAccent: #1E1D24;
     --ringFull: #EB8479;
     --volRgb: 235 132 121;
+    --midRgb: 245 196 70;
     --freeBg: rgba(134, 195, 225, 0.09);
     --freeTileBg: rgba(134, 195, 225, 0.1);
     --freeTileBorder: rgba(134, 195, 225, 0.55);
@@ -323,6 +325,9 @@ button.rij:active { opacity: 0.6; }
   display: flex; align-items: center; justify-content: center;
   background: rgb(var(--tint) / var(--a, 0));
 }
+/* Op een dekkende ondergrond, zodat de tint in de gekozen (blauwe) week niet groenig mengt */
+.dagcel.gevuld { background: linear-gradient(rgb(var(--tint) / var(--a)), rgb(var(--tint) / var(--a))), var(--celBg, var(--card)); }
+.dagcel.mid { --tint: var(--midRgb); }
 .dagcel.vol { --tint: var(--volRgb); }
 .dagcel span { font-size: 14px; font-weight: 500; font-variant-numeric: tabular-nums; }
 .dagcel.weekend span { color: var(--secondary); }
@@ -331,6 +336,7 @@ button.rij:active { opacity: 0.6; }
 .kiezerlegenda { display: flex; align-items: center; gap: 6px; padding: 14px 8px 0; color: var(--secondary); font-size: 12px; }
 .kiezerlegenda i { width: 14px; height: 14px; border-radius: 4px; }
 .kiezerlegenda i.rustig { background: rgb(120 120 128 / 0.12); }
+.kiezerlegenda i.gemiddeld { background: rgb(var(--midRgb) / 0.28); margin-left: 8px; }
 .kiezerlegenda i.druk { background: rgb(var(--volRgb) / 0.26); margin-left: 8px; }
 .vandaagtekst { display: none; }
 
@@ -451,6 +457,7 @@ button.drij:active { opacity: 0.6; }
   .minikal .weekrij { height: 32px; border-radius: 8px; margin-bottom: 1px; }
   .minikal .weekrij .wk { font-size: 10px; font-weight: 500; }
   .minikal .dagcel { height: 28px; max-width: 30px; border-radius: 7px; }
+  .minikal { --celBg: var(--zbBg); }
   .minikal .dagcel span { font-size: 12px; }
   .minikal .dagcel.vandaag span { width: 22px; height: 22px; border-radius: 11px; }
   .minikal .kiezerlegenda { padding: 8px 6px 0; font-size: 11px; }

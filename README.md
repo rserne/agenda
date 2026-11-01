@@ -4,7 +4,7 @@ Je week in één oogopslag, als web-app (PWA) voor iPhone, iPad en laptop. De ap
 
 - **Week:** per dag een lijst, met Opvallend, Alles en Vrij. De dagkop blijft bovenaan staan tijdens het scrollen.
 - **Vooruitblik:** zeven dagen vanaf vandaag in tegels.
-- **Weekkiezer:** tik op de titel. Elke werkdag kleurt mee met hoe vol hij is (een heatmap): lichtgrijs bij een rustige dag, zacht rood bij zes uur of meer aan afspraken.
+- **Weekkiezer:** tik op de titel. Elke werkdag kleurt mee met hoe vol hij is (een heatmap): grijs bij een rustige dag, geel vanaf drie uur en rood vanaf zes uur aan afspraken (`MID_HOURS`, `FULL_HOURS`).
 - **Detailscherm:** locatie, Teams-link, organisator en deelnemers per organisatie, notities, en mailen naar één of alle deelnemers.
 
 Zonder bouwstap: `index.html`, `app.css`, `app.js` en `voorbeeld.js` draaien zoals ze zijn op GitHub Pages. Licht en donker volgen de instelling van het toestel.

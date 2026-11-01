@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-01-5';
+const APP_VERSIE = '2026-11-01-6';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -22,7 +22,8 @@ const LOOK_AROUND_WEEKS = 4; // zoveel weken terug en vooruit zoeken naar vaste 
 const WORK_START = 8; // werkdag voor bezetting en vrije tijd: 08:00–18:00
 const WORK_END = 18;
 const FREE_MIN = 30; // vrije blokken vanaf een half uur
-const FULL_HOURS = 6; // rode ring in de weekkiezer vanaf zoveel uur afspraken
+const MID_HOURS = 3; // heatmap: geel vanaf zoveel uur afspraken
+const FULL_HOURS = 6; // heatmap: rood vanaf zoveel uur afspraken
 const RING_HOURS = 8; // zoveel uur is een volle ring
 const PEOPLE_LIMIT = 6; // zoveel deelnemers eerst, daarna 'Alle … tonen'
 const MAX_ORGS = 2; // organisaties per afspraak in Week
@@ -886,12 +887,15 @@ function maakVeegbaar(paneel, greep, sluit) {
 /*  Weekkiezer                                                         */
 /* ------------------------------------------------------------------ */
 
-// Maandraster met weekrijen. Bezetting als getint vlak: lichtgrijs bij een rustige dag, zacht rood vanaf
-// FULL_HOURS uur. Gebruikt in het paneel (telefoon, tablet) en in de zijbalk (desktop).
+// Maandraster met weekrijen. Bezetting als heatmap in drie stappen: grijs (rustig), geel (vanaf MID_HOURS)
+// en rood (vanaf FULL_HOURS); binnen elke stap wordt de tint voller naarmate de dag drukker is.
+// Gebruikt in het paneel (telefoon, tablet) en in de zijbalk (desktop).
+const niveau = (h) => (h >= FULL_HOURS ? 'vol' : h >= MID_HOURS ? 'mid' : '');
 function tint(h) {
   if (!h) return 0;
-  if (h >= FULL_HOURS) return 0.16 + 0.14 * Math.min(1, (h - FULL_HOURS) / 2);
-  return 0.05 + 0.13 * Math.min(1, h / FULL_HOURS);
+  if (h >= FULL_HOURS) return 0.18 + 0.12 * Math.min(1, (h - FULL_HOURS) / 2);
+  if (h >= MID_HOURS) return 0.2 + 0.12 * ((h - MID_HOURS) / (FULL_HOURS - MID_HOURS));
+  return 0.05 + 0.07 * (h / MID_HOURS);
 }
 function maandRasterHtml(maand, gekozen, soort = 'paneel') {
   const rasterStart = startOfWeek(maand);
@@ -905,7 +909,7 @@ function maandRasterHtml(maand, gekozen, soort = 'paneel') {
       const d = addDays(ma, i);
       const weekend = i >= 5;
       const h = weekend ? 0 : uren[d.getTime()] || 0;
-      const klasse = ['dagcel', weekend ? 'weekend' : '', d.getMonth() !== maand.getMonth() ? 'anders' : '', sameDay(d, t) ? 'vandaag' : '', h >= FULL_HOURS ? 'vol' : ''].join(' ');
+      const klasse = ['dagcel', weekend ? 'weekend' : '', d.getMonth() !== maand.getMonth() ? 'anders' : '', sameDay(d, t) ? 'vandaag' : '', niveau(h), h ? 'gevuld' : ''].join(' ');
       cellen += `<span class="cel"><span class="${klasse}" style="--a:${tint(h).toFixed(3)}"><span>${d.getDate()}</span></span></span>`;
     }
     rijen += `<button class="weekrij${sameDay(ma, gekozen) ? ' gekozen' : ''}" data-ma="${ma.getTime()}" aria-label="Week ${isoWeek(ma)}"><span class="wk">${isoWeek(ma)}</span>${cellen}</button>`;
@@ -916,7 +920,7 @@ function maandRasterHtml(maand, gekozen, soort = 'paneel') {
   return `<div class="kiezerkop"><h2>${cap(MONTHS_LONG[maand.getMonth()])} ${maand.getFullYear()}</h2>${knoppen}</div>
     <div class="rasterkop"><span></span>${['ma', 'di', 'wo', 'do', 'vr', 'za', 'zo'].map((d) => `<span>${d}</span>`).join('')}</div>
     ${rijen}
-    <div class="kiezerlegenda"><i class="rustig"></i>rustig<i class="druk"></i>${FULL_HOURS} uur of meer</div>`;
+    <div class="kiezerlegenda"><i class="rustig"></i>rustig<i class="gemiddeld"></i>${MID_HOURS}–${FULL_HOURS} uur<i class="druk"></i>${FULL_HOURS} uur of meer</div>`;
 }
 const gekozenMaandag = () => startOfWeek(ST.tab === 'week' ? ST.anker : ST.fcStart);
 function kiesWeek(ma) {
@@ -969,7 +973,9 @@ function tekenRingen(el, maand) {
       if (i >= 5) return;
       const h = uren[addDays(ma, i).getTime()] || 0;
       cel.style.setProperty('--a', tint(h).toFixed(3));
-      cel.classList.toggle('vol', h >= FULL_HOURS);
+      cel.classList.toggle('vol', niveau(h) === 'vol');
+      cel.classList.toggle('mid', niveau(h) === 'mid');
+      cel.classList.toggle('gevuld', h > 0);
     });
   });
 }

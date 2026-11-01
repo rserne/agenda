@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-01-9';
+const APP_VERSIE = '2026-11-01-10';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -641,7 +641,7 @@ function weekKolommenHtml(events) {
     if (!rijen) rijen = '<div class="krij rest leeg">Geen afspraken</div>';
     const isVandaag = sameDay(d, t);
     kolommen.push(`<section class="dagkolom${isVandaag ? ' vandaag' : ''}${d < t ? ' voorbij' : ''}${i >= 5 ? ' weekend' : ''}">
-      <h2 class="kolomkop"><span class="dow">${isVandaag ? 'Vandaag' : cap(DAYS_LONG[d.getDay()])}</span><span class="nr num">${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}</span></h2>
+      <h2 class="kolomkop" aria-label="${isVandaag ? 'Vandaag, ' : ''}${DAYS_LONG[d.getDay()]} ${d.getDate()} ${MONTHS_LONG[d.getMonth()]}"><span class="nr num">${d.getDate()}</span><span class="dow">${cap(DAYS_LONG[d.getDay()])}</span>${d.getDate() === 1 && i > 0 ? `<span class="mnd">${MONTHS_SHORT[d.getMonth()]}</span>` : ''}</h2>
       <div class="kaart">${rijen}</div>
     </section>`);
   }

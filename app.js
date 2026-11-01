@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-01-49';
+const APP_VERSIE = '2026-11-01-50';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -1566,20 +1566,38 @@ if (PARAMS.has('uitloggen')) uitloggen();
   });
 })();
 
-// Service worker, en een melding als er een nieuwe versie klaarstaat.
-// Bij elke uitgave verandert VERSION in sw.js; de browser ziet dan een nieuwe service worker. Die neemt het
-// meteen over (skipWaiting), en de pagina die nog open staat krijgt een 'controllerchange'. Een app op het
-// beginscherm blijft vaak dagen in het geheugen, daarom kijken we ook bij terugkomen en elk half uur.
-if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
-  const hadAl = !!navigator.serviceWorker.controller; // bij de allereerste keer is er niets te vernieuwen
+// Melding als er een nieuwe versie klaarstaat. We halen het begin van app.js op, zonder cache, en vergelijken
+// APP_VERSIE met de versie die nu draait. Dat werkt los van de service worker: die meldt een update op de iPhone
+// niet betrouwbaar, en een app op het beginscherm blijft vaak dagen in het geheugen. We kijken kort na het
+// openen, bij elke terugkeer naar de app en elk half uur.
+const versieDelen = (v) => String(v).split('-').map(Number);
+const nieuwer = (a, b) => { const x = versieDelen(a), y = versieDelen(b); for (let i = 0; i < Math.max(x.length, y.length); i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0); } return false; };
+(function versieControle() {
+  if (!/^https?:$/.test(location.protocol)) return;
   const melding = $('#updatemelding');
-  const toon = () => { melding.hidden = false; requestAnimationFrame(() => melding.classList.add('open')); };
-  navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadAl) toon(); });
+  let gemeld = false, laatst = 0;
+  const toon = () => { if (gemeld) return; gemeld = true; melding.hidden = false; requestAnimationFrame(() => melding.classList.add('open')); };
   $('#vernieuwknop').addEventListener('click', () => location.reload());
   $('#laterknop').addEventListener('click', () => { melding.classList.remove('open'); setTimeout(() => { melding.hidden = true; }, 250); });
+  const kijk = async () => {
+    if (gemeld || Date.now() - laatst < 60 * 1000) return;
+    laatst = Date.now();
+    try {
+      const r = await fetch(`app.js?versiecheck=${Date.now()}`, { cache: 'no-store', headers: { Range: 'bytes=0-2047' } });
+      if (!r.ok) return;
+      const m = (await r.text()).match(/APP_VERSIE = '([^']+)'/);
+      if (m && nieuwer(m[1], APP_VERSIE)) toon();
+    } catch (e) { /* geen verbinding: later opnieuw */ }
+  };
+  setTimeout(kijk, 4000);
+  setInterval(kijk, 30 * 60 * 1000);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') kijk(); });
+  window.addEventListener('focus', kijk);
+})();
+
+// Service worker: de app zonder verbinding kunnen openen. Bij terugkomen ook de service worker bijwerken.
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   navigator.serviceWorker.register('sw.js').then((reg) => {
-    const kijk = () => reg.update().catch(() => {});
-    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') kijk(); });
-    setInterval(kijk, 30 * 60 * 1000);
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reg.update().catch(() => {}); });
   }).catch(() => {});
 }

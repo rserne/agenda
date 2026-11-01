@@ -1,7 +1,7 @@
 // Agenda, service worker
 // Bewaart de app zelf op het toestel, zodat hij ook zonder verbinding opent. Je afspraken bewaart app.js
 // (localStorage); die komen nooit in deze cache. Hoog VERSION op bij elke uitgave, samen met APP_VERSIE in app.js.
-const VERSION = 'v49';
+const VERSION = 'v50';
 const CACHE = 'agenda-' + VERSION;
 const BESTANDEN = ['./', './index.html', './app.css', './app.js', './manifest.webmanifest', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png', './favicon-64.png', './voorbeeld.js', './vendor/ical.min.js', './functions/_ical.js', './functions/_verrijk.js'];
 
@@ -22,8 +22,11 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
   if (e.request.method !== 'GET' || url.origin !== self.location.origin) return;
+  if (url.searchParams.has('versiecheck')) return; // de versiecontrole gaat altijd rechtstreeks naar het netwerk
   e.respondWith(
-    fetch(e.request)
+    // 'no-cache': altijd bij de server navragen of er iets nieuws is (een 304 is goedkoop), zodat Vernieuwen
+    // nooit een oude versie uit de browsercache haalt
+    fetch(new Request(e.request.url, { cache: 'no-cache', credentials: 'same-origin' }))
       .then((r) => {
         if (r.ok) {
           const kopie = r.clone();

@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-01-33';
+const APP_VERSIE = '2026-11-01-34';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -1019,10 +1019,14 @@ function renderZijbalk() {
   z.innerHTML = `<div class="zbbinnen">
     <div class="minikal">${maandRasterHtml(zijMaand, gekozenMaandag(), 'zijbalk')}</div>
     <nav class="zblijst" aria-label="Weergave"><h3>Weergave</h3>${item('week', I.week, 'Week')}${item('forecast', I.vooruit, 'Vooruitblik')}</nav>
-    <div class="zblegenda">
-      <span><i class="vlak" style="background:var(--externDot)"></i>Extern</span>
-      <span><i class="vlak" style="background:var(--internDot)"></i>Intern, ad hoc</span>
-      <span><i class="vlak" style="background:var(--regularDot)"></i>Intern, vast</span>
+    <div class="zblegenda">${ST.tab === 'forecast'
+      // Vooruitblik: de lichte kleuren van de tegels; Week: de streep van de afspraken
+      ? `<span><i class="vlak" style="background:var(--externTile)"></i>Extern</span>
+      <span><i class="vlak" style="background:var(--internTile)"></i>Intern, ad hoc</span>
+      <span><i class="vlak" style="background:var(--regularTile)"></i>Intern, vast</span>`
+      : `<span><i class="streep" style="background:var(--externDot)"></i>Extern</span>
+      <span><i class="streep" style="background:var(--internDot)"></i>Intern, ad hoc</span>
+      <span><i class="streep" style="background:var(--regularDot)"></i>Intern, vast</span>`}
     </div>
     ${bronHtml('zbvoet')}
   </div>`;

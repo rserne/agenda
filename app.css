@@ -253,10 +253,9 @@ button.rij:active { opacity: 0.6; }
 .vbdatum.vandaag .dow, .vbdatum.vandaag .nr, .vbdatum.vandaag .mnd { color: var(--accent); }
 .vbinhoud { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
 .vbleeg { height: 64px; border-radius: 14px; background: var(--tileEmpty); border: 1px solid var(--cardBorder); display: flex; align-items: center; justify-content: center; font-size: 15px; color: var(--secondary); }
-.vbheledag { display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 8px 12px; border-radius: 12px; background: var(--regularTile); color: var(--regularTileText); text-align: left; }
-.vbheledag::before { content: ''; width: 4px; align-self: stretch; border-radius: 2px; background: var(--regularDot); }
+.vbheledag { display: flex; align-items: center; gap: 8px; min-height: 38px; padding: 7px 12px; border-radius: 12px; background: var(--card); border: 1px solid var(--cardBorder); text-align: left; }
 .vbheledag .t { flex: 1; min-width: 0; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.vbheledag .h { color: var(--regularTileText); font-size: 12px; opacity: 0.85; }
+.vbheledag .h { color: var(--secondary); font-size: 12px; }
 .tegels { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .tegel {
   height: 124px; border-radius: 12px; padding: 8px 8px 7px; display: flex; flex-direction: column; gap: 2px;
@@ -502,7 +501,7 @@ button.drij:active { opacity: 0.6; }
 
   /* Week: dagkolommen met een gekleurd streepje per afspraak */
   .weekraster { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)) repeat(2, minmax(0, 0.7fr)); gap: 10px; align-items: start; }
-  .heledagbalk { display: block; width: 100%; text-align: left; margin-bottom: 3px; padding: 4px 8px; border-radius: 6px; background: var(--regularTile); color: var(--regularTileText); font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .heledagbalk { display: block; width: 100%; text-align: left; margin-bottom: 3px; padding: 4px 8px; border-radius: 6px; background: rgb(120 120 128 / 0.1); color: var(--label); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .heledagbalk:hover { filter: brightness(0.96); }
   .dagkolom.weekend .krij.leeg { padding: 10px 0; font-size: 12px; }
   .kolomkop {
@@ -535,10 +534,23 @@ button.drij:active { opacity: 0.6; }
   .krij.vrij .rijtitel span { color: var(--secondary); font-weight: 400; }
 
   /* Vooruitblik: zoveel tegels als er passen */
-  .vb { gap: 18px; padding-top: 0; }
-  .vbdatum { width: 48px; }
-  .vbdag { gap: 12px; }
-  .tegels { grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); }
+  .vb { gap: 10px; padding-top: 0; }
+  .vbdag { gap: 10px; }
+  .vbdatum { width: 44px; padding-top: 0; }
+  .vbdatum .dow { font-size: 10px; }
+  .vbdatum .nr { font-size: 18px; line-height: 22px; }
+  .vbdatum .mnd { font-size: 10px; }
+  .vbinhoud { gap: 6px; }
+  .tegels { grid-template-columns: repeat(auto-fill, minmax(156px, 1fr)); gap: 6px; }
+  .tegel { height: 84px; border-radius: 10px; padding: 6px 8px; gap: 1px; }
+  .tegel .tt { font-size: 12px; line-height: 15px; }
+  .tegel .tit { font-size: 13px; line-height: 16px; -webkit-line-clamp: 2; max-height: 32px; }
+  .tegel.ext .tit { -webkit-line-clamp: 1; max-height: 16px; }
+  .tegel .iconen .icoon { width: 12px; height: 12px; }
+  .vbleeg { height: 36px; border-radius: 10px; font-size: 13px; }
+  .vbheledag { min-height: 32px; padding: 5px 10px; border-radius: 10px; }
+  .vbheledag .t { font-size: 13px; }
+  .vbrest { font-size: 12px; }
   .tegel[data-id]:hover { filter: brightness(0.96); }
 
   /* Detail: een dialoog midden in beeld */

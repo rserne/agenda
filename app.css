@@ -582,6 +582,42 @@ label.frij:focus-within .flabel { color: var(--accent); }
 .kiezer .zbagenda button:active { background: var(--fill); }
 .kiezer .zbagenda button .icoon { width: 20px; height: 20px; }
 
+/* ================================================================ Datumprikker */
+.nieuw [hidden] { display: none !important; }
+.nieuw.prik .alleenafspraak, .nieuw:not(.prik) .alleenprik { display: none !important; }
+.soortkeuze { display: flex; gap: 2px; padding: 2px; margin: -4px 0 0; border-radius: 10px; background: var(--fill); }
+.soortkeuze button { flex: 1; height: 32px; border-radius: 8px; font-size: 14px; font-weight: 500; color: var(--label); }
+.soortkeuze button.aan { background: var(--card); font-weight: 600; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 0 0 0.5px rgba(0, 0, 0, 0.04); }
+.chips.gekozen { justify-content: center; margin-top: 10px; }
+.chip.keuze { gap: 8px; background: var(--card); box-shadow: 0 0 0 0.5px var(--cardBorder); font-size: 14px; }
+.chip.keuze span { color: var(--secondary); font-size: 16px; line-height: 1; }
+.nieuw .fout { color: var(--badgeText); font-size: 14px; text-align: center; }
+.prikklaar { background: var(--card); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 6px; }
+.prikklaar .t1 { font-size: 17px; font-weight: 700; }
+.prikklaar .t2 { color: var(--secondary); font-size: 14px; line-height: 19px; }
+.priklink { margin-top: 6px; width: 100%; border: 0; border-radius: 10px; background: var(--fill); color: var(--label); font: inherit; font-size: 14px; padding: 10px 12px; }
+.groteknop.rood { color: var(--badgeText); }
+.dkop > .stip.prik { background: var(--accent); }
+.dgesloten { color: var(--accent); font-weight: 600; margin-top: 6px; }
+.prikopties { padding: 0 16px; }
+.prikoptie { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 12px; row-gap: 3px; align-items: center; padding: 12px 0; }
+.prikoptie + .prikoptie { border-top: 0.5px solid var(--separator); }
+.prikoptie > .actie { grid-column: 2; grid-row: 1 / span 3; }
+.prikkop { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 600; }
+.bestelabel { background: var(--selBg); color: var(--selText); border-radius: 6px; padding: 2px 7px; font-size: 12px; font-weight: 700; }
+.prikoptie.beste .prikkop .num { color: var(--accent); }
+.prikteller { display: flex; gap: 12px; font-size: 14px; color: var(--secondary); }
+.prikteller .ja { color: var(--label); font-weight: 600; }
+.priknamen { font-size: 13px; color: var(--secondary); line-height: 18px; }
+.prikrij { display: flex; flex-direction: column; min-width: 0; text-align: left; }
+.prikrij .t1 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.prikrij .t2 { font-size: 12px; color: var(--secondary); font-weight: 400; }
+.kiezer .zbprik button { min-height: 52px; }
+@media (min-width: 1200px) {
+  .zbprik button { height: auto !important; min-height: 32px; padding-top: 5px !important; padding-bottom: 5px !important; }
+  .zbprik .prikrij .t2 { font-size: 11px; }
+}
+
 /* ================================================================ Desktop (vanaf 1200): ontwerp A, in de stijl van Agenda op de Mac */
 .zijbalk { display: none; }
 @media (min-width: 1200px) {

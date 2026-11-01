@@ -18,6 +18,8 @@ Zonder bouwstap: `index.html`, `app.css`, `app.js` en `voorbeeld.js` draaien zoa
 
 **Nieuwe afspraak.** Met de plusknop in de kop (op de desktop **Nieuw**): je kiest de dag en de duur (standaard een uur, in stappen van een kwartier) en de app stelt begintijden voor die in je vrije blokken passen, tussen 8:00 en 18:00. Kies je zelf een andere tijd die botst, dan zie je meteen met welke afspraak. Tik je op een vrij blok, dan blijft alles binnen dat blok: de dag ligt vast, de duur gaat niet verder dan het blok lang is en de begintijden vallen erbinnen. Omdat de app je agenda alleen leest, opent **Verder in Outlook** Outlook op het web met alles ingevuld; daar sla je de afspraak op en verstuur je de uitnodiging. **Downloaden als .ics** werkt ook in andere agenda's.
 
+**Datumprikker.** In het scherm voor een nieuwe afspraak kies je bovenaan **Datumprikker**. Je tikt dan een of meer begintijden aan, ook op verschillende dagen, uit je vrije blokken. **Peiling maken** bewaart de peiling bij Nhost (zo nodig log je eerst in) en geeft een link. Genodigden openen `prik.html?p=…` zonder account, kiezen per tijd ja, misschien of nee en vullen hun naam en eventueel e-mailadres in. Ze zien alleen de voorgestelde tijden, niets van je agenda. Je peilingen staan in de weekkiezer (desktop: zijbalk) onder **Datumprikkers**, met per tijd wie kan en de beste keuze bovenaan. **Inplannen** opent Outlook met die tijd en de mailadressen van wie ja of misschien zei, en sluit de peiling. De tabellen en rechten staan in `database/`; eenmalig instellen in het dashboard van Nhost, zonder de repository te koppelen.
+
 ## Hoe het werkt
 
 ```

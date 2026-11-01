@@ -481,6 +481,9 @@ button.drij:active { opacity: 0.6; }
 .plus { display: inline-flex; margin-left: auto; color: var(--accent); flex-shrink: 0; opacity: 0.8; }
 .plus .icoon { width: 18px; height: 18px; }
 .rij.vrij .plus { align-self: center; }
+/* Hoe langer vrij, hoe hoger het blok (met een grens), en de eindtijd onderaan: zo zie je in één oogopslag waar ruimte is */
+.rij.vrij { min-height: clamp(48px, calc(28px + var(--uren, 0) * 32px), 200px); }
+.rij.vrij .tijdkolom { align-self: stretch; display: flex; flex-direction: column; justify-content: space-between; }
 .rij.vrij:active, .tegel.vrij:active { filter: brightness(0.96); }
 .tegel.vrij .tegelkop .plus .icoon { width: 14px; height: 14px; }
 
@@ -667,6 +670,7 @@ label.frij:focus-within .flabel { color: var(--accent); }
   .nieuwknop span { display: inline; }
   .nieuwknop:hover { filter: brightness(1.08); }
   .krij.vrij .plus { align-self: center; }
+  .krij.vrij { min-height: clamp(40px, calc(18px + var(--uren, 0) * 24px), 170px); }
   .krij.vrij .plus { opacity: 0; transition: opacity 0.12s; }
   .krij.vrij .plus .icoon { width: 14px; height: 14px; }
   .krij.vrij:hover .plus, .tegel.vrij:hover .plus { opacity: 0.9; }

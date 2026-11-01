@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-01-22';
+const APP_VERSIE = '2026-11-01-23';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -617,7 +617,7 @@ function weekRij(e, ov) {
 }
 
 function vrijRij(f) {
-  return `<button class="rij vrij" data-vrij="${f.start.getTime()}-${f.end.getTime()}" aria-label="Vrij van ${hhmm(f.start)} tot ${hhmm(f.end)}, ${freeText(f.min)}. Afspraak toevoegen">
+  return `<button class="rij vrij" style="--uren:${(f.min / 60).toFixed(2)}" data-vrij="${f.start.getTime()}-${f.end.getTime()}" aria-label="Vrij van ${hhmm(f.start)} tot ${hhmm(f.end)}, ${freeText(f.min)}. Afspraak toevoegen">
     <span class="stip"></span>
     <span class="tijdkolom"><div class="tijd">${hhmm(f.start)}</div><div class="eind">${hhmm(f.end)}</div></span>
     <span class="rijtekst"><span class="rijtitel"><b>Vrij</b><span> · ${freeText(f.min)}</span></span></span>
@@ -638,7 +638,7 @@ function kolomRij(e, ov) {
   </button>`;
 }
 function kolomVrij(f) {
-  return `<button class="krij vrij" data-vrij="${f.start.getTime()}-${f.end.getTime()}" aria-label="Vrij van ${hhmm(f.start)} tot ${hhmm(f.end)}, ${freeText(f.min)}. Afspraak toevoegen">
+  return `<button class="krij vrij" style="--uren:${(f.min / 60).toFixed(2)}" data-vrij="${f.start.getTime()}-${f.end.getTime()}" aria-label="Vrij van ${hhmm(f.start)} tot ${hhmm(f.end)}, ${freeText(f.min)}. Afspraak toevoegen">
     <span class="stip"></span>
     <span class="rijtekst"><span class="ktijd num">${hhmm(f.start)} – ${hhmm(f.end)}</span><span class="rijtitel"><b>Vrij</b><span> · ${freeText(f.min)}</span></span></span>
     <span class="plus" aria-hidden="true">${I.plus}</span>

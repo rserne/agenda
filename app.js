@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-01-14';
+const APP_VERSIE = '2026-11-01-15';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -561,10 +561,12 @@ function overlapVan(lijst) {
   t.forEach((e) => {
     const tegelijk = t.filter((x) => x !== e && x.start.getTime() === e.start.getTime());
     const later = t.filter((x) => x.start > e.start && x.start < e.end);
-    const delen = [];
-    if (tegelijk.length) delen.push(`Tegelijk met ${naam(tegelijk[0])}${tegelijk.length > 1 ? ` en nog ${tegelijk.length - 1}` : ''}`);
-    if (later.length) delen.push(`${delen.length ? 'om' : 'Om'} ${hhmm(later[0].start)} begint ${naam(later[0])}${later.length > 1 ? ` en nog ${later.length - 1}` : ''}`);
-    if (delen.length) tekst.set(e, delen.join(', '));
+    // Eerst wat tegelijk begint, dan wat later begint (met de tijd erbij: dan moet je misschien eerder weg)
+    const andere = [...tegelijk, ...later];
+    if (!andere.length) return;
+    const eerste = andere[0];
+    const tijd = eerste.start > e.start ? ` om ${hhmm(eerste.start)}` : '';
+    tekst.set(e, `Overlap met ${naam(eerste)}${tijd}${andere.length > 1 ? ` en nog ${andere.length - 1}` : ''}`);
   });
   return tekst;
 }

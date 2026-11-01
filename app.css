@@ -524,12 +524,10 @@ label.frij:focus-within .flabel { color: var(--accent); }
 .datumlabel .kort { display: none; }
 @media (max-width: 480px) { .datumlabel .lang { display: none; } .datumlabel .kort { display: inline; } }
 .datumlabel input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
-.tijdblok + .tijdblok { margin-top: 12px; }
-.bloklabel { color: var(--secondary); font-size: 13px; margin: 0 0 7px; }
 .ngeen { color: var(--secondary); font-size: 15px; line-height: 21px; }
 .link { color: var(--accent); font: inherit; font-weight: 600; padding: 0; }
-.eigentijd { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
-.eigentijd input { flex: none; height: 34px; border-radius: 10px; border: 0; background: var(--fill); color: var(--label); font: inherit; font-size: 16px; padding: 0 10px; }
+.chips.na { margin-top: 12px; }
+.eigeninvoer { flex: none; height: 34px; border-radius: 10px; border: 0; background: var(--fill); color: var(--label); font: inherit; font-size: 16px; padding: 0 10px; }
 .nsamenvatting { text-align: center; font-size: 15px; font-weight: 600; padding: 2px 8px 4px; }
 .nsamenvatting .leeg { color: var(--secondary); font-weight: 500; }
 .nsamenvatting .doverlap { color: var(--overlap); font-weight: 500; font-size: 14px; margin-top: 3px; }

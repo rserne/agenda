@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-01-31';
+const APP_VERSIE = '2026-11-01-32';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -1367,16 +1367,15 @@ async function openNieuw({ dag = null, blok = null } = {}) {
       const blokken = startTijden(lijst, d, v.duur);
       const alle = blokken.flatMap((b) => b.tijden);
       if (!v.eigen && !alle.includes(v.start)) v.start = alle.length ? alle[0] : null;
-      html = blokken.map((b) => `<div class="tijdblok">
-          <div class="bloklabel num">Vrij ${hhmm(b.blok.start)} – ${hhmm(b.blok.end)}</div>
-          <div class="chips">${b.tijden.map(chip).join('')}</div>
-        </div>`).join('');
+      // Alle begintijden in één rij; de vrije blokken zelf hoeven niet apart genoemd
+      html = '';
       if (!blokken.length) {
         const volgende = await eersteDagMetRuimte(addDays(d, 1), v.duur);
         html = `<div class="ngeen">Geen vrij blok van ${duurKort(v.duur)} tussen ${WORK_START}:00 en ${WORK_END}:00.${volgende ? ` <button class="link" data-naar="${volgende.getTime()}">Naar ${DAYS_LONG[volgende.getDay()]} ${volgende.getDate()} ${MONTHS_LONG[volgende.getMonth()]}</button>` : ''}</div>`;
       }
       const eigenWaarde = v.eigen && v.start != null ? hhmm(new Date(v.start)) : '';
-      html += `<div class="eigentijd"><button class="chip${v.eigen ? ' aan' : ''}" data-actie="eigen">Andere tijd</button>${v.eigen ? `<input type="time" step="900" id="neigen" value="${eigenWaarde}" aria-label="Begintijd">` : ''}</div>`;
+      // Andere tijd staat gewoon achteraan in dezelfde rij
+      html += `<div class="chips${blokken.length ? '' : ' na'}">${alle.map(chip).join('')}<button class="chip${v.eigen ? ' aan' : ''}" data-actie="eigen">Andere tijd</button>${v.eigen ? `<input class="eigeninvoer" type="time" step="900" id="neigen" value="${eigenWaarde}" aria-label="Begintijd">` : ''}</div>`;
     }
     $('#ntijden', el).innerHTML = html;
     tekenSamen();

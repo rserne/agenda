@@ -480,7 +480,7 @@ button.drij:active { opacity: 0.6; }
 /* Vrije blokken zijn aan te tikken: een plusje rechts */
 .plus { display: inline-flex; margin-left: auto; color: var(--accent); flex-shrink: 0; opacity: 0.8; }
 .plus .icoon { width: 18px; height: 18px; }
-.rij.vrij { align-items: center; }
+.rij.vrij .plus { align-self: center; }
 .rij.vrij:active, .tegel.vrij:active { filter: brightness(0.96); }
 .tegel.vrij .tegelkop .plus .icoon { width: 14px; height: 14px; }
 

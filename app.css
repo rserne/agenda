@@ -9,6 +9,7 @@
   --tileEmpty: #FFFFFF;
   --label: #000000;
   --secondary: rgba(60, 60, 67, 0.75); /* 5,2:1 op wit */
+  --weekendText: rgba(60, 60, 67, 0.82); /* ook op de blauwe balk van de gekozen week minstens 4,5:1 */
   --separator: rgba(60, 60, 67, 0.29);
   --accent: #1F72A0; /* 5,3:1 op wit */
   --externTile: #FFC6C0;
@@ -71,6 +72,7 @@
     --tileEmpty: #2C2C2E;
     --label: #FFFFFF;
     --secondary: rgba(235, 235, 245, 0.6);
+    --weekendText: rgba(235, 235, 245, 0.72);
     --separator: rgba(84, 84, 88, 0.65);
     --accent: #86C3E1;
     --externTile: #D6928B;
@@ -355,16 +357,16 @@ button.rij:active { background: var(--fill); }
    met donkere cijfers op geel en witte op rood */
 @media (prefers-color-scheme: dark) {
   .dagcel.gevuld { background: rgb(150 150 160 / 0.3); }
-  .dagcel.gevuld.mid { background: rgb(var(--midRgb) / 0.6); }
+  .dagcel.gevuld.mid { background: rgb(var(--midRgb) / 0.68); }
   .dagcel.gevuld.mid span { color: #1C1C1E; }
   .dagcel.gevuld.vol { background: rgb(var(--volRgb) / 0.58); }
   :root .kiezerlegenda i.rustig { background: rgb(150 150 160 / 0.3); }
-  :root .kiezerlegenda i.gemiddeld { background: rgb(var(--midRgb) / 0.6); }
+  :root .kiezerlegenda i.gemiddeld { background: rgb(var(--midRgb) / 0.68); }
   :root .kiezerlegenda i.druk { background: rgb(var(--volRgb) / 0.58); }
 }
 .dagcel span { font-size: 14px; font-weight: 500; font-variant-numeric: tabular-nums; }
-.dagcel.weekend span { color: var(--secondary); }
-.dagcel.anders { opacity: 0.45; }
+.dagcel.weekend span { color: var(--weekendText, var(--secondary)); }
+.dagcel.anders span { color: var(--secondary); font-weight: 400; } /* geen doorzichtigheid meer: die drukte het contrast ver onder de norm */
 .dagcel.vandaag span { width: 26px; height: 26px; border-radius: 13px; display: flex; align-items: center; justify-content: center; background: var(--accent); color: var(--onAccent); font-weight: 700; }
 .kiezerlegenda { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 14px 8px 0; color: var(--secondary); font-size: 12px; }
 .kiezerlegenda span { display: flex; align-items: center; gap: 6px; white-space: nowrap; }

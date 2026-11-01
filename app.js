@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-01-37';
+const APP_VERSIE = '2026-11-01-38';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -934,8 +934,10 @@ function maandRasterHtml(maand, gekozen, soort = 'paneel') {
     for (let i = 0; i < 7; i++) {
       const d = addDays(ma, i);
       const weekend = i >= 5;
-      const h = weekend ? 0 : uren[d.getTime()] || 0;
-      const klasse = ['dagcel', weekend ? 'weekend' : '', d.getMonth() !== maand.getMonth() ? 'anders' : '', sameDay(d, t) ? 'vandaag' : '', niveau(h), h ? 'gevuld' : ''].join(' ');
+      const anders = d.getMonth() !== maand.getMonth();
+      // Dagen van de maand ervoor of erna: alleen het cijfer, gedempt; geen kleur, dan blijft het goed leesbaar
+      const h = weekend || anders ? 0 : uren[d.getTime()] || 0;
+      const klasse = ['dagcel', weekend ? 'weekend' : '', anders ? 'anders' : '', sameDay(d, t) ? 'vandaag' : '', niveau(h), h ? 'gevuld' : ''].join(' ');
       cellen += `<span class="cel"><span class="${klasse}" style="--a:${tint(h).toFixed(3)}"><span>${d.getDate()}</span></span></span>`;
     }
     rijen += `<button class="weekrij${sameDay(ma, gekozen) ? ' gekozen' : ''}" data-ma="${ma.getTime()}" aria-label="Week ${isoWeek(ma)}"><span class="wk">${isoWeek(ma)}</span>${cellen}</button>`;
@@ -996,7 +998,7 @@ function tekenRingen(el, maand) {
   el.querySelectorAll('.weekrij').forEach((rij) => {
     const ma = new Date(Number(rij.dataset.ma));
     rij.querySelectorAll('.dagcel').forEach((cel, i) => {
-      if (i >= 5) return;
+      if (i >= 5 || cel.classList.contains('anders')) return;
       const h = uren[addDays(ma, i).getTime()] || 0;
       cel.style.setProperty('--a', tint(h).toFixed(3));
       cel.classList.toggle('vol', niveau(h) === 'vol');

@@ -354,11 +354,13 @@ button.rij:active { background: var(--fill); }
 /* Donker: een doorschijnende tint op grijs wordt grauw (geel lijkt olijfgroen). Daarom vaste, volle kleuren per niveau,
    met donkere cijfers op geel en witte op rood */
 @media (prefers-color-scheme: dark) {
-  .dagcel.gevuld.mid { background: rgb(var(--midRgb) / 0.82); }
+  .dagcel.gevuld { background: rgb(150 150 160 / 0.3); }
+  .dagcel.gevuld.mid { background: rgb(var(--midRgb) / 0.6); }
   .dagcel.gevuld.mid span { color: #1C1C1E; }
-  .dagcel.gevuld.vol { background: rgb(var(--volRgb) / 0.78); }
-  :root .kiezerlegenda i.gemiddeld { background: rgb(var(--midRgb) / 0.82); }
-  :root .kiezerlegenda i.druk { background: rgb(var(--volRgb) / 0.78); }
+  .dagcel.gevuld.vol { background: rgb(var(--volRgb) / 0.58); }
+  :root .kiezerlegenda i.rustig { background: rgb(150 150 160 / 0.3); }
+  :root .kiezerlegenda i.gemiddeld { background: rgb(var(--midRgb) / 0.6); }
+  :root .kiezerlegenda i.druk { background: rgb(var(--volRgb) / 0.58); }
 }
 .dagcel span { font-size: 14px; font-weight: 500; font-variant-numeric: tabular-nums; }
 .dagcel.weekend span { color: var(--secondary); }
@@ -367,7 +369,7 @@ button.rij:active { background: var(--fill); }
 .kiezerlegenda { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 14px 8px 0; color: var(--secondary); font-size: 12px; }
 .kiezerlegenda span { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
 .kiezerlegenda i { width: 14px; height: 14px; border-radius: 4px; }
-.kiezerlegenda i.rustig { background: rgb(120 120 128 / 0.12); }
+.kiezerlegenda i.rustig { background: rgb(120 120 128 / 0.18); }
 .kiezerlegenda i.gemiddeld { background: rgb(var(--midRgb) / calc(0.28 * var(--hm, 1))); }
 .kiezerlegenda i.druk { background: rgb(var(--volRgb) / calc(0.26 * var(--hm, 1))); }
 .vandaagtekst { display: none; }

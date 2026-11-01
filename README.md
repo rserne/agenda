@@ -4,7 +4,7 @@ Je week in één oogopslag, als web-app (PWA) voor iPhone, iPad en laptop. De ap
 
 - **Week:** per dag een lijst, met Opvallend, Alles en Vrij. De dagkop blijft bovenaan staan tijdens het scrollen.
 - **Vooruitblik:** zeven dagen vanaf vandaag in tegels.
-- **Weekkiezer:** tik op de titel. Elke werkdag heeft een ring die laat zien hoe vol hij is; rood betekent zes uur of meer aan afspraken.
+- **Weekkiezer:** tik op de titel. Elke werkdag kleurt mee met hoe vol hij is (een heatmap): lichtgrijs bij een rustige dag, zacht rood bij zes uur of meer aan afspraken.
 - **Detailscherm:** locatie, Teams-link, organisator en deelnemers per organisatie, notities, en mailen naar één of alle deelnemers.
 
 Zonder bouwstap: `index.html`, `app.css`, `app.js` en `voorbeeld.js` draaien zoals ze zijn op GitHub Pages. Licht en donker volgen de instelling van het toestel.
@@ -12,7 +12,7 @@ Zonder bouwstap: `index.html`, `app.css`, `app.js` en `voorbeeld.js` draaien zoa
 **Formaten**
 - **Telefoon:** kop met titel en capsule, schakelaar bovenin, tabbalk onderin, panelen van onderen.
 - **Tablet (vanaf 768 punten):** dezelfde opbouw in een kolom van 760 punten, Vooruitblik met vier tegels naast elkaar.
-- **Desktop (vanaf 1200 punten):** een zijbalk met maandkalender (met ringen), Week of Vooruitblik, Opvallend, Alles of Vrij en de legenda. Week toont de werkdagen als kolommen naast elkaar; het detailscherm opent als dialoog midden in beeld.
+- **Desktop (vanaf 1200 punten):** in de stijl van Agenda op de Mac. Een zijbalk met de maandkalender (heatmap) en Week of Vooruitblik, een werkbalk met Opvallend, Alles of Vrij en ‹ Vandaag ›, en de werkdagen als kolommen naast elkaar met een gekleurd streepje per afspraak. Het detailscherm opent als dialoog midden in beeld.
 
 **Voorbeeldgegevens.** Zolang de echte agenda nog niet is gekoppeld, staat `BRON = 'voorbeeld'` bovenin `app.js`. `voorbeeld.js` maakt dan voor elke week verzonnen afspraken: vaste overleggen, losse interne afspraken en externe overleggen met deelnemers. Zet `BRON` op `'nhost'` als de functie werkt; met `?echt` of `?demo` achter het adres kies je tijdelijk de andere bron.
 

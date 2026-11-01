@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-01-3';
+const APP_VERSIE = '2026-11-01-4';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -137,6 +137,8 @@ const I = {
   mail: lijn('<rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="M3.5 7l8.5 6 8.5-6"/>', 1.9),
   mailVol: vol('<path d="M5 5h14a3 3 0 0 1 3 3v.4l-10 6.3L2 8.4V8a3 3 0 0 1 3-3z"/><path d="M2 10.7l9.5 6a1 1 0 0 0 1 0l9.5-6V16a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3z"/>'),
   persoon: vol('<circle cx="12" cy="8" r="4.2"/><path d="M3.5 20.5c.8-4.2 4.3-6.8 8.5-6.8s7.7 2.6 8.5 6.8z"/>'),
+  week: lijn('<rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M3.5 9h17M9.2 9v10.5M14.8 9v10.5"/>', 1.8),
+  vooruit: lijn('<rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M3.5 9h17M7.5 13h9M7.5 16.5h6"/>', 1.8),
   extern: lijn('<path d="M14 4h6v6M20 4l-9 9M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/>', 2),
 };
 
@@ -738,7 +740,7 @@ function vooruitblikHtml(events) {
 /* ------------------------------------------------------------------ */
 
 function capsuleHtml(vorigeLabel, volgendeLabel) {
-  return `<button data-nav="-1" aria-label="${vorigeLabel}">${I.terug}</button><button data-nav="0" aria-label="Naar vandaag">${I.kalender}</button><button data-nav="1" aria-label="${volgendeLabel}">${I.verder}</button>`;
+  return `<button data-nav="-1" aria-label="${vorigeLabel}">${I.terug}</button><button data-nav="0" aria-label="Naar vandaag">${I.kalender}<span class="vandaagtekst">Vandaag</span></button><button data-nav="1" aria-label="${volgendeLabel}">${I.verder}</button>`;
 }
 
 function renderKop() {
@@ -884,8 +886,14 @@ function maakVeegbaar(paneel, greep, sluit) {
 /*  Weekkiezer                                                         */
 /* ------------------------------------------------------------------ */
 
-// Maandraster met weekrijen en ringen. Gebruikt in het paneel (telefoon, tablet) en in de zijbalk (desktop).
-function maandRasterHtml(maand, gekozen, capsule = true) {
+// Maandraster met weekrijen. Bezetting als getint vlak: lichtgrijs bij een rustige dag, zacht rood vanaf
+// FULL_HOURS uur. Gebruikt in het paneel (telefoon, tablet) en in de zijbalk (desktop).
+function tint(h) {
+  if (!h) return 0;
+  if (h >= FULL_HOURS) return 0.16 + 0.14 * Math.min(1, (h - FULL_HOURS) / 2);
+  return 0.05 + 0.13 * Math.min(1, h / FULL_HOURS);
+}
+function maandRasterHtml(maand, gekozen, soort = 'paneel') {
   const rasterStart = startOfWeek(maand);
   const uren = busyHoursByDay(afsprakenTussen(rasterStart, addDays(rasterStart, 42)));
   const t = vandaag();
@@ -897,15 +905,18 @@ function maandRasterHtml(maand, gekozen, capsule = true) {
       const d = addDays(ma, i);
       const weekend = i >= 5;
       const h = weekend ? 0 : uren[d.getTime()] || 0;
-      const klasse = ['ring', weekend ? 'weekend geen' : '', d.getMonth() !== maand.getMonth() ? 'anders' : '', sameDay(d, t) ? 'vandaag' : '', h >= FULL_HOURS ? 'vol' : ''].join(' ');
-      cellen += `<span class="cel"><span class="${klasse}" style="--p:${Math.min(1, h / RING_HOURS).toFixed(3)}"><span>${d.getDate()}</span></span></span>`;
+      const klasse = ['dagcel', weekend ? 'weekend' : '', d.getMonth() !== maand.getMonth() ? 'anders' : '', sameDay(d, t) ? 'vandaag' : '', h >= FULL_HOURS ? 'vol' : ''].join(' ');
+      cellen += `<span class="cel"><span class="${klasse}" style="--a:${tint(h).toFixed(3)}"><span>${d.getDate()}</span></span></span>`;
     }
     rijen += `<button class="weekrij${sameDay(ma, gekozen) ? ' gekozen' : ''}" data-ma="${ma.getTime()}" aria-label="Week ${isoWeek(ma)}"><span class="wk">${isoWeek(ma)}</span>${cellen}</button>`;
   }
-  return `<div class="kiezerkop"><h2>${cap(MONTHS_LONG[maand.getMonth()])} ${maand.getFullYear()}</h2>${capsule ? `<div class="capsule glas maandcapsule"><button data-maand="-1" aria-label="Vorige maand">${I.terug}</button><button data-maand="0" aria-label="Naar vandaag">${I.kalender}</button><button data-maand="1" aria-label="Volgende maand">${I.verder}</button></div>` : ''}</div>
+  const knoppen = soort === 'paneel'
+    ? `<div class="capsule glas maandcapsule"><button data-maand="-1" aria-label="Vorige maand">${I.terug}</button><button data-maand="0" aria-label="Naar vandaag">${I.kalender}</button><button data-maand="1" aria-label="Volgende maand">${I.verder}</button></div>`
+    : `<div class="maandpijlen"><button data-maand="-1" aria-label="Vorige maand">${I.terug}</button><button data-maand="1" aria-label="Volgende maand">${I.verder}</button></div>`;
+  return `<div class="kiezerkop"><h2>${cap(MONTHS_LONG[maand.getMonth()])} ${maand.getFullYear()}</h2>${knoppen}</div>
     <div class="rasterkop"><span></span>${['ma', 'di', 'wo', 'do', 'vr', 'za', 'zo'].map((d) => `<span>${d}</span>`).join('')}</div>
     ${rijen}
-    <div class="kiezerlegenda"><i></i>${FULL_HOURS} uur of meer aan afspraken</div>`;
+    <div class="kiezerlegenda"><i class="rustig"></i>rustig<i class="druk"></i>${FULL_HOURS} uur of meer</div>`;
 }
 const gekozenMaandag = () => startOfWeek(ST.tab === 'week' ? ST.anker : ST.fcStart);
 function kiesWeek(ma) {
@@ -948,17 +959,17 @@ function openWeekkiezer() {
     if (rij) { p.sluit(); kiesWeek(new Date(Number(rij.dataset.ma))); }
   });
 }
-// Ringen bijwerken zodra de gegevens binnen zijn, zonder het raster te laten verspringen
+// Tinten bijwerken zodra de gegevens binnen zijn, zonder het raster te laten verspringen
 function tekenRingen(el, maand) {
   const rasterStart = startOfWeek(maand);
   const uren = busyHoursByDay(afsprakenTussen(rasterStart, addDays(rasterStart, 42)));
   el.querySelectorAll('.weekrij').forEach((rij) => {
     const ma = new Date(Number(rij.dataset.ma));
-    rij.querySelectorAll('.ring').forEach((ring, i) => {
+    rij.querySelectorAll('.dagcel').forEach((cel, i) => {
       if (i >= 5) return;
       const h = uren[addDays(ma, i).getTime()] || 0;
-      ring.style.setProperty('--p', Math.min(1, h / RING_HOURS).toFixed(3));
-      ring.classList.toggle('vol', h >= FULL_HOURS);
+      cel.style.setProperty('--a', tint(h).toFixed(3));
+      cel.classList.toggle('vol', h >= FULL_HOURS);
     });
   });
 }
@@ -972,18 +983,15 @@ function renderZijbalk() {
   const z = $('#zijbalk');
   if (!isDesktop()) { z.innerHTML = ''; return; }
   if (!zijMaand) zijMaand = firstOfMonth(addDays(gekozenMaandag(), 3));
-  const knop = (attr, waarde, tekst, aan) => `<button ${attr}="${waarde}" class="${aan ? 'aan' : ''}" aria-selected="${aan}">${tekst}</button>`;
+  const item = (tab, icoon, tekst) => `<button data-tab="${tab}" class="${ST.tab === tab ? 'aan' : ''}" aria-selected="${ST.tab === tab}">${icoon}<span>${tekst}</span></button>`;
   z.innerHTML = `<div class="zbbinnen">
-    <div class="merk"><img src="icon-512.png" alt="" width="28" height="28"><span>Agenda</span></div>
-    <div class="minikal">${maandRasterHtml(zijMaand, gekozenMaandag())}</div>
-    <div class="zbsectie"><h3>Weergave</h3><div class="schakelaar zbschakel">${knop('data-tab', 'week', 'Week', ST.tab === 'week')}${knop('data-tab', 'forecast', 'Vooruitblik', ST.tab === 'forecast')}</div></div>
-    <div class="zbsectie"><h3>Tonen</h3><div class="schakelaar zbschakel">${knop('data-filter', 'notable', 'Opvallend', ST.filter === 'notable')}${knop('data-filter', 'all', 'Alles', ST.filter === 'all')}${knop('data-filter', 'free', 'Vrij', ST.filter === 'free')}</div></div>
-    <div class="zbsectie"><h3>Legenda</h3><div class="zblegenda">
-      <span><i class="vlak" style="background:var(--externTile)"></i>Extern</span>
-      <span><i class="vlak" style="background:var(--internTile)"></i>Intern, ad hoc</span>
-      <span><i class="vlak" style="background:var(--regularTile)"></i>Intern, vast</span>
-      <span><i class="vlak vrijvlak"></i>Vrij, vanaf ${FREE_MIN} minuten</span>
-    </div></div>
+    <div class="minikal">${maandRasterHtml(zijMaand, gekozenMaandag(), 'zijbalk')}</div>
+    <nav class="zblijst" aria-label="Weergave"><h3>Weergave</h3>${item('week', I.week, 'Week')}${item('forecast', I.vooruit, 'Vooruitblik')}</nav>
+    <div class="zblegenda">
+      <span><i class="vlak" style="background:var(--externDot)"></i>Extern</span>
+      <span><i class="vlak" style="background:var(--internDot)"></i>Intern, ad hoc</span>
+      <span><i class="vlak" style="background:var(--regularDot)"></i>Intern, vast</span>
+    </div>
     ${bronHtml('zbvoet')}
   </div>`;
   const rasterStart = startOfWeek(zijMaand);

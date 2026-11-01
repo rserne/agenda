@@ -201,15 +201,15 @@ main.kolom { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--barH,
   position: sticky; top: var(--kopH); z-index: 5;
   background: var(--bg);
   /* Ruimte tussen de dagen als marge, niet als opvulling: zo blijft de kop compact als hij bovenaan plakt */
-  margin-top: 22px;
-  padding: 6px 16px 6px;
+  margin-top: 14px;
+  padding: 4px 16px 5px;
   display: flex; align-items: baseline; gap: 8px;
   font-size: 16px; font-weight: 500; color: var(--secondary);
   white-space: nowrap; overflow: hidden;
 }
-.dagkop.eerste { margin-top: 0; padding-top: 6px; }
+.dagkop.eerste { margin-top: 0; padding-top: 4px; }
 /* Groot dagnummer met de dag ernaast op dezelfde grondlijn, net als de kolomkoppen op de desktop */
-.dagkop .nr { color: var(--label); font-size: 26px; font-weight: 600; letter-spacing: -0.5px; line-height: 30px; }
+.dagkop .nr { color: var(--label); font-size: 26px; font-weight: 600; letter-spacing: -0.5px; line-height: 26px; }
 .dagkop .dow { overflow: hidden; text-overflow: ellipsis; }
 .dagkop .mnd { margin-left: -4px; font-weight: 400; }
 .dagkop.vandaag .nr, .dagkop.vandaag .dow { color: var(--accent); }

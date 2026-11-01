@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-01-30';
+const APP_VERSIE = '2026-11-01-31';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -1219,17 +1219,17 @@ async function afsprakenOp(dag) {
   return afsprakenTussen(a, addDays(a, 1));
 }
 
-// Begintijden in een vrij blok: het begin van het blok, elk heel en half uur, en het laatste moment waarop het nog past
+// Begintijden in een vrij blok: aansluitend in stappen van de gekozen duur, vanaf het begin van het blok
+// (op een kwartier), plus het laatste moment waarop de afspraak nog past. Een uur in 16:00 – 18:00 geeft 16:00 en 17:00.
 function tijdenInBlok(a, b, duur) {
   const ms = duur * 6e4;
+  const kwartier = 15 * 6e4;
   const zet = new Set();
-  const begin = new Date(a);
-  if (begin.getMinutes() % 15 === 0) zet.add(a);
-  const eerste = new Date(a); eerste.setMinutes(Math.ceil(eerste.getMinutes() / 30) * 30, 0, 0);
-  for (let t = eerste.getTime(); t + ms <= b; t += 30 * 6e4) zet.add(t);
-  const laatste = new Date(b - ms); laatste.setMinutes(Math.floor(laatste.getMinutes() / 15) * 15, 0, 0);
-  if (laatste.getTime() >= a) zet.add(laatste.getTime());
-  return [...zet].filter((t) => t >= a && t + ms <= b).sort((x, y) => x - y);
+  const eerste = Math.ceil(a / kwartier) * kwartier;
+  for (let t = eerste; t + ms <= b; t += ms) zet.add(t);
+  const laatste = Math.floor((b - ms) / kwartier) * kwartier;
+  if (laatste >= eerste) zet.add(laatste);
+  return [...zet].sort((x, y) => x - y);
 }
 function startTijden(lijst, dag, duur) {
   return freeSlots(lijst, dag).map((f) => ({ blok: f, tijden: tijdenInBlok(f.start.getTime(), f.end.getTime(), duur) })).filter((x) => x.tijden.length);

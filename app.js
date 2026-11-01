@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-01-12';
+const APP_VERSIE = '2026-11-01-13';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -33,8 +33,6 @@ const VERS_MS = 5 * 60 * 1000; // gegevens ouder dan vijf minuten opnieuw ophale
 const NH_AUTH = `https://${NHOST_SUB}.auth.${NHOST_REG}.nhost.run/v1`;
 const API = `https://${NHOST_SUB}.functions.${NHOST_REG}.nhost.run/v1/agenda`;
 const PARAMS = new URLSearchParams(location.search);
-// Ontwerpvarianten voor overlap: ?overlap=a (tegelijk-groep), b (tijdlijn per dag), c (label op de afspraak)
-const OVERLAP = (PARAMS.get('overlap') || '').toLowerCase();
 // Formaat: telefoon (smal), tablet (vanaf 768) en desktop (vanaf 1200, met zijbalk en dagkolommen)
 const DESKTOP = window.matchMedia('(min-width: 1200px)');
 const isDesktop = () => DESKTOP.matches;
@@ -127,7 +125,6 @@ const vastText = (n) => (n === 1 ? '1 vast overleg' : `${n} vaste overleggen`);
 const lijn = (d, w = 2.2) => `<svg class="icoon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const vol = (d) => `<svg class="icoon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">${d}</svg>`;
 const I = {
-  overlap: lijn('<rect x="3" y="3" width="12.5" height="12.5" rx="3"/><rect x="8.5" y="8.5" width="12.5" height="12.5" rx="3"/>', 2.2),
   terug: lijn('<path d="M15 18l-6-6 6-6"/>', 2.6),
   verder: lijn('<path d="M9 18l6-6-6-6"/>', 2.6),
   kalender: lijn('<rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 17.5h.01M12 17.5h.01" stroke-width="2.6"/>', 1.8),
@@ -554,85 +551,25 @@ function busyHoursByDay(list) {
   return uren;
 }
 
-// Overlap: welke afspraken op een dag tegelijk vallen. Hele dagen en afspraken op 'vrij' tellen niet mee
-// (afgezegde staan er al niet meer in). Ook vaste overleggen die bij Opvallend verborgen zijn, tellen mee.
+// Overlap: alleen de afspraak die je als eerste ingaat krijgt een waarschuwing, want daar moet je misschien
+// eerder weg. De afspraak die later begint, noemen we niet. Beginnen ze tegelijk, dan geldt het voor allebei.
+// Hele dagen en afspraken op 'vrij' tellen niet mee; vaste overleggen die bij Opvallend verborgen zijn wel.
 function overlapVan(lijst) {
   const t = lijst.filter((e) => !e.allDay && !e.free && e.end > e.start).sort((a, b) => a.start - b.start || b.end - a.end);
-  const met = new Map(); // afspraak → afspraken die ermee overlappen
-  const voeg = (a, b) => { if (!met.has(a)) met.set(a, []); met.get(a).push(b); };
-  for (let i = 0; i < t.length; i++) {
-    for (let j = i + 1; j < t.length && t[j].start < t[i].end; j++) { voeg(t[i], t[j]); voeg(t[j], t[i]); }
-  }
-  // Groepen: afspraken die via elkaar aan elkaar vastzitten
-  const groepVan = new Map();
-  let groep = null, eind = 0;
-  t.forEach((e) => {
-    if (groep && e.start < eind) { groep.push(e); eind = Math.max(eind, e.end); } else { groep = [e]; eind = e.end; }
-    groepVan.set(e, groep);
-  });
-  // Stukken van de dag waarin twee of meer afspraken tegelijk lopen
-  const punten = [];
-  t.forEach((e) => { punten.push([e.start.getTime(), 1], [e.end.getTime(), -1]); });
-  punten.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
-  const dubbel = [];
-  let n = 0, van = 0;
-  punten.forEach(([tijd, d]) => {
-    const was = n; n += d;
-    if (was < 2 && n >= 2) van = tijd;
-    if (was >= 2 && n < 2 && tijd > van) dubbel.push([van, tijd]);
-  });
-  return { met, groepVan, dubbel, getimed: t };
-}
-const overlapt = (e, ov) => !!(ov && ov.met.has(e));
-function overlapTekst(e, ov) {
-  const andere = (ov && ov.met.get(e)) || [];
-  if (!andere.length) return '';
+  const tekst = new Map(); // afspraak → waarschuwing
   const naam = (x) => x.title || 'een afspraak';
-  if (andere.length === 1) return `Overlapt met ${naam(andere[0])}`;
-  if (andere.length === 2) return `Overlapt met ${naam(andere[0])} en ${naam(andere[1])}`;
-  return `Overlapt met ${andere.length} afspraken`;
-}
-// Variant A: opeenvolgende afspraken uit dezelfde overlapgroep bij elkaar zetten
-function segmenten(items, ov) {
-  const uit = [];
-  items.forEach((it) => {
-    const g = it.e && ov.groepVan.get(it.e);
-    const groep = g && g.length > 1 ? g : null;
-    const laatste = uit[uit.length - 1];
-    if (laatste && laatste.groep === groep) laatste.items.push(it);
-    else uit.push({ groep, items: [it] });
+  t.forEach((e) => {
+    const tegelijk = t.filter((x) => x !== e && x.start.getTime() === e.start.getTime());
+    const later = t.filter((x) => x.start > e.start && x.start < e.end);
+    const delen = [];
+    if (tegelijk.length) delen.push(`Tegelijk met ${naam(tegelijk[0])}${tegelijk.length > 1 ? ` en nog ${tegelijk.length - 1}` : ''}`);
+    if (later.length) delen.push(`${delen.length ? 'om' : 'Om'} ${hhmm(later[0].start)} begint ${naam(later[0])}${later.length > 1 ? ` en nog ${later.length - 1}` : ''}`);
+    if (delen.length) tekst.set(e, delen.join(', '));
   });
-  return uit;
+  return tekst;
 }
-function groepKop(groep) {
-  const a = Math.min(...groep.map((e) => e.start.getTime()));
-  const b = Math.max(...groep.map((e) => e.end.getTime()));
-  return `<div class="tegelijkkop">${I.overlap}<span>Tegelijk</span><span class="num">${hhmm(new Date(a))} – ${hhmm(new Date(b))}</span></div>`;
-}
-// Afspraken uit de groep die bij Opvallend verborgen zijn, als stille regel
-function verborgenInGroep(groep, getoond) {
-  const rest = groep.filter((e) => !getoond.has(e));
-  return rest.map((e) => `<button class="spook" data-id="${esc(e.id)}"><span class="num">${hhmm(e.start)} – ${hhmm(e.end)}</span><span class="t">${esc(e.title || '(geen titel)')}</span><span class="v">vast</span></button>`).join('');
-}
-// Variant B: tijdlijn van de werkdag met bezet (grijs) en dubbel geboekt (oranje)
-function tijdlijnHtml(d, ov) {
-  if (!ov.getimed.length) return '';
-  const dagA = startOfDay(d).getTime();
-  const dagB = addDays(startOfDay(d), 1).getTime();
-  let u0 = WORK_START, u1 = WORK_END;
-  ov.getimed.forEach((e) => {
-    const a = Math.max(e.start.getTime(), dagA), b = Math.min(e.end.getTime(), dagB);
-    u0 = Math.min(u0, Math.floor((a - dagA) / 36e5));
-    u1 = Math.max(u1, Math.ceil((b - dagA) / 36e5));
-  });
-  const A = dagA + u0 * 36e5, B = dagA + u1 * 36e5, W = B - A;
-  const pos = (a, b) => { const x = Math.max(a, A), y = Math.min(b, B); return y > x ? `left:${((x - A) / W * 100).toFixed(2)}%;width:${((y - x) / W * 100).toFixed(2)}%` : null; };
-  const bezet = ov.getimed.map((e) => pos(e.start.getTime(), e.end.getTime())).filter(Boolean).map((st) => `<i class="bz" style="${st}"></i>`).join('');
-  const dubbel = ov.dubbel.map(([a, b]) => { const st = pos(a, b); return st ? `<i class="db" style="${st}" title="Dubbel geboekt ${hhmm(new Date(a))} – ${hhmm(new Date(b))}"></i>` : ''; }).join('');
-  const streepjes = [];
-  for (let u = u0 + 1; u < u1; u++) if (u % 2 === 0) streepjes.push(`<b style="left:${((u - u0) / (u1 - u0) * 100).toFixed(2)}%"></b>`);
-  return `<div class="tijdlijn" aria-hidden="true"><div class="baan">${streepjes.join('')}${bezet}${dubbel}</div><div class="uren num"><span>${u0}</span><span>${u1}</span></div></div>`;
-}
+const overlapt = (e, ov) => !!(ov && ov.has(e));
+const overlapLabel = (e, ov) => (overlapt(e, ov) ? `<span class="overlaplabel">${esc(ov.get(e))}</span>` : '');
 
 /* ------------------------------------------------------------------ */
 /*  Toestand                                                           */
@@ -666,19 +603,13 @@ function badgesHtml(e, max = MAX_ORGS) {
   return `<div class="badges">${e.regular ? `<span class="herhaal" title="Terugkerend">${I.herhaal}</span>` : ''}${shown.map((o) => `<span class="badge">${esc(o)}</span>`).join('')}${rest > 0 ? `<span class="meer">+${rest}</span>` : ''}</div>`;
 }
 
-function overlapIcoon(e, ov) {
-  return OVERLAP === 'b' && overlapt(e, ov) ? `<span class="ovicoon" title="${esc(overlapTekst(e, ov))}">${I.overlap}</span>` : '';
-}
-function overlapLabel(e, ov) {
-  return OVERLAP === 'c' && overlapt(e, ov) ? `<span class="overlaplabel">${I.overlap}<span>${esc(overlapTekst(e, ov))}</span></span>` : '';
-}
 function weekRij(e, ov) {
   const onSite = e.mode === 'physical' || e.mode === 'hybrid';
   return `<button class="rij${e.notable ? '' : ' vast'}${overlapt(e, ov) ? ' overlapt' : ''}" data-id="${esc(e.id)}">
     <span class="stip ${e.kind}"></span>
     <span class="tijdkolom"><div class="tijd">${hhmm(e.start)}</div><div class="eind">${hhmm(e.end)}</div></span>
     <span class="rijtekst">
-      <span class="titelregel"><span class="rijtitel">${esc(e.title || '(geen titel)')}</span>${onSite ? `<span class="speld" aria-label="op locatie">${I.speld}</span>` : ''}${overlapIcoon(e, ov)}</span>
+      <span class="titelregel"><span class="rijtitel">${esc(e.title || '(geen titel)')}</span>${onSite ? `<span class="speld" aria-label="op locatie">${I.speld}</span>` : ''}</span>
       ${overlapLabel(e, ov)}${badgesHtml(e)}
     </span>
   </button>`;
@@ -698,7 +629,7 @@ function kolomRij(e, ov) {
   return `<button class="krij${e.notable ? '' : ' vast'}${overlapt(e, ov) ? ' overlapt' : ''}" data-id="${esc(e.id)}">
     <span class="stip ${e.kind}"></span>
     <span class="rijtekst">
-      <span class="ktijd num">${hhmm(e.start)} – ${hhmm(e.end)}${onSite ? `<span class="speld" aria-label="op locatie">${I.speld}</span>` : ''}${overlapIcoon(e, ov)}</span>
+      <span class="ktijd num">${hhmm(e.start)} – ${hhmm(e.end)}${onSite ? `<span class="speld" aria-label="op locatie">${I.speld}</span>` : ''}</span>
       <span class="rijtitel">${esc(e.title || '(geen titel)')}</span>
       ${overlapLabel(e, ov)}${badgesHtml(e)}
     </span>
@@ -709,14 +640,6 @@ function kolomVrij(f) {
     <span class="stip"></span>
     <span class="rijtekst"><span class="ktijd num">${hhmm(f.start)} – ${hhmm(f.end)}</span><span class="rijtitel"><b>Vrij</b><span> · ${freeText(f.min)}</span></span></span>
   </div>`;
-}
-// Rijen van één dag; bij variant A staan afspraken die overlappen samen in een groep
-function rijenHtml(items, ov, getoond, rij, vrij) {
-  if (OVERLAP !== 'a') return items.map((it) => (it.e ? rij(it.e, ov) : vrij(it.f))).join('');
-  const zet = new Set(getoond);
-  return segmenten(items, ov).map((sg) => (sg.groep
-    ? `<div class="tegelijk">${groepKop(sg.groep)}${sg.groep.map((e) => (zet.has(e) ? rij(e, ov) : verborgenInGroep([e], zet))).join('')}</div>`
-    : sg.items.map((it) => (it.e ? rij(it.e, ov) : vrij(it.f))).join(''))).join('');
 }
 function weekKolommenHtml(events) {
   const { start } = periode();
@@ -734,12 +657,12 @@ function weekKolommenHtml(events) {
     // Hele dagen als smalle balk bovenaan de kolom, zoals in Agenda op de Mac
     let rijen = heleDag.map((e) => `<button class="heledagbalk" data-id="${esc(e.id)}"><span>${esc(e.title)}</span></button>`).join('');
     const ov = overlapVan(lijst);
-    rijen += rijenHtml(items, ov, getoond, kolomRij, kolomVrij);
+    rijen += items.map((it) => (it.e ? kolomRij(it.e, ov) : kolomVrij(it.f))).join('');
     if (verborgen > 0) rijen += `<div class="krij rest"><span class="stip"></span><span>${vastText(verborgen)}</span></div>`;
     if (!rijen) rijen = '<div class="krij rest leeg">Geen afspraken</div>';
     const isVandaag = sameDay(d, t);
     kolommen.push(`<section class="dagkolom${isVandaag ? ' vandaag' : ''}${d < t ? ' voorbij' : ''}${i >= 5 ? ' weekend' : ''}">
-      <h2 class="kolomkop" aria-label="${isVandaag ? 'Vandaag, ' : ''}${DAYS_LONG[d.getDay()]} ${d.getDate()} ${MONTHS_LONG[d.getMonth()]}"><span class="nr num">${d.getDate()}</span><span class="dow">${cap(DAYS_LONG[d.getDay()])}</span>${d.getDate() === 1 && i > 0 ? `<span class="mnd">${MONTHS_SHORT[d.getMonth()]}</span>` : ''}${OVERLAP === 'b' ? tijdlijnHtml(d, ov) : ''}</h2>
+      <h2 class="kolomkop" aria-label="${isVandaag ? 'Vandaag, ' : ''}${DAYS_LONG[d.getDay()]} ${d.getDate()} ${MONTHS_LONG[d.getMonth()]}"><span class="nr num">${d.getDate()}</span><span class="dow">${cap(DAYS_LONG[d.getDay()])}</span>${d.getDate() === 1 && i > 0 ? `<span class="mnd">${MONTHS_SHORT[d.getMonth()]}</span>` : ''}</h2>
       <div class="kaart">${rijen}</div>
     </section>`);
   }
@@ -764,14 +687,14 @@ function weekHtml(events) {
     const items = [...getoond.map((e) => ({ t: e.start.getTime(), e })), ...vrij.map((f) => ({ t: f.start.getTime(), f }))].sort((a, b) => a.t - b.t);
     let rijen = heleDag.map((e) => `<button class="rij heledag" data-id="${esc(e.id)}"><span class="rijtitel">${esc(e.title)}</span><span class="hint">hele dag</span></button>`).join('');
     const ov = overlapVan(lijst);
-    rijen += rijenHtml(items, ov, getoond, weekRij, vrijRij);
+    rijen += items.map((it) => (it.e ? weekRij(it.e, ov) : vrijRij(it.f))).join('');
     if (verborgen > 0) rijen += `<div class="rij rest"><span class="stip"></span><span>${vastText(verborgen)}</span></div>`;
     if (!rijen) rijen = '<div class="rij rest"><span>Geen afspraken</span></div>';
     const datum = `${d.getDate()} ${MONTHS_LONG[d.getMonth()]}`;
     const kop = sameDay(d, t)
       ? `<span class="vandaag">Vandaag</span><span class="datum"> · ${DAYS_LONG[d.getDay()]} ${datum}</span>`
       : `${cap(DAYS_LONG[d.getDay()])}<span class="datum"> ${datum}</span>`;
-    html += `<h2 class="dagkop${eerste ? ' eerste' : ''}">${kop}${OVERLAP === 'b' ? tijdlijnHtml(d, ov) : ''}</h2><div class="kaart">${rijen}</div>`;
+    html += `<h2 class="dagkop${eerste ? ' eerste' : ''}">${kop}</h2><div class="kaart">${rijen}</div>`;
     eerste = false;
   }
   html += isDesktop() ? '' : `<div class="legenda">
@@ -789,9 +712,8 @@ function weekHtml(events) {
 function tegel(e, dag, ov) {
   const onSite = e.mode === 'physical' || e.mode === 'hybrid';
   const vervolg = e.start < startOfDay(dag);
-  const ovIcoon = (OVERLAP === 'b' || OVERLAP === 'c') && overlapt(e, ov) ? `<span class="ovicoon">${I.overlap}</span>` : '';
-  return `<button class="tegel ${e.kind}${OVERLAP === 'c' && overlapt(e, ov) ? ' overlapt' : ''}" data-id="${esc(e.id)}"${overlapt(e, ov) ? ` title="${esc(overlapTekst(e, ov))}"` : ''}>
-    <span class="tegelkop"><span class="tt">${vervolg ? 'vervolg' : hhmm(e.start)}</span><span class="iconen">${ovIcoon}${onSite ? I.speld : ''}${e.external && e.regular ? I.herhaal : ''}</span></span>
+  return `<button class="tegel ${e.kind}${overlapt(e, ov) ? ' overlapt' : ''}" data-id="${esc(e.id)}"${overlapt(e, ov) ? ` title="${esc(ov.get(e))}"` : ''}>
+    <span class="tegelkop"><span class="tt">${vervolg ? 'vervolg' : hhmm(e.start)}</span><span class="iconen">${onSite ? I.speld : ''}${e.external && e.regular ? I.herhaal : ''}</span></span>
     <span class="tit">${esc(e.title || '(geen titel)')}</span>
     ${e.external ? `<span class="orgregel"><span class="b">${esc(e.orgs[0])}</span>${e.orgs.length > 1 ? `<span class="m">+${e.orgs.length - 1}</span>` : ''}</span>` : ''}
     <span class="tt te">${hhmm(e.end)}</span>
@@ -803,14 +725,6 @@ function vrijeTegel(f) {
   </div>`;
 }
 
-function tegelsHtml(items, d, ov, getoond) {
-  const los = (lijst) => `<div class="tegels">${lijst.map((it) => (it.e ? tegel(it.e, d, ov) : vrijeTegel(it.f))).join('')}</div>`;
-  if (OVERLAP !== 'a') return los(items);
-  const zet = new Set(getoond);
-  return segmenten(items, ov).map((sg) => (sg.groep
-    ? `<div class="tegelijkgroep">${groepKop(sg.groep)}${los(sg.items)}${verborgenInGroep(sg.groep, zet)}</div>`
-    : los(sg.items))).join('');
-}
 function vooruitblikHtml(events) {
   const { start } = periode();
   const t = vandaag();
@@ -832,8 +746,7 @@ function vooruitblikHtml(events) {
       <div class="vbinhoud">
         ${!lijst.length && !vrij.length ? `<div class="vbleeg">${isVandaag ? 'Geen afspraken vandaag' : 'Geen afspraken'}</div>` : ''}
         ${heleDag.map((e) => `<button class="vbheledag" data-id="${esc(e.id)}"><span class="t">${esc(e.title)}</span><span class="h">hele dag</span></button>`).join('')}
-        ${OVERLAP === 'b' ? tijdlijnHtml(d, ov) : ''}
-        ${items.length ? tegelsHtml(items, d, ov, tegels) : ''}
+        ${items.length ? `<div class="tegels">${items.map((it) => (it.e ? tegel(it.e, d, ov) : vrijeTegel(it.f))).join('')}</div>` : ''}
         ${verborgen > 0 ? `<div class="vbrest">+ ${vastText(verborgen)}</div>` : ''}
       </div>
     </section>`;

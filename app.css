@@ -8,30 +8,30 @@
   --card: #FFFFFF;
   --tileEmpty: #FFFFFF;
   --label: #000000;
-  --secondary: rgba(60, 60, 67, 0.6);
+  --secondary: rgba(60, 60, 67, 0.75); /* 5,2:1 op wit */
   --separator: rgba(60, 60, 67, 0.29);
-  --accent: #2C86B8;
+  --accent: #1F72A0; /* 5,3:1 op wit */
   --externTile: #FFC6C0;
   --internTile: #D3ECF9;
   --regularTile: #D1D1D6;
   --regularTileText: rgba(0, 0, 0, 0.72);
   --externDot: #D04F42;
-  --internDot: #2C86B8;
+  --internDot: #1F72A0;
   --regularDot: rgba(60, 60, 67, 0.42);
   --regularText: rgba(60, 60, 67, 0.84);
   --cardBorder: rgba(60, 60, 67, 0.18);
-  --onSite: rgba(60, 60, 67, 0.6);
-  --online: #2C86B8;
+  --onSite: rgba(60, 60, 67, 0.7);
+  --online: #1F72A0;
   --onlineBg: rgba(44, 134, 184, 0.12);
   --fill: rgba(120, 120, 128, 0.16);
   --badgeBg: rgba(208, 79, 66, 0.14);
-  --badgeText: #C04236;
+  --badgeText: #B0372C; /* 5,1:1 op het badgevlak */
   --avatarGrey: #8E8E93;
   --glass: rgba(255, 255, 255, 0.72);
   --glassBorder: rgba(0, 0, 0, 0.08);
   --glassShadow: 0 4px 18px rgba(0, 0, 0, 0.08);
   --selBg: rgba(44, 134, 184, 0.14);
-  --selText: #2C86B8;
+  --selText: #1F72A0;
   --tabText: rgba(60, 60, 67, 0.85);
   --grabber: rgba(60, 60, 67, 0.3);
   --meta: rgba(60, 60, 67, 0.85);
@@ -233,7 +233,7 @@ button.rij:active { opacity: 0.6; }
 .rij.vrij + .rij, .rij + .rij.vrij { border-top: 0.5px solid var(--separator); }
 .rij.vrij .stip { background: transparent; border: 1.5px solid var(--accent); }
 .rij.vrij .tijd { color: var(--accent); }
-.rij.vrij .eind { color: var(--accent); opacity: 0.75; }
+.rij.vrij .eind { color: var(--accent); }
 .rij.vrij .rijtitel b { color: var(--accent); font-weight: 600; }
 .rij.vrij .rijtitel span { color: var(--secondary); font-weight: 400; }
 
@@ -326,7 +326,7 @@ button.rij:active { opacity: 0.6; }
 .dagcel.vol { --tint: var(--volRgb); }
 .dagcel span { font-size: 14px; font-weight: 500; font-variant-numeric: tabular-nums; }
 .dagcel.weekend span { color: var(--secondary); }
-.dagcel.anders { opacity: 0.4; }
+.dagcel.anders { opacity: 0.45; }
 .dagcel.vandaag span { width: 26px; height: 26px; border-radius: 13px; display: flex; align-items: center; justify-content: center; background: var(--accent); color: var(--onAccent); font-weight: 700; }
 .kiezerlegenda { display: flex; align-items: center; gap: 6px; padding: 14px 8px 0; color: var(--secondary); font-size: 12px; }
 .kiezerlegenda i { width: 14px; height: 14px; border-radius: 4px; }
@@ -499,7 +499,7 @@ button.drij:active { opacity: 0.6; }
   }
   .kolomkop .nr { color: var(--secondary); font-weight: 400; font-size: 12px; }
   .dagkolom.vandaag .kolomkop .dow { color: var(--accent); }
-  .dagkolom.voorbij .kaart { opacity: 0.6; }
+  .dagkolom.voorbij .kolomkop .dow { color: var(--secondary); }
   .dagkolom .kaart { padding: 4px; border-radius: 12px; border: 0; box-shadow: 0 0 0 0.5px var(--cardBorder), 0 1px 2px rgba(0, 0, 0, 0.04); }
   .krij { display: flex; align-items: stretch; gap: 8px; padding: 7px 8px; width: 100%; text-align: left; border-radius: 8px; }
   button.krij:hover { background: var(--fill); }

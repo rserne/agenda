@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-01-6';
+const APP_VERSIE = '2026-11-01-7';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -628,24 +628,24 @@ function weekKolommenHtml(events) {
   for (let i = 0; i < 7; i++) {
     const d = addDays(start, i);
     const lijst = eventsForDay(events, d);
-    if (i >= 5 && !lijst.length) continue;
     const heleDag = lijst.filter((e) => e.allDay);
     const getimed = lijst.filter((e) => !e.allDay);
     const getoond = ST.filter === 'notable' ? getimed.filter((e) => e.notable) : getimed;
     const verborgen = getimed.length - getoond.length;
     const vrij = ST.filter === 'free' && i < 5 && d >= t ? freeSlots(lijst, d) : [];
     const items = [...getoond.map((e) => ({ t: e.start.getTime(), e })), ...vrij.map((f) => ({ t: f.start.getTime(), f }))].sort((a, b) => a.t - b.t);
-    let rijen = heleDag.map((e) => `<button class="krij heledag" data-id="${esc(e.id)}"><span class="rijtekst"><span class="ktijd">hele dag</span><span class="rijtitel">${esc(e.title)}</span></span></button>`).join('');
+    // Hele dagen als smalle balk bovenaan de kolom, zoals in Agenda op de Mac
+    let rijen = heleDag.map((e) => `<button class="heledagbalk" data-id="${esc(e.id)}"><span>${esc(e.title)}</span></button>`).join('');
     rijen += items.map((it) => (it.e ? kolomRij(it.e) : kolomVrij(it.f))).join('');
     if (verborgen > 0) rijen += `<div class="krij rest"><span class="stip"></span><span>${vastText(verborgen)}</span></div>`;
     if (!rijen) rijen = '<div class="krij rest leeg">Geen afspraken</div>';
     const isVandaag = sameDay(d, t);
-    kolommen.push(`<section class="dagkolom${isVandaag ? ' vandaag' : ''}${d < t ? ' voorbij' : ''}">
-      <h2 class="kolomkop"><span class="dow">${isVandaag ? 'Vandaag' : cap(DAYS_LONG[d.getDay()])}</span><span class="nr num">${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}</span></h2>
+    kolommen.push(`<section class="dagkolom${isVandaag ? ' vandaag' : ''}${d < t ? ' voorbij' : ''}${i >= 5 ? ' weekend' : ''}">
+      <h2 class="kolomkop"><span class="dow">${isVandaag ? 'Vandaag' : cap(i >= 5 ? DAYS_SHORT[d.getDay()] : DAYS_LONG[d.getDay()])}</span><span class="nr num">${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}</span></h2>
       <div class="kaart">${rijen}</div>
     </section>`);
   }
-  return `<div class="weekraster" style="--n:${kolommen.length}">${kolommen.join('')}</div>`;
+  return `<div class="weekraster">${kolommen.join('')}</div>`;
 }
 
 function weekHtml(events) {
@@ -920,7 +920,7 @@ function maandRasterHtml(maand, gekozen, soort = 'paneel') {
   return `<div class="kiezerkop"><h2>${cap(MONTHS_LONG[maand.getMonth()])} ${maand.getFullYear()}</h2>${knoppen}</div>
     <div class="rasterkop"><span></span>${['ma', 'di', 'wo', 'do', 'vr', 'za', 'zo'].map((d) => `<span>${d}</span>`).join('')}</div>
     ${rijen}
-    <div class="kiezerlegenda"><i class="rustig"></i>rustig<i class="gemiddeld"></i>${MID_HOURS}–${FULL_HOURS} uur<i class="druk"></i>${FULL_HOURS} uur of meer</div>`;
+    <div class="kiezerlegenda"><span><i class="rustig"></i>rustig</span><span><i class="gemiddeld"></i>${MID_HOURS}–${FULL_HOURS} uur</span><span><i class="druk"></i>${FULL_HOURS} uur of meer</span></div>`;
 }
 const gekozenMaandag = () => startOfWeek(ST.tab === 'week' ? ST.anker : ST.fcStart);
 function kiesWeek(ma) {

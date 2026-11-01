@@ -413,3 +413,113 @@ button.drij:active { opacity: 0.6; }
 @media (prefers-reduced-motion: reduce) {
   .paneel, .achtergrond, .visite { transition: none; }
 }
+
+/* ================================================================ Tablet (vanaf 768) */
+@media (min-width: 768px) {
+  :root { --maxW: 760px; }
+  .tegels { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .tabbalk .kolom { max-width: 460px; }
+  .kiezer { border-radius: 28px 28px 0 0; }
+  button.rij:hover, .tegel[data-id]:hover { filter: brightness(0.97); }
+}
+
+/* ================================================================ Desktop (vanaf 1200) */
+.zijbalk { display: none; }
+@media (min-width: 1200px) {
+  :root { --maxW: none; }
+  .shell { display: grid; grid-template-columns: 320px minmax(0, 1fr); min-height: 100vh; }
+  .zijbalk {
+    display: block; position: sticky; top: 0; height: 100vh; overflow-y: auto;
+    background: var(--card); border-right: 1px solid var(--cardBorder);
+  }
+  body.vooruitblik .zijbalk { background: var(--card); }
+  .zbbinnen { padding: 22px 16px 24px; display: flex; flex-direction: column; gap: 22px; }
+  .merk { display: flex; align-items: center; gap: 10px; padding: 0 6px; font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+  .merk img { border-radius: 7px; }
+  .minikal .kiezerkop { padding: 0 2px 10px 6px; }
+  .minikal .kiezerkop h2 { font-size: 17px; }
+  .minikal .capsule { height: 32px; background: var(--fill); border: 0; box-shadow: none; }
+  .minikal .capsule button { width: 32px; height: 32px; }
+  .minikal .capsule .icoon { width: 16px; height: 16px; }
+  .minikal .rasterkop, .minikal .weekrij { grid-template-columns: 24px repeat(7, minmax(0, 1fr)); padding: 0 2px; }
+  .minikal .weekrij { height: 38px; border-radius: 10px; }
+  .minikal .ring { width: 28px; height: 28px; }
+  .minikal .ring span { font-size: 12.5px; }
+  .minikal .kiezerlegenda { padding: 10px 6px 0; }
+  .weekrij:hover { background: var(--fill); }
+  .weekrij.gekozen:hover { background: var(--selBg); }
+  .zbsectie h3 { margin: 0 0 8px; padding: 0 6px; color: var(--secondary); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
+  .zbschakel { height: 40px; border-radius: 20px; background: var(--fill); padding: 3px; }
+  .zbschakel button { border-radius: 17px; font-size: 13px; }
+  .zbschakel button:hover:not(.aan) { color: var(--label); }
+  .zblegenda { display: flex; flex-direction: column; gap: 8px; padding: 0 6px; }
+  .zblegenda span { display: flex; align-items: center; gap: 8px; color: var(--secondary); font-size: 13px; }
+  .zblegenda .vlak { width: 12px; height: 12px; border-radius: 3px; }
+  .zblegenda .vrijvlak { background: var(--freeTileBg); border: 1.5px dashed var(--freeTileBorder); }
+  .zbvoet { text-align: left; padding: 0 6px; }
+
+  /* Kop: geen schakelaar en tabbalk (staan in de zijbalk), geen keuzepijltje bij de titel */
+  .kop { padding-top: 22px; }
+  .kop .kolom, main.kolom { padding: 0 32px; }
+  .kop #schakelaar, .tabbalk, .titelknop .icoon { display: none; }
+  .titelknop { cursor: default; flex: 0 1 auto; }
+  .kopregel { justify-content: space-between; }
+  main { padding-bottom: 48px; }
+
+  /* Week: dagkolommen naast elkaar */
+  .weekraster { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 14px; align-items: start; padding-top: 8px; }
+  .kolomkop {
+    position: sticky; top: var(--kopH); z-index: 5; background: var(--bg);
+    margin: 0; padding: 6px 4px 10px; display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+    font-size: 15px; font-weight: 600;
+  }
+  .kolomkop .nr { color: var(--secondary); font-weight: 400; font-size: 14px; }
+  .dagkolom.vandaag .kolomkop .dow { color: var(--accent); }
+  .dagkolom.voorbij { opacity: 0.6; }
+  .dagkolom .kaart { padding: 0 12px; border-radius: 16px; }
+  .krij { display: flex; align-items: flex-start; gap: 8px; padding: 10px 0; width: 100%; text-align: left; }
+  .krij + .krij { border-top: 0.5px solid var(--separator); }
+  button.krij:hover .rijtitel { text-decoration: underline; text-decoration-color: var(--separator); text-underline-offset: 3px; }
+  .krij .stip { margin-top: 5px; }
+  .krij .rijtekst { gap: 3px; }
+  .ktijd { display: flex; align-items: center; gap: 4px; color: var(--secondary); font-size: 12px; font-weight: 500; }
+  .ktijd .speld { width: 12px; height: 12px; margin: 0; }
+  .krij .rijtitel { font-size: 14px; line-height: 18px; -webkit-line-clamp: 3; }
+  .krij .badges { margin-top: 3px; }
+  .krij.vast .rijtitel { color: var(--regularText); font-weight: 400; }
+  .krij.heledag .rijtitel { font-weight: 400; color: var(--regularText); }
+  .krij.rest { align-items: center; color: var(--secondary); font-size: 14px; }
+  .krij.rest .stip { margin-top: 0; }
+  .krij.leeg { justify-content: center; padding: 16px 0; }
+  .krij.vrij { background: var(--freeBg); margin: 0 -12px; width: calc(100% + 24px); padding-left: 12px; padding-right: 12px; }
+  .krij.vrij + .krij, .krij + .krij.vrij { border-top: 0.5px solid var(--separator); }
+  .krij.vrij .stip { background: transparent; border: 1.5px solid var(--accent); }
+  .krij.vrij .ktijd { color: var(--accent); }
+  .krij.vrij .rijtitel b { color: var(--accent); font-weight: 600; }
+  .krij.vrij .rijtitel span { color: var(--secondary); font-weight: 400; }
+
+  /* Vooruitblik: zoveel tegels als er passen */
+  .vb { gap: 18px; padding-top: 8px; }
+  .vbdatum { width: 48px; }
+  .vbdag { gap: 12px; }
+  .tegels { grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); }
+  .tegel[data-id]:hover { filter: brightness(0.96); }
+
+  /* Detail: een dialoog midden in beeld in plaats van een paneel van onderen */
+  .paneel.detail.dialoog {
+    top: 50%; bottom: auto; border-radius: 22px; max-height: min(86vh, 900px); width: min(640px, calc(100% - 64px));
+    transform: translate(-50%, -48%) scale(0.98); opacity: 0;
+    transition: transform 0.22s ease, opacity 0.22s ease;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  }
+  .paneel.detail.dialoog.open { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  .paneel.detail.dialoog .greep { display: none; }
+  .paneel.detail.dialoog .detailnav { padding-top: 14px; }
+  .drij:hover .t1, button.drij:hover .t1 { color: var(--accent); }
+  .groteknop:hover { filter: brightness(0.97); }
+}
+
+@media (min-width: 1600px) {
+  .shell { grid-template-columns: 340px minmax(0, 1fr); }
+  .kop .kolom, main.kolom { padding: 0 48px; }
+}

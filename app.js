@@ -3,14 +3,16 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-01-1';
+const APP_VERSIE = '2026-11-01-2';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
 /* ------------------------------------------------------------------ */
 
+// Bron van de afspraken: 'voorbeeld' (verzonnen gegevens, zie voorbeeld.js) of 'nhost' (je echte agenda).
+// Met ?echt of ?demo achter het adres kies je de andere bron.
+const BRON = 'voorbeeld';
 // Nhost-project (Settings, General). Voorlopig het project van de AustralieApp (Frankfurt).
-// Leeg, of ?demo achter het adres: de app draait op voorbeeldgegevens.
 const NHOST_SUB = 'gjqqtpteurwdbealgmqh';
 const NHOST_REG = 'eu-central-1';
 
@@ -30,7 +32,10 @@ const VERS_MS = 5 * 60 * 1000; // gegevens ouder dan vijf minuten opnieuw ophale
 const NH_AUTH = `https://${NHOST_SUB}.auth.${NHOST_REG}.nhost.run/v1`;
 const API = `https://${NHOST_SUB}.functions.${NHOST_REG}.nhost.run/v1/agenda`;
 const PARAMS = new URLSearchParams(location.search);
-const DEMO = !NHOST_SUB || PARAMS.has('demo');
+// Formaat: telefoon (smal), tablet (vanaf 768) en desktop (vanaf 1200, met zijbalk en dagkolommen)
+const DESKTOP = window.matchMedia('(min-width: 1200px)');
+const isDesktop = () => DESKTOP.matches;
+const DEMO = !NHOST_SUB || (BRON === 'voorbeeld' ? !PARAMS.has('echt') : PARAMS.has('demo'));
 
 /* ------------------------------------------------------------------ */
 /*  Hulpjes                                                            */
@@ -76,7 +81,7 @@ function rangeLong(a, b) {
 
 // Testen op een andere dag: ?datum=2026-11-02
 function nu() {
-  const p = PARAMS.get('datum') || (DEMO && !PARAMS.has('echt') ? '2026-11-01' : null);
+  const p = PARAMS.get('datum');
   if (p && /^\d{4}-\d{2}-\d{2}$/.test(p)) {
     const d = parseYmd(p);
     const n = new Date();
@@ -217,15 +222,16 @@ function bewaar() {
   DATA.me = b.me; DATA.ownDomains = b.ownDomains || []; DATA.opgehaald = b.opgehaald || 0;
 })();
 
-let _demo = null;
-async function laadDemo() {
-  if (!_demo) {
-    _demo = fetch('demo.json').then((r) => r.json()).then((d) => {
-      d.events.forEach((e) => DATA.ruw.set(e.id, e));
-      DATA.me = d.me; DATA.ownDomains = d.ownDomains || []; DATA.opgehaald = Date.now();
-    });
+// Voorbeeldgegevens: per ontbrekende week maken (voorbeeld.js)
+function laadVoorbeeld(van, tot) {
+  DATA.me = VOORBEELD_IK;
+  DATA.ownDomains = VOORBEELD_DOMEINEN;
+  DATA.opgehaald = Date.now();
+  for (let w = startOfWeek(van); w < tot; w = addDays(w, 7)) {
+    if (DATA.weken.has(w.getTime())) continue;
+    voorbeeldAfspraken(w, addDays(w, 7)).forEach((e) => DATA.ruw.set(e.id, e));
+    DATA.weken.add(w.getTime());
   }
-  return _demo;
 }
 
 class NietIngelogd extends Error {}
@@ -262,7 +268,7 @@ async function haalOp(van, tot) {
 // Zorg dat de weken van van t/m tot er zijn. Ontbreekt er iets, dan halen we meteen een flink blok op.
 const _bezig = new Map();
 async function zorgVoor(van, tot, { vers = false } = {}) {
-  if (DEMO) return laadDemo();
+  if (DEMO) return laadVoorbeeld(van, tot);
   const wekenNodig = [];
   for (let w = startOfWeek(van); w < tot; w = addDays(w, 7)) wekenNodig.push(w.getTime());
   const missen = wekenNodig.filter((w) => !DATA.weken.has(w));
@@ -498,7 +504,53 @@ function vrijRij(f) {
   </div>`;
 }
 
+// Desktop: de werkdagen naast elkaar in kolommen, weekenddagen alleen als er iets staat
+function kolomRij(e) {
+  const onSite = e.mode === 'physical' || e.mode === 'hybrid';
+  return `<button class="krij${e.notable ? '' : ' vast'}" data-id="${esc(e.id)}">
+    <span class="stip ${e.kind}"></span>
+    <span class="rijtekst">
+      <span class="ktijd num">${hhmm(e.start)} – ${hhmm(e.end)}${onSite ? `<span class="speld" aria-label="op locatie">${I.speld}</span>` : ''}</span>
+      <span class="rijtitel">${esc(e.title || '(geen titel)')}</span>
+      ${badgesHtml(e)}
+    </span>
+  </button>`;
+}
+function kolomVrij(f) {
+  return `<div class="krij vrij" aria-label="Vrij van ${hhmm(f.start)} tot ${hhmm(f.end)}, ${freeText(f.min)}">
+    <span class="stip"></span>
+    <span class="rijtekst"><span class="ktijd num">${hhmm(f.start)} – ${hhmm(f.end)}</span><span class="rijtitel"><b>Vrij</b><span> · ${freeText(f.min)}</span></span></span>
+  </div>`;
+}
+function weekKolommenHtml(events) {
+  const { start } = periode();
+  const t = vandaag();
+  const kolommen = [];
+  for (let i = 0; i < 7; i++) {
+    const d = addDays(start, i);
+    const lijst = eventsForDay(events, d);
+    if (i >= 5 && !lijst.length) continue;
+    const heleDag = lijst.filter((e) => e.allDay);
+    const getimed = lijst.filter((e) => !e.allDay);
+    const getoond = ST.filter === 'notable' ? getimed.filter((e) => e.notable) : getimed;
+    const verborgen = getimed.length - getoond.length;
+    const vrij = ST.filter === 'free' && i < 5 && d >= t ? freeSlots(lijst, d) : [];
+    const items = [...getoond.map((e) => ({ t: e.start.getTime(), e })), ...vrij.map((f) => ({ t: f.start.getTime(), f }))].sort((a, b) => a.t - b.t);
+    let rijen = heleDag.map((e) => `<button class="krij heledag" data-id="${esc(e.id)}"><span class="rijtekst"><span class="ktijd">hele dag</span><span class="rijtitel">${esc(e.title)}</span></span></button>`).join('');
+    rijen += items.map((it) => (it.e ? kolomRij(it.e) : kolomVrij(it.f))).join('');
+    if (verborgen > 0) rijen += `<div class="krij rest"><span class="stip"></span><span>${vastText(verborgen)}</span></div>`;
+    if (!rijen) rijen = '<div class="krij rest leeg">Geen afspraken</div>';
+    const isVandaag = sameDay(d, t);
+    kolommen.push(`<section class="dagkolom${isVandaag ? ' vandaag' : ''}${d < t ? ' voorbij' : ''}">
+      <h2 class="kolomkop"><span class="dow">${isVandaag ? 'Vandaag' : cap(DAYS_LONG[d.getDay()])}</span><span class="nr num">${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}</span></h2>
+      <div class="kaart">${rijen}</div>
+    </section>`);
+  }
+  return `<div class="weekraster" style="--n:${kolommen.length}">${kolommen.join('')}</div>`;
+}
+
 function weekHtml(events) {
+  if (isDesktop()) return weekKolommenHtml(events);
   const { start } = periode();
   const t = vandaag();
   let html = '';
@@ -524,7 +576,7 @@ function weekHtml(events) {
     html += `<h2 class="dagkop${eerste ? ' eerste' : ''}">${kop}</h2><div class="kaart">${rijen}</div>`;
     eerste = false;
   }
-  html += `<div class="legenda">
+  html += isDesktop() ? '' : `<div class="legenda">
     <span><i class="stip ext" style="margin:0"></i>Extern</span>
     <span><i class="stip int" style="margin:0"></i>Intern, ad hoc</span>
     <span><i class="stip" style="margin:0"></i>Intern, vast</span>
@@ -577,11 +629,11 @@ function vooruitblikHtml(events) {
       </div>
     </section>`;
   }
-  html += `</div><div class="legenda">
+  html += '</div>' + (isDesktop() ? '' : `<div class="legenda">
     <span><i class="vlak" style="background:var(--externTile)"></i>Extern</span>
     <span><i class="vlak" style="background:var(--internTile)"></i>Intern, ad hoc</span>
     <span><i class="vlak" style="background:var(--regularTile)"></i>Intern, vast</span>
-  </div>`;
+  </div>`);
   return html;
 }
 
@@ -611,7 +663,9 @@ function renderKop() {
 }
 
 function render() {
+  document.body.classList.toggle('desktop', isDesktop());
   renderKop();
+  renderZijbalk();
   const main = $('#inhoud');
   if (ST.login) { main.innerHTML = loginHtml(); koppelLogin(); return; }
   const { start, eind } = periode();
@@ -622,7 +676,7 @@ function render() {
   if (geenData && ST.laden) { main.innerHTML = '<div class="laden">Agenda laden…</div>'; return; }
   if (geenData && ST.fout) { main.innerHTML = meldingHtml('Agenda niet beschikbaar', ST.fout, 'Opnieuw proberen'); $('#inhoud .knop').onclick = () => laad({ vers: true }); return; }
   main.innerHTML = (ST.tab === 'week' ? weekHtml(events) : vooruitblikHtml(events)) +
-    (DEMO ? '<p class="voorbeeld">Voorbeeldgegevens met verzonnen namen</p>' : '');
+    (DEMO && !isDesktop() ? '<p class="voorbeeld">Voorbeeldgegevens met verzonnen namen</p>' : '');
 }
 
 function meldingHtml(titel, tekst, knop) {
@@ -734,85 +788,111 @@ function maakVeegbaar(paneel, greep, sluit) {
 /*  Weekkiezer                                                         */
 /* ------------------------------------------------------------------ */
 
+// Maandraster met weekrijen en ringen. Gebruikt in het paneel (telefoon, tablet) en in de zijbalk (desktop).
+function maandRasterHtml(maand, gekozen, capsule = true) {
+  const rasterStart = startOfWeek(maand);
+  const uren = busyHoursByDay(afsprakenTussen(rasterStart, addDays(rasterStart, 42)));
+  const t = vandaag();
+  let rijen = '';
+  for (let r = 0; r < 6; r++) {
+    const ma = addDays(rasterStart, r * 7);
+    let cellen = '';
+    for (let i = 0; i < 7; i++) {
+      const d = addDays(ma, i);
+      const weekend = i >= 5;
+      const h = weekend ? 0 : uren[d.getTime()] || 0;
+      const klasse = ['ring', weekend ? 'weekend geen' : '', d.getMonth() !== maand.getMonth() ? 'anders' : '', sameDay(d, t) ? 'vandaag' : '', h >= FULL_HOURS ? 'vol' : ''].join(' ');
+      cellen += `<span class="cel"><span class="${klasse}" style="--p:${Math.min(1, h / RING_HOURS).toFixed(3)}"><span>${d.getDate()}</span></span></span>`;
+    }
+    rijen += `<button class="weekrij${sameDay(ma, gekozen) ? ' gekozen' : ''}" data-ma="${ma.getTime()}" aria-label="Week ${isoWeek(ma)}"><span class="wk">${isoWeek(ma)}</span>${cellen}</button>`;
+  }
+  return `<div class="kiezerkop"><h2>${cap(MONTHS_LONG[maand.getMonth()])} ${maand.getFullYear()}</h2>${capsule ? `<div class="capsule glas maandcapsule"><button data-maand="-1" aria-label="Vorige maand">${I.terug}</button><button data-maand="0" aria-label="Naar vandaag">${I.kalender}</button><button data-maand="1" aria-label="Volgende maand">${I.verder}</button></div>` : ''}</div>
+    <div class="rasterkop"><span></span>${['ma', 'di', 'wo', 'do', 'vr', 'za', 'zo'].map((d) => `<span>${d}</span>`).join('')}</div>
+    ${rijen}
+    <div class="kiezerlegenda"><i></i>${FULL_HOURS} uur of meer aan afspraken</div>`;
+}
+const gekozenMaandag = () => startOfWeek(ST.tab === 'week' ? ST.anker : ST.fcStart);
+function kiesWeek(ma) {
+  ST.anker = ma;
+  ST.tab = 'week';
+  LS.set('ag_tab', ST.tab);
+  window.scrollTo(0, 0);
+  laad();
+}
+
 function openWeekkiezer() {
-  const gekozen = startOfWeek(ST.tab === 'week' ? ST.anker : ST.fcStart);
-  let maand = firstOfMonth(addDays(gekozen, 3));
+  if (isDesktop()) return; // op de desktop staat de kalender al in de zijbalk
+  let maand = firstOfMonth(addDays(gekozenMaandag(), 3));
   const el = document.createElement('div');
   el.className = 'paneel kiezer';
   el.setAttribute('role', 'dialog');
   el.setAttribute('aria-label', 'Kies een week');
-  const p = openPaneel(el, { greepSelector: '.kiezergreep' });
-
+  const p = openPaneel(el);
   const teken = () => {
+    el.innerHTML = `<div class="kiezergreep"><div class="greep"></div>${maandRasterHtml(maand, gekozenMaandag())}</div>`;
+    // Verplaats raster en legenda uit de greep, zodat alleen de kop veegbaar is
+    const greep = el.querySelector('.kiezergreep');
+    [...greep.children].slice(2).forEach((n) => el.appendChild(n));
+    maakVeegbaar(el, greep, p.sluit);
     const rasterStart = startOfWeek(maand);
-    const rasterEind = addDays(rasterStart, 42);
-    const uren = busyHoursByDay(afsprakenTussen(rasterStart, rasterEind));
-    const t = vandaag();
-    let rijen = '';
-    for (let r = 0; r < 6; r++) {
-      const ma = addDays(rasterStart, r * 7);
-      const sel = sameDay(ma, gekozen);
-      let cellen = '';
-      for (let i = 0; i < 7; i++) {
-        const d = addDays(ma, i);
-        const weekend = i >= 5;
-        const anders = d.getMonth() !== maand.getMonth();
-        const h = uren[d.getTime()] || 0;
-        const klasse = ['ring', weekend ? 'weekend geen' : '', anders ? 'anders' : '', sameDay(d, t) ? 'vandaag' : '', h >= FULL_HOURS ? 'vol' : ''].join(' ');
-        const p2 = weekend ? 0 : Math.min(1, h / RING_HOURS);
-        cellen += `<span class="cel"><span class="${klasse}" style="--p:${p2.toFixed(3)}"><span>${d.getDate()}</span></span></span>`;
-      }
-      rijen += `<button class="weekrij${sel ? ' gekozen' : ''}" data-ma="${ma.getTime()}" aria-label="Week ${isoWeek(ma)}"><span class="wk">${isoWeek(ma)}</span>${cellen}</button>`;
-    }
-    el.innerHTML = `<div class="kiezergreep"><div class="greep" style="margin:6px auto 0"></div>
-      <div class="kiezerkop"><h2>${cap(MONTHS_LONG[maand.getMonth()])} ${maand.getFullYear()}</h2><div class="capsule glas">${capsuleHtml('Vorige maand', 'Volgende maand')}</div></div></div>
-      <div class="rasterkop"><span></span>${['ma', 'di', 'wo', 'do', 'vr', 'za', 'zo'].map((d) => `<span>${d}</span>`).join('')}</div>
-      ${rijen}
-      <div class="kiezerlegenda"><i></i>${FULL_HOURS} uur of meer aan afspraken</div>`;
-    maakVeegbaar(el, el.querySelector('.kiezergreep'), p.sluit);
-    zorgVoor(rasterStart, rasterEind).then(() => { if (el.isConnected && maandNu === maand) tekenRingen(); }).catch(() => {});
-  };
-  let maandNu = maand;
-  // Alleen de ringen bijwerken als de gegevens binnen zijn (zonder het paneel te laten verspringen)
-  const tekenRingen = () => {
-    const rasterStart = startOfWeek(maand);
-    const uren = busyHoursByDay(afsprakenTussen(rasterStart, addDays(rasterStart, 42)));
-    el.querySelectorAll('.weekrij').forEach((rij) => {
-      const ma = new Date(Number(rij.dataset.ma));
-      rij.querySelectorAll('.ring').forEach((ring, i) => {
-        if (i >= 5) return;
-        const h = uren[addDays(ma, i).getTime()] || 0;
-        ring.style.setProperty('--p', Math.min(1, h / RING_HOURS).toFixed(3));
-        ring.classList.toggle('vol', h >= FULL_HOURS);
-      });
-    });
+    const ditMaand = maand;
+    Promise.resolve(zorgVoor(rasterStart, addDays(rasterStart, 42))).then(() => { if (el.isConnected && ditMaand === maand) tekenRingen(el, maand); }).catch(() => {});
   };
   teken();
-
   el.addEventListener('click', (ev) => {
-    const nav = ev.target.closest('[data-nav]');
-    if (nav) {
-      const n = Number(nav.dataset.nav);
-      if (n === 0) {
-        ST.anker = defaultWeekAnchor(vandaag());
-        ST.tab = 'week';
-        p.sluit();
-        laad();
-        return;
-      }
+    const m = ev.target.closest('[data-maand]');
+    if (m) {
+      const n = Number(m.dataset.maand);
+      if (n === 0) { p.sluit(); verschuif(0, 'week'); return; }
       maand = new Date(maand.getFullYear(), maand.getMonth() + n, 1);
-      maandNu = maand;
       teken();
       return;
     }
     const rij = ev.target.closest('.weekrij');
-    if (rij) {
-      ST.anker = new Date(Number(rij.dataset.ma));
-      ST.tab = 'week';
-      p.sluit();
-      laad();
-    }
+    if (rij) { p.sluit(); kiesWeek(new Date(Number(rij.dataset.ma))); }
   });
+}
+// Ringen bijwerken zodra de gegevens binnen zijn, zonder het raster te laten verspringen
+function tekenRingen(el, maand) {
+  const rasterStart = startOfWeek(maand);
+  const uren = busyHoursByDay(afsprakenTussen(rasterStart, addDays(rasterStart, 42)));
+  el.querySelectorAll('.weekrij').forEach((rij) => {
+    const ma = new Date(Number(rij.dataset.ma));
+    rij.querySelectorAll('.ring').forEach((ring, i) => {
+      if (i >= 5) return;
+      const h = uren[addDays(ma, i).getTime()] || 0;
+      ring.style.setProperty('--p', Math.min(1, h / RING_HOURS).toFixed(3));
+      ring.classList.toggle('vol', h >= FULL_HOURS);
+    });
+  });
+}
+
+/* ------------------------------------------------------------------ */
+/*  Zijbalk (desktop)                                                  */
+/* ------------------------------------------------------------------ */
+
+let zijMaand = null;
+function renderZijbalk() {
+  const z = $('#zijbalk');
+  if (!isDesktop()) { z.innerHTML = ''; return; }
+  if (!zijMaand) zijMaand = firstOfMonth(addDays(gekozenMaandag(), 3));
+  const knop = (attr, waarde, tekst, aan) => `<button ${attr}="${waarde}" class="${aan ? 'aan' : ''}" aria-selected="${aan}">${tekst}</button>`;
+  z.innerHTML = `<div class="zbbinnen">
+    <div class="merk"><img src="icon-512.png" alt="" width="28" height="28"><span>Agenda</span></div>
+    <div class="minikal">${maandRasterHtml(zijMaand, gekozenMaandag())}</div>
+    <div class="zbsectie"><h3>Weergave</h3><div class="schakelaar zbschakel">${knop('data-tab', 'week', 'Week', ST.tab === 'week')}${knop('data-tab', 'forecast', 'Vooruitblik', ST.tab === 'forecast')}</div></div>
+    <div class="zbsectie"><h3>Tonen</h3><div class="schakelaar zbschakel">${knop('data-filter', 'notable', 'Opvallend', ST.filter === 'notable')}${knop('data-filter', 'all', 'Alles', ST.filter === 'all')}${knop('data-filter', 'free', 'Vrij', ST.filter === 'free')}</div></div>
+    <div class="zbsectie"><h3>Legenda</h3><div class="zblegenda">
+      <span><i class="vlak" style="background:var(--externTile)"></i>Extern</span>
+      <span><i class="vlak" style="background:var(--internTile)"></i>Intern, ad hoc</span>
+      <span><i class="vlak" style="background:var(--regularTile)"></i>Intern, vast</span>
+      <span><i class="vlak vrijvlak"></i>Vrij, vanaf ${FREE_MIN} minuten</span>
+    </div></div>
+    ${DEMO ? '<p class="voorbeeld zbvoet">Voorbeeldgegevens met verzonnen namen</p>' : ''}
+  </div>`;
+  const rasterStart = startOfWeek(zijMaand);
+  const ditMaand = zijMaand;
+  Promise.resolve(zorgVoor(rasterStart, addDays(rasterStart, 42))).then(() => { if (ditMaand === zijMaand) tekenRingen(z, zijMaand); }).catch(() => {});
 }
 
 /* ------------------------------------------------------------------ */
@@ -908,7 +988,7 @@ function openDetail(e) {
 
   const notes = cleanNotes(e.notes);
   const el = document.createElement('div');
-  el.className = 'paneel detail';
+  el.className = 'paneel detail' + (isDesktop() ? ' dialoog' : '');
   el.setAttribute('role', 'dialog');
   el.setAttribute('aria-label', e.title || 'Afspraak');
   let allen = false;
@@ -1002,39 +1082,52 @@ function openVisitekaartje(k) {
 /*  Bediening                                                          */
 /* ------------------------------------------------------------------ */
 
-function verschuif(n) {
+function verschuif(n, tab) {
+  if (tab) { ST.tab = tab; LS.set('ag_tab', tab); }
   if (n === 0) {
     const t = vandaag();
     ST.anker = defaultWeekAnchor(t);
     ST.fcStart = t;
+    zijMaand = null;
   } else if (ST.tab === 'week') ST.anker = addDays(ST.anker, 7 * n);
   else ST.fcStart = addDays(ST.fcStart, 7 * n);
+  // De kalender in de zijbalk loopt mee naar de maand van de gekozen week
+  if (zijMaand && firstOfMonth(addDays(gekozenMaandag(), 3)).getTime() !== zijMaand.getTime()) zijMaand = firstOfMonth(addDays(gekozenMaandag(), 3));
   window.scrollTo(0, 0);
   laad();
 }
 
 function koppel() {
   $('#capsule').innerHTML = capsuleHtml('Week terug', 'Week verder');
-  $('#capsule').addEventListener('click', (ev) => { const b = ev.target.closest('[data-nav]'); if (b) verschuif(Number(b.dataset.nav)); });
-  $('#datumregel').addEventListener('click', () => verschuif(0));
   $('#titelknop').addEventListener('click', openWeekkiezer);
-  $('#schakelaar').addEventListener('click', (ev) => {
-    const b = ev.target.closest('[data-filter]');
-    if (!b || b.dataset.filter === ST.filter) return;
-    ST.filter = b.dataset.filter;
-    LS.set('ag_filter', ST.filter);
-    render();
-  });
-  $('#tabbalk').addEventListener('click', (ev) => {
-    const b = ev.target.closest('[data-tab]');
-    if (!b || b.dataset.tab === ST.tab) return;
-    ST.tab = b.dataset.tab;
-    LS.set('ag_tab', ST.tab);
-    window.scrollTo(0, 0);
-    laad();
-  });
-  $('#inhoud').addEventListener('click', (ev) => {
-    const b = ev.target.closest('[data-id]');
+  $('#datumregel').addEventListener('click', () => verschuif(0));
+
+  // Eén luisteraar voor alle knoppen in kop, zijbalk, tabbalk en inhoud
+  document.addEventListener('click', (ev) => {
+    if (ev.target.closest('#lagen')) return; // panelen regelen hun eigen knoppen
+    const nav = ev.target.closest('[data-nav]');
+    if (nav) { verschuif(Number(nav.dataset.nav)); return; }
+    const f = ev.target.closest('[data-filter]');
+    if (f) {
+      if (f.dataset.filter !== ST.filter) { ST.filter = f.dataset.filter; LS.set('ag_filter', ST.filter); render(); }
+      return;
+    }
+    const tab = ev.target.closest('[data-tab]');
+    if (tab) {
+      if (tab.dataset.tab !== ST.tab) { ST.tab = tab.dataset.tab; LS.set('ag_tab', ST.tab); window.scrollTo(0, 0); laad(); }
+      return;
+    }
+    const maand = ev.target.closest('#zijbalk [data-maand]');
+    if (maand) {
+      const n = Number(maand.dataset.maand);
+      if (n === 0) { verschuif(0, 'week'); return; }
+      zijMaand = new Date(zijMaand.getFullYear(), zijMaand.getMonth() + n, 1);
+      renderZijbalk();
+      return;
+    }
+    const rij = ev.target.closest('#zijbalk .weekrij');
+    if (rij) { kiesWeek(new Date(Number(rij.dataset.ma))); return; }
+    const b = ev.target.closest('#inhoud [data-id]');
     if (b && zichtbaar.has(b.dataset.id)) openDetail(zichtbaar.get(b.dataset.id));
   });
 
@@ -1044,11 +1137,14 @@ function koppel() {
   if ('ResizeObserver' in window) new ResizeObserver(zetKop).observe(kop);
   zetKop();
 
+  // Van telefoon- naar desktopopmaak (venster groter of kleiner): opnieuw tekenen
+  DESKTOP.addEventListener('change', () => { panelen.slice().forEach((p) => p.sluit()); render(); });
+
   // Terug in de app: nieuwe dag? Dan terug naar vandaag. Gegevens ouder dan vijf minuten: opnieuw ophalen.
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState !== 'visible') return;
     const t = vandaag();
-    if (!sameDay(t, ST.dag)) { ST.dag = t; ST.anker = defaultWeekAnchor(t); ST.fcStart = t; }
+    if (!sameDay(t, ST.dag)) { ST.dag = t; ST.anker = defaultWeekAnchor(t); ST.fcStart = t; zijMaand = null; }
     if (!DEMO && Date.now() - DATA.opgehaald > VERS_MS) laad({ vers: true });
     else render();
   });

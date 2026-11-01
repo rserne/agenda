@@ -7,7 +7,14 @@ Je week in één oogopslag, als web-app (PWA) voor iPhone, iPad en laptop. De ap
 - **Weekkiezer:** tik op de titel. Elke werkdag heeft een ring die laat zien hoe vol hij is; rood betekent zes uur of meer aan afspraken.
 - **Detailscherm:** locatie, Teams-link, organisator en deelnemers per organisatie, notities, en mailen naar één of alle deelnemers.
 
-Zonder bouwstap: `index.html`, `app.css` en `app.js` draaien zoals ze zijn op GitHub Pages. Licht en donker volgen de instelling van het toestel.
+Zonder bouwstap: `index.html`, `app.css`, `app.js` en `voorbeeld.js` draaien zoals ze zijn op GitHub Pages. Licht en donker volgen de instelling van het toestel.
+
+**Formaten**
+- **Telefoon:** kop met titel en capsule, schakelaar bovenin, tabbalk onderin, panelen van onderen.
+- **Tablet (vanaf 768 punten):** dezelfde opbouw in een kolom van 760 punten, Vooruitblik met vier tegels naast elkaar.
+- **Desktop (vanaf 1200 punten):** een zijbalk met maandkalender (met ringen), Week of Vooruitblik, Opvallend, Alles of Vrij en de legenda. Week toont de werkdagen als kolommen naast elkaar; het detailscherm opent als dialoog midden in beeld.
+
+**Voorbeeldgegevens.** Zolang de echte agenda nog niet is gekoppeld, staat `BRON = 'voorbeeld'` bovenin `app.js`. `voorbeeld.js` maakt dan voor elke week verzonnen afspraken: vaste overleggen, losse interne afspraken en externe overleggen met deelnemers. Zet `BRON` op `'nhost'` als de functie werkt; met `?echt` of `?demo` achter het adres kies je tijdelijk de andere bron.
 
 ## Hoe het werkt
 
@@ -72,7 +79,7 @@ Open de app in Safari, tik op Delen, Zet op beginscherm. Log in met je Australie
 Bovenin `app.js` staan onder meer de werktijd (`WORK_START`, `WORK_END`), de grens voor vrije blokken (`FREE_MIN`), de rode ring (`FULL_HOURS`), de naam van je eigen organisatie (`OWN_ORG_NAME`) en hoeveel weken de app terug en vooruit kijkt om vaste overleggen te herkennen (`LOOK_AROUND_WEEKS`).
 
 Handige adressen:
-- `?demo`: voorbeeldgegevens met verzonnen namen, zonder inloggen.
+- `?demo` of `?echt`: tijdelijk de andere bron (voorbeeldgegevens of je echte agenda), zie `BRON`.
 - `?datum=2026-11-02`: doen alsof het die dag is.
 - `?uitloggen`: uitloggen en de bewaarde afspraken wissen.
 
@@ -82,8 +89,7 @@ Handige adressen:
 npm install
 node test/run.mjs        # voorbeeldfeed omzetten, week 45 van 2026
 node test/functie.mjs    # de functie met nagebootste login en feed
-node test/maakdemo.mjs   # demo.json opnieuw maken uit test/voorbeeld.ics
-python3 -m http.server 8080   # en open http://localhost:8080/?demo
+python3 -m http.server 8080   # en open http://localhost:8080/
 ```
 
 `test/voorbeeld.ics` is een feed in Outlook-stijl met verzonnen namen: herhaalreeksen, een verplaatste keer, een uitzondering, een hele dag, een afgezegde en een vrije afspraak.

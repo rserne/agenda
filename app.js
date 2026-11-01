@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-01-43';
+const APP_VERSIE = '2026-11-01-44';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -669,7 +669,7 @@ function weekKolommenHtml(events) {
       <div class="kaart">${rijen}</div>
     </section>`);
   }
-  return `<div class="weekraster">${kolommen.join('')}</div>`;
+  return `<div class="weekraster">${kolommen.join('')}</div>${legendaWeek()}`;
 }
 
 function weekHtml(events) {
@@ -699,13 +699,19 @@ function weekHtml(events) {
     html += `<h2 class="dagkop${eerste ? ' eerste' : ''}${isVandaag ? ' vandaag' : ''}${d < t ? ' voorbij' : ''}" aria-label="${isVandaag ? 'Vandaag, ' : ''}${DAYS_LONG[d.getDay()]} ${d.getDate()} ${MONTHS_LONG[d.getMonth()]}">${kop}</h2><div class="kaart">${rijen}</div>`;
     eerste = false;
   }
-  html += isDesktop() ? '' : `<div class="legenda">
+  return html + legendaWeek();
+}
+// Legenda onderaan bij de afspraken zelf: streepjes in de week, de tegelkleuren in de Vooruitblik
+const legendaWeek = () => `<div class="legenda">
     <span><i class="stip ext" style="margin:0"></i>Extern</span>
     <span><i class="stip int" style="margin:0"></i>Intern, ad hoc</span>
     <span><i class="stip" style="margin:0"></i>Intern, vast</span>
   </div>`;
-  return html;
-}
+const legendaVooruitblik = () => `<div class="legenda">
+    <span><i class="vlak" style="background:var(--externTile)"></i>Extern</span>
+    <span><i class="vlak" style="background:var(--internTile)"></i>Intern, ad hoc</span>
+    <span><i class="vlak" style="background:var(--regularTile)"></i>Intern, vast</span>
+  </div>`;
 
 /* ------------------------------------------------------------------ */
 /*  Weergave: Vooruitblik                                              */
@@ -754,12 +760,7 @@ function vooruitblikHtml(events) {
       </div>
     </section>`;
   }
-  html += '</div>' + (isDesktop() ? '' : `<div class="legenda">
-    <span><i class="vlak" style="background:var(--externTile)"></i>Extern</span>
-    <span><i class="vlak" style="background:var(--internTile)"></i>Intern, ad hoc</span>
-    <span><i class="vlak" style="background:var(--regularTile)"></i>Intern, vast</span>
-  </div>`);
-  return html;
+  return html + '</div>' + legendaVooruitblik();
 }
 
 /* ------------------------------------------------------------------ */
@@ -1023,15 +1024,6 @@ function renderZijbalk() {
   z.innerHTML = `<div class="zbbinnen">
     <div class="minikal">${maandRasterHtml(zijMaand, gekozenMaandag(), 'zijbalk')}</div>
     <nav class="zblijst" aria-label="Weergave"><h3>Weergave</h3>${item('week', I.week, 'Week')}${item('forecast', I.vooruit, 'Vooruitblik')}</nav>
-    <div class="zblegenda">${ST.tab === 'forecast'
-      // Vooruitblik: de lichte kleuren van de tegels; Week: de streep van de afspraken
-      ? `<span><i class="vlak" style="background:var(--externTile)"></i>Extern</span>
-      <span><i class="vlak" style="background:var(--internTile)"></i>Intern, ad hoc</span>
-      <span><i class="vlak" style="background:var(--regularTile)"></i>Intern, vast</span>`
-      : `<span><i class="streep" style="background:var(--externDot)"></i>Extern</span>
-      <span><i class="streep" style="background:var(--internDot)"></i>Intern, ad hoc</span>
-      <span><i class="streep" style="background:var(--regularDot)"></i>Intern, vast</span>`}
-    </div>
     ${bronHtml('zbvoet')}
   </div>`;
   const rasterStart = startOfWeek(zijMaand);

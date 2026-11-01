@@ -263,7 +263,7 @@ button.rij:active { background: var(--fill); }
 
 .legenda { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 16px; padding-top: 30px; }
 .legenda span { display: flex; align-items: center; gap: 6px; color: var(--secondary); font-size: 12px; }
-.legenda .vlak { width: 12px; height: 12px; border-radius: 3px; }
+.legenda .vlak { width: 12px; height: 12px; border-radius: 3px; box-shadow: inset 0 0 0 0.5px var(--separator); }
 .legenda .stip { width: 3px; height: 13px; border-radius: 2px; }
 
 /* ---------------------------------------------------------------- Vooruitblik */
@@ -611,11 +611,7 @@ label.frij:focus-within .flabel { color: var(--accent); }
   .zblijst button .icoon { width: 16px; height: 16px; color: var(--accent); }
   .zblijst button:hover { background: var(--fill); }
   .zblijst button.aan { background: rgb(120 120 128 / 0.18); font-weight: 600; }
-  .zblegenda { margin-top: auto; display: flex; flex-direction: column; gap: 6px; padding: 0 10px; }
-  .zblegenda span { display: flex; align-items: center; gap: 7px; color: var(--secondary); font-size: 11.5px; }
-  .zblegenda .vlak { width: 11px; height: 11px; border-radius: 3px; box-shadow: inset 0 0 0 0.5px var(--separator); }
-  .zblegenda .streep { width: 3px; height: 12px; border-radius: 2px; margin: 0 4px; }
-  .zbvoet { text-align: left; padding: 0 10px; margin: 0; font-size: 11px; }
+  .zbvoet { text-align: left; padding: 0 10px; margin: auto 0 0; font-size: 11px; }
 
   /* Werkbalk: titel, datum, filter en ‹ Vandaag › op één regel */
   .kop { padding: 0; background: var(--werkbalk); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); border-bottom: 0.5px solid var(--separator); }

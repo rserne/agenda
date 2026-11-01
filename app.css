@@ -363,15 +363,16 @@ button.rij:active { background: var(--fill); }
 .detail { background: var(--sheetBg); max-width: 680px; }
 /* Alleen een sluitknop, rechts naast de eerste regel: de rij zelf neemt geen hoogte in */
 .detailnav { display: flex; justify-content: flex-end; align-items: flex-start; height: 0; overflow: visible; padding: 6px 16px 0; flex-shrink: 0; position: relative; z-index: 2; touch-action: none; }
-.detail .dkop { padding-top: 3px; padding-right: 52px; }
+.detail .dkop { padding-top: 0; padding-right: 52px; }
+.detail .dtitel { margin-top: -3px; }
 .rond { width: 36px; height: 36px; border-radius: 18px; display: flex; align-items: center; justify-content: center; color: var(--label); }
 .rond .icoon { width: 17px; height: 17px; }
 .detailinhoud { overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding: 8px 16px calc(env(safe-area-inset-bottom, 0px) + 30px); display: flex; flex-direction: column; gap: 20px; }
-.dkop { padding: 0 16px; display: flex; flex-direction: column; gap: 4px; }
-.dsoort { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; font-size: 13px; font-weight: 600; }
-.dsoort .stip { margin-top: 0; }
-.dsoort .her { display: flex; align-items: center; gap: 4px; color: var(--secondary); font-weight: 500; }
-.dsoort .her .icoon { width: 13px; height: 13px; }
+/* Kop van het detail: dezelfde gekleurde streep als in de lijst, over titel en gegevens heen */
+.dkop { padding: 0 16px; display: flex; gap: 12px; }
+.dkop > .stip { width: 4px; height: auto; align-self: stretch; border-radius: 2px; margin: 0; }
+.dkopinhoud { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.dher .icoon { display: inline-block; width: 15px; height: 15px; vertical-align: -2px; margin-right: 5px; }
 .dtitel { font-size: 24px; font-weight: 700; letter-spacing: -0.3px; line-height: 29px; margin: 0 0 4px; overflow-wrap: anywhere; }
 /* Dag, tijd, vorm en overlap: gewone regels met dezelfde hoogte, zonder iconen ertussen */
 .dmeta { color: var(--meta); font-size: 16px; line-height: 22px; }
@@ -663,7 +664,7 @@ label.frij:focus-within .flabel { color: var(--accent); }
   .paneel.detail.dialoog.open { transform: translate(-50%, -50%) scale(1); opacity: 1; }
   .paneel.detail.dialoog .greep { display: none; }
   .paneel.detail.dialoog .detailnav { padding-top: 14px; }
-  .paneel.detail.dialoog .dkop { padding-top: 2px; }
+  .paneel.detail.dialoog .dkop { padding-top: 0; }
   /* Nieuwe afspraak: knop in de werkbalk, vrije blokken met hover */
   .nieuwknop { order: 5; width: auto; height: 26px; border-radius: 7px; padding: 0 10px 0 7px; gap: 4px; background: var(--accent); color: var(--onAccent); border: 0; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; font-size: 12px; font-weight: 600; }
   .nieuwknop .icoon { width: 13px; height: 13px; }

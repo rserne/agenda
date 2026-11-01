@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-01-24';
+const APP_VERSIE = '2026-11-01-25';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -1072,7 +1072,6 @@ const mailLink = (adressen, onderwerp) => `mailto:${adressen.map(encodeURICompon
 function openDetail(e) {
   const own = eigenDomeinen();
   const kindLabel = e.kind === 'ext' ? 'Extern' : e.kind === 'int' ? 'Intern, ad hoc' : 'Intern, vast';
-  const kindKleur = e.kind === 'ext' ? 'var(--externDot)' : e.kind === 'int' ? 'var(--internDot)' : 'var(--secondary)';
   const rec = recurrenceText(e);
   const dateLine = cap(`${DAYS_LONG[e.start.getDay()]} ${e.start.getDate()} ${MONTHS_LONG[e.start.getMonth()]}`);
   // Overlap: dezelfde regel als in de lijst, maar hier met alle afspraken erbij
@@ -1167,15 +1166,18 @@ function openDetail(e) {
       <div class="detailnav"><button class="rond glas" data-actie="sluit" aria-label="Sluiten">${I.kruis}</button></div></div>
       <div class="detailinhoud">
         <div class="dkop">
-          <div class="dsoort"><span class="stip ${e.kind}"></span><span style="color:${kindKleur}">${kindLabel}</span>${rec ? `<span class="her">${I.herhaal}${esc(rec)}</span>` : ''}</div>
+          <span class="stip ${e.kind}" role="img" aria-label="${kindLabel}" title="${kindLabel}"></span>
+          <div class="dkopinhoud">
           <h2 class="dtitel">${esc(e.title || '(geen titel)')}</h2>
           <div class="dmeta">
             <div>${dateLine}</div>
             <div class="num">${timeLine}</div>
+            ${rec ? `<div class="dher">${I.herhaal}${esc(cap(rec))}</div>` : ''}
             ${e.mode !== 'none' ? `<div>${MODE_LABEL[e.mode]}</div>` : ''}
             ${ovLine ? `<div class="doverlap">${esc(ovLine)}</div>` : ''}
           </div>
           ${e.external ? `<div class="dbadges">${e.orgs.map((o) => `<span>${esc(o)}</span>`).join('')}</div>` : ''}
+          </div>
         </div>
         ${plekken.length ? `<section class="sectie"><h3>Locatie</h3><div class="kaart">${plekken.join('')}</div></section>` : ''}
         ${orgHtml || afgeleidHtml}

@@ -483,28 +483,42 @@ button.drij:active { opacity: 0.6; }
 .tegel.vrij .tegelkop .plus .icoon { width: 14px; height: 14px; }
 
 .nieuw .dkop { padding-top: 6px; }
-.velden { padding: 0 16px; }
-.veld { display: block; width: 100%; border: 0; background: transparent; color: var(--label); font: inherit; font-size: 17px; line-height: 22px; padding: 13px 0; outline: none; resize: none; }
-.veld + .veld { border-top: 0.5px solid var(--separator); }
-.veld.groot { font-size: 20px; font-weight: 600; padding: 15px 0; }
-.veld::placeholder { color: var(--secondary); font-weight: 400; }
+/* Formulier als gegroepeerde lijst: label links, invoer rechts, dunne lijnen ertussen */
+.formkaart { background: var(--card); border-radius: 14px; padding: 0 16px; }
+.frij { display: flex; align-items: center; gap: 12px; min-height: 50px; padding: 8px 0; }
+.frij + .frij { border-top: 0.5px solid var(--separator); }
+.frij.kolom { flex-direction: column; align-items: stretch; gap: 10px; padding: 12px 0 14px; }
+.frij.boven { align-items: flex-start; padding-top: 14px; }
+.flabel { flex: 0 0 104px; color: var(--label); font-size: 16px; font-weight: 500; }
+.frij.kolom .flabel { flex: none; }
+.frij input, .frij textarea { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--label); font: inherit; font-size: 16px; line-height: 22px; padding: 0; outline: none; resize: none; }
+.frij textarea { min-height: 66px; }
+.frij input::placeholder, .frij textarea::placeholder { color: var(--secondary); opacity: 0.8; }
+.frij input:-webkit-autofill { -webkit-box-shadow: 0 0 0 40px var(--card) inset; -webkit-text-fill-color: var(--label); }
+label.frij:focus-within .flabel { color: var(--accent); }
+.fwaarde { flex: 1; min-width: 0; display: flex; flex-direction: column; font-size: 16px; }
+.fsub { color: var(--secondary); font-size: 14px; margin-top: 1px; }
+.dagkeuze, .stapper { flex-direction: row; align-items: center; gap: 6px; }
+.stapper { justify-content: flex-start; }
+.stapper #nduur { min-width: 74px; text-align: center; font-weight: 600; }
+.mini { width: 32px; height: 32px; border-radius: 16px; background: var(--fill); color: var(--accent); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.mini .icoon { width: 16px; height: 16px; }
+.mini:disabled { color: var(--secondary); opacity: 0.45; }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
-.sectie > .chips, .sectie > .datumrij, .sectie > #ntijden { padding: 0 4px; }
-.chip { height: 36px; padding: 0 14px; border-radius: 18px; background: var(--card); color: var(--label); font-size: 15px; font-weight: 500; display: inline-flex; align-items: center; box-shadow: 0 0 0 0.5px var(--cardBorder); }
+.chip { height: 34px; padding: 0 14px; border-radius: 17px; background: var(--fill); color: var(--label); font-size: 15px; font-weight: 500; display: inline-flex; align-items: center; }
 .chip.num { font-variant-numeric: tabular-nums; min-width: 66px; justify-content: center; }
-.chip.aan { background: var(--accent); color: var(--onAccent); box-shadow: none; font-weight: 600; }
-#nduur { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
-#nduur .chip { justify-content: center; padding: 0 4px; }
-.datumrij { display: flex; align-items: center; gap: 8px; }
-.rond.zacht { background: var(--card); color: var(--accent); box-shadow: 0 0 0 0.5px var(--cardBorder); flex-shrink: 0; }
-.datumlabel { position: relative; flex: 1; height: 36px; border-radius: 18px; background: var(--card); box-shadow: 0 0 0 0.5px var(--cardBorder); display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 600; cursor: pointer; overflow: hidden; }
+.chip.aan { background: var(--accent); color: var(--onAccent); font-weight: 600; }
+.datumlabel { position: relative; flex: 1; min-width: 0; height: 32px; border-radius: 16px; background: var(--fill); display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600; cursor: pointer; overflow: hidden; white-space: nowrap; padding: 0 10px; }
+.datumlabel span { overflow: hidden; text-overflow: ellipsis; }
+.datumlabel .kort { display: none; }
+@media (max-width: 480px) { .datumlabel .lang { display: none; } .datumlabel .kort { display: inline; } }
 .datumlabel input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
-.tijdblok + .tijdblok { margin-top: 14px; }
-.bloklabel { color: var(--secondary); font-size: 13px; margin: 0 2px 7px; }
-.ngeen { color: var(--secondary); font-size: 15px; line-height: 21px; padding: 2px 2px 0; }
+.tijdblok + .tijdblok { margin-top: 12px; }
+.bloklabel { color: var(--secondary); font-size: 13px; margin: 0 0 7px; }
+.ngeen { color: var(--secondary); font-size: 15px; line-height: 21px; }
 .link { color: var(--accent); font: inherit; font-weight: 600; padding: 0; }
-.eigentijd { display: flex; align-items: center; gap: 10px; margin-top: 14px; }
-.eigentijd input { height: 36px; border-radius: 10px; border: 0; background: var(--card); color: var(--label); font: inherit; font-size: 16px; padding: 0 10px; box-shadow: 0 0 0 0.5px var(--cardBorder); }
+.eigentijd { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+.eigentijd input { flex: none; height: 34px; border-radius: 10px; border: 0; background: var(--fill); color: var(--label); font: inherit; font-size: 16px; padding: 0 10px; }
 .nsamenvatting { text-align: center; font-size: 15px; font-weight: 600; padding: 2px 8px 4px; }
 .nsamenvatting .leeg { color: var(--secondary); font-weight: 500; }
 .nsamenvatting .doverlap { color: var(--overlap); font-weight: 500; font-size: 14px; margin-top: 3px; }

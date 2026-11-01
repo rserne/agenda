@@ -16,7 +16,7 @@ Zonder bouwstap: `index.html`, `app.css`, `app.js` en `voorbeeld.js` draaien zoa
 
 **Voorbeeldgegevens.** Zolang de echte agenda nog niet is gekoppeld, staat `BRON = 'voorbeeld'` bovenin `app.js`. `voorbeeld.js` maakt dan voor elke week verzonnen afspraken: vaste overleggen, losse interne afspraken en externe overleggen met deelnemers. Zet `BRON` op `'nhost'` als de functie werkt; met `?echt` of `?demo` achter het adres kies je tijdelijk de andere bron.
 
-**Nieuwe afspraak.** Met de plusknop in de kop (op de desktop **Nieuw**) of door op een vrij blok te tikken. Je kiest de duur (standaard een uur) en de dag; de app stelt dan begintijden voor die in je vrije blokken passen, tussen 8:00 en 18:00. Kies je zelf een andere tijd die botst, dan zie je meteen met welke afspraak. Omdat de app je agenda alleen leest, opent **Verder in Outlook** Outlook op het web met alles ingevuld; daar sla je de afspraak op en verstuur je de uitnodiging. **Downloaden als .ics** werkt ook in andere agenda's.
+**Nieuwe afspraak.** Met de plusknop in de kop (op de desktop **Nieuw**): je kiest de dag en de duur (standaard een uur, in stappen van een kwartier) en de app stelt begintijden voor die in je vrije blokken passen, tussen 8:00 en 18:00. Kies je zelf een andere tijd die botst, dan zie je meteen met welke afspraak. Tik je op een vrij blok, dan blijft alles binnen dat blok: de dag ligt vast, de duur gaat niet verder dan het blok lang is en de begintijden vallen erbinnen. Omdat de app je agenda alleen leest, opent **Verder in Outlook** Outlook op het web met alles ingevuld; daar sla je de afspraak op en verstuur je de uitnodiging. **Downloaden als .ics** werkt ook in andere agenda's.
 
 ## Hoe het werkt
 

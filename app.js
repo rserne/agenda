@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-01-19';
+const APP_VERSIE = '2026-11-01-20';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -125,6 +125,7 @@ const vastText = (n) => (n === 1 ? '1 vast overleg' : `${n} vaste overleggen`);
 const lijn = (d, w = 2.2) => `<svg class="icoon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const vol = (d) => `<svg class="icoon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">${d}</svg>`;
 const I = {
+  min: lijn('<path d="M5 12h14"/>', 2.4),
   plus: lijn('<path d="M12 5v14M5 12h14"/>', 2.4),
   terug: lijn('<path d="M15 18l-6-6 6-6"/>', 2.6),
   verder: lijn('<path d="M9 18l6-6-6-6"/>', 2.6),
@@ -616,7 +617,7 @@ function weekRij(e, ov) {
 }
 
 function vrijRij(f) {
-  return `<button class="rij vrij" data-vrij="${f.start.getTime()}" aria-label="Vrij van ${hhmm(f.start)} tot ${hhmm(f.end)}, ${freeText(f.min)}. Afspraak toevoegen">
+  return `<button class="rij vrij" data-vrij="${f.start.getTime()}-${f.end.getTime()}" aria-label="Vrij van ${hhmm(f.start)} tot ${hhmm(f.end)}, ${freeText(f.min)}. Afspraak toevoegen">
     <span class="stip"></span>
     <span class="tijdkolom"><div class="tijd">${hhmm(f.start)}</div><div class="eind">${hhmm(f.end)}</div></span>
     <span class="rijtekst"><span class="rijtitel"><b>Vrij</b><span> · ${freeText(f.min)}</span></span></span>
@@ -637,7 +638,7 @@ function kolomRij(e, ov) {
   </button>`;
 }
 function kolomVrij(f) {
-  return `<button class="krij vrij" data-vrij="${f.start.getTime()}" aria-label="Vrij van ${hhmm(f.start)} tot ${hhmm(f.end)}, ${freeText(f.min)}. Afspraak toevoegen">
+  return `<button class="krij vrij" data-vrij="${f.start.getTime()}-${f.end.getTime()}" aria-label="Vrij van ${hhmm(f.start)} tot ${hhmm(f.end)}, ${freeText(f.min)}. Afspraak toevoegen">
     <span class="stip"></span>
     <span class="rijtekst"><span class="ktijd num">${hhmm(f.start)} – ${hhmm(f.end)}</span><span class="rijtitel"><b>Vrij</b><span> · ${freeText(f.min)}</span></span></span>
     <span class="plus" aria-hidden="true">${I.plus}</span>
@@ -722,7 +723,7 @@ function tegel(e, dag, ov) {
   </button>`;
 }
 function vrijeTegel(f) {
-  return `<button class="tegel vrij" data-vrij="${f.start.getTime()}" aria-label="Vrij van ${hhmm(f.start)} tot ${hhmm(f.end)}, ${freeText(f.min)}. Afspraak toevoegen">
+  return `<button class="tegel vrij" data-vrij="${f.start.getTime()}-${f.end.getTime()}" aria-label="Vrij van ${hhmm(f.start)} tot ${hhmm(f.end)}, ${freeText(f.min)}. Afspraak toevoegen">
     <span class="tegelkop"><span class="tt">${hhmm(f.start)}</span><span class="plus" aria-hidden="true">${I.plus}</span></span><span class="tit">Vrij</span><span class="duur">${freeText(f.min)}</span><span class="tt te">${hhmm(f.end)}</span>
   </button>`;
 }
@@ -1209,7 +1210,6 @@ function openDetail(e) {
 
 // De app leest de agenda alleen. Dit scherm zoekt een geschikt moment en opent daarna Outlook met alles
 // ingevuld (of geeft een .ics-bestand); opslaan en uitnodigen gebeurt in Outlook.
-const DUREN = [30, 45, 60, 90, 120];
 const duurKort = (m) => (m < 60 ? `${m} min` : freeText(m));
 
 async function afsprakenOp(dag) {
@@ -1218,18 +1218,20 @@ async function afsprakenOp(dag) {
   return afsprakenTussen(a, addDays(a, 1));
 }
 
-// Starttijden per vrij blok: op het hele en halve uur, en het begin van het blok zelf als dat op een kwartier valt
-function startTijden(lijst, dag, duur) {
+// Begintijden in een vrij blok: het begin van het blok, elk heel en half uur, en het laatste moment waarop het nog past
+function tijdenInBlok(a, b, duur) {
   const ms = duur * 6e4;
-  const stap = 30 * 6e4;
-  return freeSlots(lijst, dag).map((f) => {
-    const a = f.start.getTime(), b = f.end.getTime();
-    const tijden = [];
-    const eerste = new Date(a); eerste.setMinutes(Math.ceil(eerste.getMinutes() / 30) * 30, 0, 0);
-    if (eerste.getTime() > a && f.start.getMinutes() % 15 === 0) tijden.push(a);
-    for (let t = eerste.getTime(); t + ms <= b; t += stap) tijden.push(t);
-    return { blok: f, tijden: tijden.filter((t) => t + ms <= b) };
-  }).filter((x) => x.tijden.length);
+  const zet = new Set();
+  const begin = new Date(a);
+  if (begin.getMinutes() % 15 === 0) zet.add(a);
+  const eerste = new Date(a); eerste.setMinutes(Math.ceil(eerste.getMinutes() / 30) * 30, 0, 0);
+  for (let t = eerste.getTime(); t + ms <= b; t += 30 * 6e4) zet.add(t);
+  const laatste = new Date(b - ms); laatste.setMinutes(Math.floor(laatste.getMinutes() / 15) * 15, 0, 0);
+  if (laatste.getTime() >= a) zet.add(laatste.getTime());
+  return [...zet].filter((t) => t >= a && t + ms <= b).sort((x, y) => x - y);
+}
+function startTijden(lijst, dag, duur) {
+  return freeSlots(lijst, dag).map((f) => ({ blok: f, tijden: tijdenInBlok(f.start.getTime(), f.end.getTime(), duur) })).filter((x) => x.tijden.length);
 }
 
 async function eersteDagMetRuimte(vanaf, duur, max = 21) {
@@ -1271,15 +1273,22 @@ function downloadIcs(v) {
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 
-// dag: de gekozen dag (of null: eerste werkdag met ruimte); voorkeur: begin van het vrije blok waarop is geklikt
-async function openNieuw({ dag = null, voorkeur = null } = {}) {
-  const v = { titel: '', locatie: '', deelnemers: '', notitie: '', duur: 60, start: null, eigen: false, dag: null, voorkeur };
-  if (dag) v.dag = startOfDay(dag);
+// dag: de gekozen dag (of null: eerste werkdag met ruimte).
+// blok: het vrije blok waarop is geklikt ({ start, end } in ms). Dan blijven dag en tijd binnen dat blok.
+async function openNieuw({ dag = null, blok = null } = {}) {
+  const v = { titel: '', locatie: '', deelnemers: '', notitie: '', duur: 60, start: null, eigen: false, dag: null, blok };
+  if (blok) {
+    v.dag = startOfDay(new Date(blok.start));
+    v.max = Math.floor((blok.end - blok.start) / 9e5) * 15; // duur hoogstens het hele blok, in kwartieren
+    v.duur = Math.min(60, v.max);
+  } else if (dag) v.dag = startOfDay(dag);
   else {
     const t = vandaag();
     const week = ST.tab === 'week' ? startOfWeek(ST.anker) : ST.fcStart;
     v.dag = (await eersteDagMetRuimte(week > t ? week : nu(), v.duur)) || t;
   }
+  if (!v.max) v.max = 8 * 60;
+  const dagTekst = (d) => (sameDay(d, vandaag()) ? `Vandaag, ${DAYS_LONG[d.getDay()]} ${d.getDate()} ${MONTHS_LONG[d.getMonth()]}` : cap(`${DAYS_LONG[d.getDay()]} ${d.getDate()} ${MONTHS_LONG[d.getMonth()]}`));
 
   const el = document.createElement('div');
   el.className = 'paneel detail nieuw' + (isDesktop() ? ' dialoog' : '');
@@ -1287,23 +1296,27 @@ async function openNieuw({ dag = null, voorkeur = null } = {}) {
       <div class="detailnav"><button class="rond glas" data-actie="sluit" aria-label="Sluiten">${I.kruis}</button></div></div>
     <div class="detailinhoud">
       <div class="dkop"><h2 class="dtitel">Nieuwe afspraak</h2></div>
-      <section class="sectie"><div class="kaart velden">
-        <input class="veld groot" name="titel" placeholder="Onderwerp" autocomplete="off" enterkeyhint="next">
-        <input class="veld" name="locatie" placeholder="Locatie of Teams" autocomplete="off" enterkeyhint="next">
-      </div></section>
-      <section class="sectie"><h3>Duur</h3><div class="chips" id="nduur"></div></section>
-      <section class="sectie"><h3>Dag</h3>
-        <div class="datumrij">
-          <button class="rond zacht" data-dag="-1" aria-label="Dag eerder">${I.terug}</button>
-          <label class="datumlabel"><span id="ndatum"></span><input type="date" id="ndatuminvoer" aria-label="Kies een dag"></label>
-          <button class="rond zacht" data-dag="1" aria-label="Dag later">${I.verder}</button>
-        </div>
-      </section>
-      <section class="sectie"><h3>Begintijd</h3><div id="ntijden"></div></section>
-      <section class="sectie"><div class="kaart velden">
-        <input class="veld" name="deelnemers" type="email" multiple placeholder="Deelnemers (e-mailadressen)" autocomplete="off">
-        <textarea class="veld" name="notitie" rows="3" placeholder="Notitie"></textarea>
-      </div></section>
+      <div class="formkaart">
+        <label class="frij"><span class="flabel">Onderwerp</span><input name="titel" placeholder="Waar gaat het over?" autocomplete="off" enterkeyhint="next"></label>
+        <label class="frij"><span class="flabel">Locatie</span><input name="locatie" placeholder="Ruimte, adres of Teams" autocomplete="off" enterkeyhint="next"></label>
+      </div>
+      <div class="formkaart">
+        <div class="frij"><span class="flabel">Dag</span>${blok
+          ? `<span class="fwaarde"><span>${dagTekst(v.dag)}</span><span class="fsub num">Vrij ${hhmm(new Date(blok.start))} – ${hhmm(new Date(blok.end))}</span></span>`
+          : `<span class="fwaarde dagkeuze">
+              <button class="mini" data-dag="-1" aria-label="Dag eerder">${I.terug}</button>
+              <label class="datumlabel"><span id="ndatum"></span><input type="date" id="ndatuminvoer" aria-label="Kies een dag"></label>
+              <button class="mini" data-dag="1" aria-label="Dag later">${I.verder}</button>
+            </span>`}</div>
+        <div class="frij"><span class="flabel">Duur</span><span class="fwaarde stapper">
+          <button class="mini" data-stap="-15" aria-label="Korter">${I.min}</button><span id="nduur" class="num" aria-live="polite"></span><button class="mini" data-stap="15" aria-label="Langer">${I.plus}</button>
+        </span></div>
+        <div class="frij kolom"><span class="flabel">Begintijd</span><div id="ntijden"></div></div>
+      </div>
+      <div class="formkaart">
+        <label class="frij"><span class="flabel">Deelnemers</span><input name="deelnemers" type="text" inputmode="email" placeholder="E-mailadressen" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+        <label class="frij boven"><span class="flabel">Notitie</span><textarea name="notitie" rows="3" placeholder="Optioneel"></textarea></label>
+      </div>
       <div class="dvoet">
         <div class="nsamenvatting" id="nsamen"></div>
         <a class="groteknop vol" id="noutlook" target="_blank" rel="noopener">${I.extern}Verder in Outlook</a>
@@ -1314,7 +1327,9 @@ async function openNieuw({ dag = null, voorkeur = null } = {}) {
 
   let lijst = [];
   const tekenDuur = () => {
-    $('#nduur', el).innerHTML = DUREN.map((m) => `<button class="chip${m === v.duur ? ' aan' : ''}" data-duur="${m}">${duurKort(m)}</button>`).join('');
+    $('#nduur', el).textContent = duurKort(v.duur);
+    $('[data-stap="-15"]', el).disabled = v.duur <= 15;
+    $('[data-stap="15"]', el).disabled = v.duur >= v.max;
   };
   const tekenSamen = () => {
     const ok = v.start != null;
@@ -1322,7 +1337,7 @@ async function openNieuw({ dag = null, voorkeur = null } = {}) {
     link.classList.toggle('uit', !ok);
     if (ok) link.href = outlookNieuwLink(v); else link.removeAttribute('href');
     $('#nics', el).disabled = !ok;
-    let tekst = ok ? `${cap(DAYS_LONG[v.dag.getDay()])} ${v.dag.getDate()} ${MONTHS_LONG[v.dag.getMonth()]}, ${hhmm(new Date(v.start))} – ${hhmm(new Date(v.start + v.duur * 6e4))}` : 'Kies een begintijd';
+    const tekst = ok ? `${dagTekst(v.dag)}, ${hhmm(new Date(v.start))} – ${hhmm(new Date(v.start + v.duur * 6e4))}` : 'Kies een begintijd';
     let ov = '';
     if (ok) {
       const a = v.start, b = v.start + v.duur * 6e4;
@@ -1331,33 +1346,46 @@ async function openNieuw({ dag = null, voorkeur = null } = {}) {
     }
     $('#nsamen', el).innerHTML = `<div class="${ok ? '' : 'leeg'}">${esc(tekst)}</div>${ov}`;
   };
+  const chip = (t) => `<button class="chip num${!v.eigen && t === v.start ? ' aan' : ''}" data-start="${t}">${hhmm(new Date(t))}</button>`;
   const tekenTijden = async () => {
     const d = v.dag;
-    $('#ndatum', el).textContent = sameDay(d, vandaag()) ? `Vandaag, ${DAYS_LONG[d.getDay()]} ${d.getDate()} ${MONTHS_LONG[d.getMonth()]}` : cap(`${DAYS_LONG[d.getDay()]} ${d.getDate()} ${MONTHS_LONG[d.getMonth()]}`);
-    $('#ndatuminvoer', el).value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    if (!blok) {
+      // Op een smal scherm de korte vorm, anders past hij niet tussen de pijltjes
+      $('#ndatum', el).innerHTML = `<span class="lang">${esc(dagTekst(d))}</span><span class="kort">${sameDay(d, vandaag()) ? 'Vandaag' : cap(DAYS_SHORT[d.getDay()])} ${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}</span>`;
+      $('#ndatuminvoer', el).value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
     lijst = await afsprakenOp(d);
     if (d !== v.dag) return; // intussen een andere dag gekozen
-    const blokken = startTijden(lijst, d, v.duur);
-    const alle = blokken.flatMap((b) => b.tijden);
-    if (!v.eigen && !alle.includes(v.start)) {
-      // Voorkeur: het vrije blok waarop is geklikt, anders de eerste mogelijkheid
-      const p = v.voorkeur != null ? blokken.find((b) => b.blok.start.getTime() <= v.voorkeur && b.blok.end.getTime() > v.voorkeur) : null;
-      v.start = p ? p.tijden.find((t) => t >= v.voorkeur) ?? p.tijden[0] : alle.length ? alle[0] : null;
+    let html;
+    if (blok) {
+      // Alleen begintijden binnen het aangeklikte blok
+      const tijden = tijdenInBlok(blok.start, blok.end, v.duur);
+      if (!tijden.includes(v.start)) v.start = tijden[0] ?? null;
+      html = `<div class="chips">${tijden.map(chip).join('')}</div>`;
+    } else {
+      const blokken = startTijden(lijst, d, v.duur);
+      const alle = blokken.flatMap((b) => b.tijden);
+      if (!v.eigen && !alle.includes(v.start)) v.start = alle.length ? alle[0] : null;
+      html = blokken.map((b) => `<div class="tijdblok">
+          <div class="bloklabel num">Vrij ${hhmm(b.blok.start)} – ${hhmm(b.blok.end)}</div>
+          <div class="chips">${b.tijden.map(chip).join('')}</div>
+        </div>`).join('');
+      if (!blokken.length) {
+        const volgende = await eersteDagMetRuimte(addDays(d, 1), v.duur);
+        html = `<div class="ngeen">Geen vrij blok van ${duurKort(v.duur)} tussen ${WORK_START}:00 en ${WORK_END}:00.${volgende ? ` <button class="link" data-naar="${volgende.getTime()}">Naar ${DAYS_LONG[volgende.getDay()]} ${volgende.getDate()} ${MONTHS_LONG[volgende.getMonth()]}</button>` : ''}</div>`;
+      }
+      const eigenWaarde = v.eigen && v.start != null ? hhmm(new Date(v.start)) : '';
+      html += `<div class="eigentijd"><button class="chip${v.eigen ? ' aan' : ''}" data-actie="eigen">Andere tijd</button>${v.eigen ? `<input type="time" step="900" id="neigen" value="${eigenWaarde}" aria-label="Begintijd">` : ''}</div>`;
     }
-    let html = blokken.map((b) => `<div class="tijdblok">
-        <div class="bloklabel num">Vrij ${hhmm(b.blok.start)} – ${hhmm(b.blok.end)} · ${freeText(b.blok.min)}</div>
-        <div class="chips">${b.tijden.map((t) => `<button class="chip num${!v.eigen && t === v.start ? ' aan' : ''}" data-start="${t}">${hhmm(new Date(t))}</button>`).join('')}</div>
-      </div>`).join('');
-    if (!blokken.length) {
-      const volgende = await eersteDagMetRuimte(addDays(d, 1), v.duur);
-      html = `<div class="ngeen">Op deze dag is tussen ${WORK_START}:00 en ${WORK_END}:00 geen vrij blok van ${duurKort(v.duur)}.${volgende ? ` <button class="link" data-naar="${volgende.getTime()}">Naar ${DAYS_LONG[volgende.getDay()]} ${volgende.getDate()} ${MONTHS_LONG[volgende.getMonth()]}</button>` : ''}</div>`;
-    }
-    const eigenWaarde = v.eigen && v.start != null ? hhmm(new Date(v.start)) : '';
-    html += `<div class="eigentijd"><button class="chip${v.eigen ? ' aan' : ''}" data-actie="eigen">Andere tijd</button>${v.eigen ? `<input type="time" step="900" id="neigen" value="${eigenWaarde}" aria-label="Begintijd">` : ''}</div>`;
     $('#ntijden', el).innerHTML = html;
     tekenSamen();
   };
-  const zetDag = (d) => { v.dag = startOfDay(d); v.voorkeur = null; if (!v.eigen) v.start = null; else if (v.start != null) { const t = new Date(v.start); v.start = new Date(v.dag.getFullYear(), v.dag.getMonth(), v.dag.getDate(), t.getHours(), t.getMinutes()).getTime(); } tekenTijden(); };
+  const zetDag = (d) => {
+    v.dag = startOfDay(d);
+    if (!v.eigen) v.start = null;
+    else if (v.start != null) { const t = new Date(v.start); v.start = new Date(v.dag.getFullYear(), v.dag.getMonth(), v.dag.getDate(), t.getHours(), t.getMinutes()).getTime(); }
+    tekenTijden();
+  };
 
   tekenDuur();
   const p = openPaneel(el, { greepSelector: '.detailgreep' });
@@ -1378,8 +1406,8 @@ async function openNieuw({ dag = null, voorkeur = null } = {}) {
   el.addEventListener('click', (ev) => {
     const t = ev.target;
     if (t.closest('[data-actie="sluit"]')) { p.sluit(); return; }
-    const duur = t.closest('[data-duur]');
-    if (duur) { v.duur = Number(duur.dataset.duur); tekenDuur(); tekenTijden(); return; }
+    const stapper = t.closest('[data-stap]');
+    if (stapper) { v.duur = Math.min(v.max, Math.max(15, v.duur + Number(stapper.dataset.stap))); tekenDuur(); tekenTijden(); return; }
     const st = t.closest('[data-start]');
     if (st) { v.start = Number(st.dataset.start); v.eigen = false; tekenTijden(); return; }
     if (t.closest('[data-actie="eigen"]')) { v.eigen = !v.eigen; if (!v.eigen) v.start = null; tekenTijden().then(() => { const i = $('#neigen', el); if (i) i.focus(); }); return; }
@@ -1474,7 +1502,7 @@ function koppel() {
     const rij = ev.target.closest('#zijbalk .weekrij');
     if (rij) { kiesWeek(new Date(Number(rij.dataset.ma))); return; }
     const vrij = ev.target.closest('#inhoud [data-vrij]');
-    if (vrij) { const t = new Date(Number(vrij.dataset.vrij)); openNieuw({ dag: t, voorkeur: t.getTime() }); return; }
+    if (vrij) { const [a, b] = vrij.dataset.vrij.split('-').map(Number); openNieuw({ blok: { start: a, end: b } }); return; }
     if (ev.target.closest('#nieuwknop')) { openNieuw(); return; }
     const b = ev.target.closest('#inhoud [data-id]');
     if (b && zichtbaar.has(b.dataset.id)) openDetail(zichtbaar.get(b.dataset.id));

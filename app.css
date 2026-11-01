@@ -447,9 +447,9 @@ button.drij:active { opacity: 0.6; }
 
   /* Zijbalk */
   .zijbalk { display: block; position: sticky; top: 0; height: 100vh; overflow-y: auto; background: var(--zbBg); border-right: 0.5px solid var(--separator); }
-  .zbbinnen { min-height: 100%; padding: 18px 12px 18px; display: flex; flex-direction: column; gap: 22px; }
+  .zbbinnen { min-height: 100%; padding: 13px 12px 18px; display: flex; flex-direction: column; gap: 22px; }
   .minikal .kiezerkop { padding: 0 4px 6px 6px; }
-  .minikal .kiezerkop h2 { font-size: 13px; font-weight: 700; letter-spacing: 0; }
+  .minikal .kiezerkop h2 { font-size: 17px; font-weight: 700; letter-spacing: -0.2px; line-height: 22px; }
   .maandpijlen { display: flex; gap: 2px; }
   .maandpijlen button { width: 26px; height: 26px; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: var(--secondary); }
   .maandpijlen button:hover { background: var(--fill); color: var(--label); }
@@ -487,7 +487,7 @@ button.drij:active { opacity: 0.6; }
   .titelknop { order: 1; flex: 0 0 auto; cursor: default; }
   .titelknop .icoon { display: none; }
   .titel { font-size: 17px; line-height: 22px; letter-spacing: -0.2px; }
-  .datumregel { order: 2; font-size: 13px; font-weight: 400; margin: 0; }
+  .datumregel { order: 2; font-size: 15px; font-weight: 500; color: var(--label); opacity: 0.72; margin: 0; }
   .kop #schakelaar { order: 3; margin-left: auto; height: 26px; padding: 2px; border-radius: 7px; background: var(--fill); border: 0; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
   .kop #schakelaar button { flex: none; padding: 0 12px; border-radius: 5px; font-size: 12px; font-weight: 500; color: var(--label); }
   .kop #schakelaar button.aan { background: var(--card); color: var(--label); font-weight: 600; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15), 0 0 0 0.5px rgba(0, 0, 0, 0.05); }
@@ -506,21 +506,18 @@ button.drij:active { opacity: 0.6; }
   .heledagbalk { display: block; width: 100%; text-align: left; margin-bottom: 3px; padding: 4px 8px; border-radius: 6px; background: rgb(120 120 128 / 0.1); color: var(--label); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .heledagbalk:hover { filter: brightness(0.96); }
   .dagkolom.weekend .krij.leeg { padding: 10px 0; font-size: 12px; }
-  /* Kolomkop zoals Outlook: groot dagnummer, daarnaast de dag; vandaag in een gevulde cirkel */
+  /* Kolomkop zoals Outlook: groot dagnummer met de dag ernaast op dezelfde grondlijn; vandaag in de accentkleur */
   .kolomkop {
     position: sticky; top: var(--kopH); z-index: 5; background: var(--deskBg);
-    margin: 0; padding: 2px 4px 8px; display: flex; align-items: center; gap: 8px;
+    margin: 0; padding: 4px 4px 8px; display: flex; align-items: baseline; gap: 7px;
     font-size: 13px; font-weight: 500; color: var(--secondary);
   }
-  .kolomkop .nr {
-    min-width: 34px; height: 34px; padding: 0 4px; border-radius: 17px; margin-left: -4px;
-    display: inline-flex; align-items: center; justify-content: center;
-    color: var(--label); font-size: 24px; font-weight: 600; letter-spacing: -0.5px; line-height: 1;
-  }
+  .kolomkop .nr { color: var(--label); font-size: 24px; font-weight: 600; letter-spacing: -0.5px; line-height: 28px; }
   .kolomkop .dow { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .kolomkop .mnd { margin-left: -4px; font-weight: 400; }
-  .dagkolom.vandaag .kolomkop .nr { background: var(--accent); color: var(--onAccent); margin-left: 0; }
-  .dagkolom.vandaag .kolomkop .dow { color: var(--accent); font-weight: 600; }
+  .kolomkop .mnd { margin-left: -3px; font-weight: 400; }
+  .dagkolom.vandaag .kolomkop .nr, .dagkolom.vandaag .kolomkop .dow { color: var(--accent); }
+  .dagkolom.vandaag .kolomkop .nr { font-weight: 700; }
+  .dagkolom.vandaag .kolomkop .dow { font-weight: 600; }
   .dagkolom.voorbij .kolomkop .nr { color: var(--secondary); font-weight: 500; }
   .dagkolom .kaart { padding: 3px; border-radius: 11px; border: 0; box-shadow: 0 0 0 0.5px var(--cardBorder), 0 1px 2px rgba(0, 0, 0, 0.04); }
   .krij { display: flex; align-items: stretch; gap: 7px; padding: 6px 7px; width: 100%; text-align: left; border-radius: 7px; }

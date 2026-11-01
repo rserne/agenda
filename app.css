@@ -193,7 +193,8 @@ body.vooruitblik .kop { background: var(--fcBg); }
 .tabbalk .kolom { display: flex; }
 .tabbalk .pil { flex: 1; display: flex; height: var(--barH); border-radius: calc(var(--barH) / 2); padding: 4px; pointer-events: auto; }
 
-main { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 100px); }
+/* Ruimte onderin, zodat de onderste regel (zoals Eigen .ics openen) boven de tabbalk uit te scrollen is */
+main.kolom { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--barH, 56px) + 48px); }
 
 /* ---------------------------------------------------------------- Week */
 .dagkop {
@@ -476,10 +477,12 @@ button.drij:active { opacity: 0.6; }
 }
 
 /* ================================================================ Nieuwe afspraak */
-.nieuwknop { width: 36px; height: 36px; border-radius: 18px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: var(--accent); }
-.nieuwknop .icoon { width: 19px; height: 19px; }
-.nieuwknop span { display: none; }
-.nieuwknop:active { background: var(--fill); }
+/* Telefoon en tablet: de plusknop staat naast de tabbalk; op de desktop de knop Nieuw in de werkbalk */
+.nieuwknop { display: none; }
+.tabbalk .kolom { gap: 10px; }
+.tabbalk .plusknop { flex: 0 0 var(--barH); padding: 0; width: var(--barH); height: var(--barH); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--accent); pointer-events: auto; }
+.tabbalk .plusknop .icoon { width: 22px; height: 22px; }
+.tabbalk .plusknop:active { background: var(--fill); }
 /* Vrije blokken zijn aan te tikken: een plusje rechts */
 .plus { display: inline-flex; margin-left: auto; color: var(--accent); flex-shrink: 0; opacity: 0.8; }
 .plus .icoon { width: 18px; height: 18px; }
@@ -667,7 +670,7 @@ label.frij:focus-within .flabel { color: var(--accent); }
   .paneel.detail.dialoog .detailnav { padding-top: 14px; }
   .paneel.detail.dialoog .dkop { padding-top: 0; }
   /* Nieuwe afspraak: knop in de werkbalk, vrije blokken met hover */
-  .nieuwknop { order: 5; width: auto; height: 26px; border-radius: 7px; padding: 0 10px 0 7px; gap: 4px; background: var(--accent); color: var(--onAccent); border: 0; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; font-size: 12px; font-weight: 600; }
+  .nieuwknop { display: flex; align-items: center; order: 5; width: auto; height: 26px; border-radius: 7px; padding: 0 10px 0 7px; gap: 4px; background: var(--accent); color: var(--onAccent); border: 0; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; font-size: 12px; font-weight: 600; }
   .nieuwknop .icoon { width: 13px; height: 13px; }
   .nieuwknop span { display: inline; }
   .nieuwknop:hover { filter: brightness(1.08); }

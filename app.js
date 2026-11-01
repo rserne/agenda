@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-01-27';
+const APP_VERSIE = '2026-11-01-29';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -1504,7 +1504,7 @@ function koppel() {
     if (rij) { kiesWeek(new Date(Number(rij.dataset.ma))); return; }
     const vrij = ev.target.closest('#inhoud [data-vrij]');
     if (vrij) { const [a, b] = vrij.dataset.vrij.split('-').map(Number); openNieuw({ blok: { start: a, end: b } }); return; }
-    if (ev.target.closest('#nieuwknop')) { openNieuw(); return; }
+    if (ev.target.closest('[data-nieuw]')) { openNieuw(); return; }
     const b = ev.target.closest('#inhoud [data-id]');
     if (b && zichtbaar.has(b.dataset.id)) openDetail(zichtbaar.get(b.dataset.id));
   });

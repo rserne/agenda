@@ -33,7 +33,7 @@
           <svg class="icoon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
         </button>
         <div class="capsule glas" id="capsule"></div>
-        <button class="nieuwknop glas" id="nieuwknop" aria-label="Nieuwe afspraak"><svg class="icoon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Nieuw</span></button>
+        <button class="nieuwknop glas" id="nieuwknop" data-nieuw aria-label="Nieuwe afspraak"><svg class="icoon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Nieuw</span></button>
       </div>
       <button class="datumregel" id="datumregel" aria-label="Naar vandaag"></button>
     </div>
@@ -55,6 +55,8 @@
       <button data-tab="week" role="tab">Week</button>
       <button data-tab="forecast" role="tab">Vooruitblik</button>
     </div>
+    <!-- Nieuwe afspraak: op telefoon en tablet naast de tabbalk, binnen bereik van de duim -->
+    <button class="plusknop glas" data-nieuw aria-label="Nieuwe afspraak"><svg class="icoon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
   </div>
 </nav>
 

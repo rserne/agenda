@@ -193,11 +193,13 @@ main { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 100px); }
 .dagkop {
   position: sticky; top: var(--kopH); z-index: 5;
   background: var(--bg);
-  padding: 36px 16px 10px;
+  /* Ruimte tussen de dagen als marge, niet als opvulling: zo blijft de kop compact als hij bovenaan plakt */
+  margin-top: 22px;
+  padding: 8px 16px 8px;
   font-size: 16px; font-weight: 600; letter-spacing: -0.2px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.dagkop.eerste { padding-top: 10px; }
+.dagkop.eerste { margin-top: 0; padding-top: 10px; }
 .dagkop .datum { color: var(--secondary); font-weight: 400; }
 .dagkop .vandaag { color: var(--accent); }
 

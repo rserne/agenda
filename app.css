@@ -249,7 +249,8 @@ button.rij:active { background: var(--fill); }
 .rij.rest { align-items: center; color: var(--secondary); }
 .rij.vrij { background: var(--freeBg); }
 .rij.vrij + .rij, .rij + .rij.vrij { margin-top: 2px; }
-.rij.vrij .stip { background: transparent; border: 1.5px dashed var(--accent); border-radius: 0; width: 0; }
+/* Stippellijn als achtergrond, niet als rand: een rand van 1,5 pixel tekent Safari op de iPhone niet goed */
+.rij.vrij .stip, .krij.vrij .stip { width: 3px; border: 0; border-radius: 1.5px; background: repeating-linear-gradient(to bottom, var(--accent) 0 4px, transparent 4px 7px); }
 .rij.vrij .tijd { color: var(--accent); }
 .rij.vrij .eind { color: var(--accent); }
 .rij.vrij .rijtitel b { color: var(--accent); font-weight: 600; }
@@ -628,7 +629,6 @@ label.frij:focus-within .flabel { color: var(--accent); }
   .krij.rest .stip { display: none; }
   .krij.leeg { justify-content: center; padding: 14px 0; }
   .krij.vrij { background: var(--freeBg); }
-  .krij.vrij .stip { background: transparent; border: 1.5px dashed var(--accent); width: 0; }
   .krij.vrij .ktijd { color: var(--accent); }
   .krij.vrij .rijtitel b { color: var(--accent); font-weight: 600; }
   .krij.vrij .rijtitel span { color: var(--secondary); font-weight: 400; }

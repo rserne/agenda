@@ -365,7 +365,7 @@ button.rij:active { background: var(--fill); }
   :root .kiezerlegenda i.druk { background: #D6928B; }
 }
 }
-.dagcel span { font-size: 14px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.dagcel span { font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; }
 .dagcel.weekend span { color: var(--weekendText, var(--secondary)); }
 .dagcel.anders:not(.gevuld) span, .dagcel.voorbij span { color: var(--secondary); font-weight: 400; } /* geen doorzichtigheid meer: die drukte het contrast ver onder de norm */
 .dagcel.vandaag span { width: 26px; height: 26px; border-radius: 13px; display: flex; align-items: center; justify-content: center; background: var(--accent); color: var(--onAccent); font-weight: 700; }
@@ -606,7 +606,7 @@ label.frij:focus-within .flabel { color: var(--accent); }
   .minikal .weekrij .wk { font-size: 10px; font-weight: 500; }
   .minikal .dagcel { height: 28px; max-width: 30px; border-radius: 7px; }
   .minikal { --celBg: var(--zbBg); }
-  .minikal .dagcel span { font-size: 12px; }
+  .minikal .dagcel span { font-size: 11.5px; }
   .minikal .dagcel.vandaag span { width: 22px; height: 22px; border-radius: 11px; }
   .minikal .kiezerlegenda { padding: 8px 6px 0; font-size: 11px; gap: 4px 10px; }
   .minikal .kiezerlegenda span { gap: 5px; }
@@ -762,7 +762,7 @@ label.frij:focus-within .flabel { color: var(--accent); }
   .minikal .weekrij { height: 40px; border-radius: 11px; margin-bottom: 3px; }
   .minikal .weekrij .wk { font-size: 12px; }
   .minikal .dagcel { height: 34px; max-width: 36px; border-radius: 10px; }
-  .minikal .dagcel span { font-size: 15px; }
+  .minikal .dagcel span { font-size: 13.5px; }
   .minikal .dagcel.vandaag span { width: 30px; height: 30px; border-radius: 15px; }
   .minikal .kiezerlegenda { padding: 10px 6px 0; font-size: 13px; gap: 6px 14px; }
   .minikal .kiezerlegenda i { width: 13px; height: 13px; border-radius: 4px; }

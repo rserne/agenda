@@ -612,6 +612,16 @@ label.frij:focus-within .flabel { color: var(--accent); }
   .zblijst button:hover { background: var(--fill); }
   .zblijst button.aan { background: rgb(120 120 128 / 0.18); font-weight: 600; }
   .zbvoet { text-align: left; padding: 0 10px; margin: auto 0 0; font-size: 11px; }
+  /* Kopje Agenda: de bron van de afspraken en een eigen .ics inladen */
+  .zbagenda { border-top: 0; padding-top: 0; }
+  .zbbron { display: flex; align-items: center; gap: 9px; padding: 4px 4px 6px; min-width: 0; }
+  .zbbron .icoon { width: 16px; height: 16px; color: var(--secondary); flex-shrink: 0; }
+  .zbbron > span { display: flex; flex-direction: column; min-width: 0; }
+  .zbbron .t1 { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .zbbron .t2 { font-size: 11px; color: var(--secondary); line-height: 14px; }
+  /* Legenda als smalle balk onderaan het venster, links gelijk met de eerste kolom */
+  body.desktop main.kolom { display: flex; flex-direction: column; min-height: calc(100vh - var(--kopH, 52px)); padding-bottom: 0; }
+  body.desktop main.kolom > .legenda { margin-top: auto; position: sticky; bottom: 0; z-index: 4; justify-content: flex-start; gap: 6px 18px; padding: 24px 2px 14px; background: linear-gradient(to bottom, transparent, var(--deskBg) 14px); }
 
   /* Werkbalk: titel, datum, filter en ‹ Vandaag › op één regel */
   .kop { padding: 0; background: var(--werkbalk); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); border-bottom: 0.5px solid var(--separator); }

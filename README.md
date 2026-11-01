@@ -86,7 +86,7 @@ Open de app in Safari, tik op Delen, Zet op beginscherm. Log in met je Australie
 
 ## Eigen .ics-bestand openen
 
-Onderaan de app (op de desktop in de zijbalk) staat **Eigen .ics openen**. De app leest het bestand in de browser, bewaart het in IndexedDB op dat toestel en toont je echte agenda, zonder Nhost en zonder inloggen. Het bestand wordt nergens naartoe gestuurd. Met **Wissen** gaat de app terug naar de voorbeeldgegevens.
+Onderaan de app (op de desktop in de zijbalk onder **Agenda**) staat **Eigen .ics openen** (desktop: **Eigen agenda inladen**). De app leest het bestand in de browser, bewaart het in IndexedDB op dat toestel en toont je echte agenda, zonder Nhost en zonder inloggen. Het bestand wordt nergens naartoe gestuurd. Met **Wissen** gaat de app terug naar de voorbeeldgegevens.
 
 Zet een echt agenda-bestand nooit in deze repository: die is openbaar.
 

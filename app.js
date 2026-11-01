@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-01-44';
+const APP_VERSIE = '2026-11-01-45';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -125,6 +125,8 @@ const vastText = (n) => (n === 1 ? '1 vast overleg' : `${n} vaste overleggen`);
 const lijn = (d, w = 2.2) => `<svg class="icoon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const vol = (d) => `<svg class="icoon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">${d}</svg>`;
 const I = {
+  inladen: lijn('<path d="M12 15V4M7.5 8.5 12 4l4.5 4.5"/><path d="M5 14v4.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V14"/>', 2),
+  wissen: lijn('<path d="M4.5 7h15M10 11v6M14 11v6M6.5 7l1 12.5h9l1-12.5M9.5 7V4.5h5V7"/>', 2),
   min: lijn('<path d="M5 12h14"/>', 2.4),
   plus: lijn('<path d="M12 5v14M5 12h14"/>', 2.4),
   terug: lijn('<path d="M15 18l-6-6 6-6"/>', 2.6),
@@ -1016,6 +1018,22 @@ function tekenRingen(el, maand) {
 /* ------------------------------------------------------------------ */
 
 let zijMaand = null;
+// Zijbalk: waar de afspraken vandaan komen, en een eigen .ics inladen of wissen
+function agendaSectieHtml() {
+  let bron;
+  if (BESTAND) {
+    const d = new Date(BESTAND.datum);
+    bron = [esc(BESTAND.naam), `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]} · alleen op dit toestel`];
+  } else if (DEMO) bron = ['Voorbeeldgegevens', 'Verzonnen afspraken en namen'];
+  else bron = ['Outlook', DATA.opgehaald ? `Bijgewerkt om ${hhmm(new Date(DATA.opgehaald))}` : 'Via Nhost'];
+  const knoppen = DEMO || BESTAND
+    ? `<button data-actie="ics-openen">${I.inladen}<span>${BESTAND ? 'Ander bestand inladen' : 'Eigen agenda inladen'}</span></button>${BESTAND ? `<button data-actie="ics-wissen">${I.wissen}<span>Wissen</span></button>` : ''}`
+    : '';
+  return `<nav class="zblijst zbagenda" aria-label="Agenda"><h3>Agenda</h3>
+    <div class="zbbron">${I.kalender}<span><span class="t1">${bron[0]}</span><span class="t2">${bron[1]}</span></span></div>
+    ${knoppen}
+  </nav>`;
+}
 function renderZijbalk() {
   const z = $('#zijbalk');
   if (!isDesktop()) { z.innerHTML = ''; return; }
@@ -1024,7 +1042,7 @@ function renderZijbalk() {
   z.innerHTML = `<div class="zbbinnen">
     <div class="minikal">${maandRasterHtml(zijMaand, gekozenMaandag(), 'zijbalk')}</div>
     <nav class="zblijst" aria-label="Weergave"><h3>Weergave</h3>${item('week', I.week, 'Week')}${item('forecast', I.vooruit, 'Vooruitblik')}</nav>
-    ${bronHtml('zbvoet')}
+    ${agendaSectieHtml()}
   </div>`;
   const rasterStart = startOfWeek(zijMaand);
   const ditMaand = zijMaand;

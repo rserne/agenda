@@ -366,7 +366,7 @@ button.rij:active { background: var(--fill); }
 }
 .dagcel span { font-size: 14px; font-weight: 500; font-variant-numeric: tabular-nums; }
 .dagcel.weekend span { color: var(--weekendText, var(--secondary)); }
-.dagcel.anders span { color: var(--secondary); font-weight: 400; } /* geen doorzichtigheid meer: die drukte het contrast ver onder de norm */
+.dagcel.anders span, .dagcel.voorbij span { color: var(--secondary); font-weight: 400; } /* geen doorzichtigheid meer: die drukte het contrast ver onder de norm */
 .dagcel.vandaag span { width: 26px; height: 26px; border-radius: 13px; display: flex; align-items: center; justify-content: center; background: var(--accent); color: var(--onAccent); font-weight: 700; }
 .kiezerlegenda { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 14px 8px 0; color: var(--secondary); font-size: 12px; }
 .kiezerlegenda span { display: flex; align-items: center; gap: 6px; white-space: nowrap; }

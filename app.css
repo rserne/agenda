@@ -368,9 +368,10 @@ button.rij:active { opacity: 0.6; }
 .dsoort .her { display: flex; align-items: center; gap: 4px; color: var(--secondary); font-weight: 500; }
 .dsoort .her .icoon { width: 13px; height: 13px; }
 .dtitel { font-size: 24px; font-weight: 700; letter-spacing: -0.3px; line-height: 29px; margin: 0 0 4px; overflow-wrap: anywhere; }
-.dmeta { color: var(--meta); font-size: 16px; }
-.dvorm { display: flex; align-items: center; gap: 6px; margin-top: 2px; }
-.dvorm .icoon { width: 16px; height: 16px; color: var(--secondary); }
+/* Dag, tijd, vorm en overlap: gewone regels met dezelfde hoogte, zonder iconen ertussen */
+.dmeta { color: var(--meta); font-size: 16px; line-height: 22px; }
+.dmeta > div + div { margin-top: 1px; }
+.dmeta .doverlap { color: var(--overlap); font-weight: 500; margin-top: 6px; }
 .dbadges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .dbadges span { background: var(--badgeBg); color: var(--badgeText); border-radius: 7px; padding: 3px 9px; font-size: 13px; font-weight: 600; }
 .sectie h3 { margin: 0 0 6px; padding: 0 16px; color: var(--secondary); font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.2px; }

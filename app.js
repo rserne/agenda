@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-01-16';
+const APP_VERSIE = '2026-11-01-17';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -129,10 +129,8 @@ const I = {
   verder: lijn('<path d="M9 18l6-6-6-6"/>', 2.6),
   kalender: lijn('<rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 17.5h.01M12 17.5h.01" stroke-width="2.6"/>', 1.8),
   speld: vol('<path d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7zm0 9.6a2.6 2.6 0 1 1 0-5.2 2.6 2.6 0 0 1 0 5.2z"/>'),
-  speldLijn: lijn('<path d="M12 21.5s-6.5-7.2-6.5-12.2a6.5 6.5 0 0 1 13 0c0 5-6.5 12.2-6.5 12.2z"/><circle cx="12" cy="9.3" r="2.3"/>', 1.8),
   herhaal: lijn('<path d="M17 2.5l3.5 3.5L17 9.5"/><path d="M3.5 11V9.5A3.5 3.5 0 0 1 7 6h13.5"/><path d="M7 21.5L3.5 18 7 14.5"/><path d="M20.5 13v1.5A3.5 3.5 0 0 1 17 18H3.5"/>', 2),
   video: vol('<rect x="2" y="6" width="14" height="12" rx="3"/><path d="M17.5 10.2l4.5-2.7v9l-4.5-2.7z"/>'),
-  videoLijn: lijn('<rect x="2.5" y="6.5" width="13" height="11" rx="2.5"/><path d="M15.5 10.5l5-3v9l-5-3"/>', 1.8),
   kruis: lijn('<path d="M18 6L6 18M6 6l12 12"/>', 2.4),
   puntjes: vol('<circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>'),
   mail: lijn('<rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="M3.5 7l8.5 6 8.5-6"/>', 1.9),
@@ -566,7 +564,7 @@ function overlapVan(lijst) {
     if (!andere.length) return;
     const eerste = andere[0];
     const tijd = eerste.start > e.start ? ` om ${hhmm(eerste.start)}` : '';
-    tekst.set(e, { lang: `Overlap met ${naam(eerste)}${tijd}${andere.length > 1 ? ` en nog ${andere.length - 1}` : ''}`, tijd: tijd ? hhmm(eerste.start) : '' });
+    tekst.set(e, { lang: `Overlap met ${naam(eerste)}${tijd}${andere.length > 1 ? ` en nog ${andere.length - 1}` : ''}`, tijd: tijd ? hhmm(eerste.start) : '', andere, start: e.start });
   });
   return tekst;
 }
@@ -1074,6 +1072,11 @@ function openDetail(e) {
   const kindKleur = e.kind === 'ext' ? 'var(--externDot)' : e.kind === 'int' ? 'var(--internDot)' : 'var(--secondary)';
   const rec = recurrenceText(e);
   const dateLine = cap(`${DAYS_LONG[e.start.getDay()]} ${e.start.getDate()} ${MONTHS_LONG[e.start.getMonth()]}`);
+  // Overlap: dezelfde regel als in de lijst, maar hier met alle afspraken erbij
+  const ov = overlapVan(eventsForDay([...zichtbaar.values()], e.start));
+  const o = ov.get(e);
+  const ovNamen = o ? o.andere.map((x) => `${x.title || 'een afspraak'}${x.start > e.start ? ` om ${hhmm(x.start)}` : ''}`) : [];
+  const ovLine = o ? `Overlap met ${ovNamen.length > 1 ? `${ovNamen.slice(0, -1).join(', ')} en ${ovNamen[ovNamen.length - 1]}` : ovNamen[0]}` : '';
   const timeLine = e.allDay
     ? (Math.round((e.end - e.start) / 864e5) > 1 ? `Hele dag, t/m ${addDays(e.end, -1).getDate()} ${MONTHS_LONG[addDays(e.end, -1).getMonth()]}` : 'Hele dag')
     : `${hhmm(e.start)} – ${hhmm(e.end)} · ${durationText(e.start, e.end)}`;
@@ -1163,9 +1166,12 @@ function openDetail(e) {
         <div class="dkop">
           <div class="dsoort"><span class="stip ${e.kind}"></span><span style="color:${kindKleur}">${kindLabel}</span>${rec ? `<span class="her">${I.herhaal}${esc(rec)}</span>` : ''}</div>
           <h2 class="dtitel">${esc(e.title || '(geen titel)')}</h2>
-          <div class="dmeta">${dateLine}</div>
-          <div class="dmeta num">${timeLine}</div>
-          ${e.mode !== 'none' ? `<div class="dvorm">${e.mode === 'online' ? I.videoLijn : I.speldLijn}<span class="dmeta">${MODE_LABEL[e.mode]}</span></div>` : ''}
+          <div class="dmeta">
+            <div>${dateLine}</div>
+            <div class="num">${timeLine}</div>
+            ${e.mode !== 'none' ? `<div>${MODE_LABEL[e.mode]}</div>` : ''}
+            ${ovLine ? `<div class="doverlap">${esc(ovLine)}</div>` : ''}
+          </div>
           ${e.external ? `<div class="dbadges">${e.orgs.map((o) => `<span>${esc(o)}</span>`).join('')}</div>` : ''}
         </div>
         ${plekken.length ? `<section class="sectie"><h3>Locatie</h3><div class="kaart">${plekken.join('')}</div></section>` : ''}

@@ -28,9 +28,11 @@
   --badgeBg: rgba(208, 79, 66, 0.14);
   --badgeText: #B0372C; /* 5,1:1 op het badgevlak */
   --avatarGrey: #8E8E93;
-  --glass: rgba(255, 255, 255, 0.72);
-  --glassBorder: rgba(0, 0, 0, 0.08);
-  --glassShadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+  /* Glas: doorzichtiger, sterker vervaagd en met een lichte rand bovenin, zoals Liquid Glass van iOS */
+  --glass: linear-gradient(180deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0.4));
+  --glassBorder: rgba(255, 255, 255, 0.55);
+  --glassShadow: 0 6px 24px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.85), inset 0 -1px 0 rgba(0, 0, 0, 0.03);
+  --glassBlur: blur(32px) saturate(210%) brightness(1.04);
   --selBg: rgba(44, 134, 184, 0.14);
   --selText: #1F72A0;
   --tabText: rgba(60, 60, 67, 0.85);
@@ -91,9 +93,10 @@
     --badgeBg: rgba(235, 132, 121, 0.2);
     --badgeText: #EB8479;
     --avatarGrey: #3A3A3C;
-    --glass: rgba(60, 60, 64, 0.55);
-    --glassBorder: rgba(255, 255, 255, 0.14);
-    --glassShadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+    --glass: linear-gradient(180deg, rgba(80, 80, 86, 0.42), rgba(50, 50, 54, 0.32));
+    --glassBorder: rgba(255, 255, 255, 0.16);
+    --glassShadow: 0 6px 24px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.14), inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+    --glassBlur: blur(32px) saturate(190%);
     --selBg: rgba(134, 195, 225, 0.24);
     --selText: #86C3E1;
     --tabText: rgba(235, 235, 245, 0.8);
@@ -145,8 +148,8 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 /* Glas: alleen voor navigatie (kop-capsule, schakelaar, tabbalk) */
 .glas {
   background: var(--glass);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: var(--glassBlur);
+  backdrop-filter: var(--glassBlur);
   border: 0.5px solid var(--glassBorder);
   box-shadow: var(--glassShadow);
 }
@@ -828,10 +831,10 @@ label.frij:focus-within .flabel { color: var(--accent); }
 
   /* Werkbalk: glazen pillen */
   .kop .kolom { height: 64px; }
-  .kop #schakelaar { height: 42px; padding: 4px; border-radius: 21px; background: var(--glass); border: 0.5px solid var(--glassBorder); box-shadow: var(--glassShadow); -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%); }
+  .kop #schakelaar { height: 42px; padding: 4px; border-radius: 21px; background: var(--glass); border: 0.5px solid var(--glassBorder); box-shadow: var(--glassShadow); -webkit-backdrop-filter: var(--glassBlur); backdrop-filter: var(--glassBlur); }
   .kop #schakelaar button { padding: 0 18px; border-radius: 17px; font-size: 15px; font-weight: 600; color: var(--tabText); }
   .kop #schakelaar button.aan { background: var(--selBg); color: var(--selText); font-weight: 700; box-shadow: none; }
-  #capsule { height: 42px; border-radius: 21px; padding: 0 3px; background: var(--glass); border: 0.5px solid var(--glassBorder); box-shadow: var(--glassShadow); -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%); }
+  #capsule { height: 42px; border-radius: 21px; padding: 0 3px; background: var(--glass); border: 0.5px solid var(--glassBorder); box-shadow: var(--glassShadow); -webkit-backdrop-filter: var(--glassBlur); backdrop-filter: var(--glassBlur); }
   #capsule button, #capsule button[data-nav="0"] { width: 40px; height: 40px; padding: 0; border: 0; border-radius: 20px; }
   #capsule button[data-nav="0"] .icoon { display: block; }
   #capsule .vandaagtekst { display: none; }

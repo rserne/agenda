@@ -86,7 +86,7 @@ Open de app in Safari, tik op Delen, Zet op beginscherm. Log in met je Australie
 
 ## Eigen .ics-bestand openen
 
-Onder **Agenda** staat **Eigen agenda inladen**: op de telefoon en tablet in de weekkiezer (tik op de titel), op de desktop in de zijbalk. De app leest het bestand in de browser, bewaart het in IndexedDB op dat toestel en toont je echte agenda, zonder Nhost en zonder inloggen. Het bestand wordt nergens naartoe gestuurd. Met **Wissen** gaat de app terug naar de voorbeeldgegevens.
+Onder **Agenda** staat **Eigen agenda inladen**: op de telefoon en tablet in de weekkiezer (tik op de titel), op de desktop in de zijbalk. De app leest het bestand in de browser, bewaart het in IndexedDB op dat toestel en toont je echte agenda, zonder Nhost en zonder inloggen. Het bestand wordt nergens naartoe gestuurd. Met **Wissen** gaat de app terug naar de voorbeeldgegevens. Het inlezen van een groot bestand kost op een telefoon enkele seconden. Daarom bewaart de app de uitgerolde weken (een halfjaar terug en vooruit) ook in IndexedDB: bij het opstarten staan die meteen in beeld, en het bestand zelf wordt pas daarna op de achtergrond ingelezen voor weken daarbuiten.
 
 Zet een echt agenda-bestand nooit in deze repository: die is openbaar.
 
@@ -112,4 +112,4 @@ python3 -m http.server 8080   # en open http://localhost:8080/
 
 ## Nieuwe versie online zetten
 
-Hoog `APP_VERSIE` in `app.js` en `VERSION` in `sw.js` op, commit en push. GitHub Pages en de Nhost-functie werken zichzelf bij. Wie de app open heeft, krijgt onderin de melding 'Nieuwe versie beschikbaar' met **Vernieuwen**: de app leest kort na het openen, bij terugkomen en elk half uur `APP_VERSIE` uit het begin van `app.js` op de server en vergelijkt die met de versie die draait. GitHub Pages kan een nieuwe versie tot een paar minuten na de push nog oud uitleveren.
+Hoog `APP_VERSIE` in `app.js` en `VERSION` in `sw.js` op, commit en push. GitHub Pages en de Nhost-functie werken zichzelf bij. Wie de app open heeft, krijgt onderin de melding 'Nieuwe versie beschikbaar' met **Vernieuwen**: de app leest kort na het openen, bij terugkomen en elk half uur `APP_VERSIE` uit het begin van `app.js` op de server en vergelijkt die met de versie die draait. GitHub Pages kan een nieuwe versie tot een paar minuten na de push nog oud uitleveren. De service worker geeft de app-bestanden meteen uit de cache (snelle start, ook zonder bereik) en haalt ze op de achtergrond opnieuw op; **Vernieuwen** leegt eerst die cache.

@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-02-2';
+const APP_VERSIE = '2026-11-02-3';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -283,25 +283,58 @@ function laadIcalCode() {
   return _icalKlaar;
 }
 
-async function gebruikBestand(b) {
+// Het bestand inlezen kost op een telefoon enkele seconden (1 à 2 MB tekst met herhaalreeksen). Daarom bewaren we
+// de uitgerolde weken in IndexedDB ('icsweken'). Bij het opstarten staan die meteen in beeld; het bestand zelf
+// lezen we pas daarna op de achtergrond in, voor weken die nog niet bewaard zijn.
+async function leesBestand(b) {
   const code = await laadIcalCode();
-  BESTAND = {
-    naam: b.naam, datum: b.datum, hintVoor: code.hintVoor, omzetter: code.omzetter,
-    reeksen: code.omzetter.voorbereid(b.tekst),
-    kennis: code.leerUitIcal(b.tekst, OWN_DOMAINS_EXTRA),
-  };
+  return { hintVoor: code.hintVoor, omzetter: code.omzetter, reeksen: code.omzetter.voorbereid(b.tekst), kennis: code.leerUitIcal(b.tekst, OWN_DOMAINS_EXTRA) };
+}
+async function gebruikBestand(b) {
+  BESTAND = { naam: b.naam, datum: b.datum, ...(await leesBestand(b)) };
+  BESTAND.klaar = Promise.resolve();
   DATA.ruw.clear(); DATA.weken.clear();
   DATA.me = null; DATA.ownDomains = BESTAND.kennis.eigenDomeinen; DATA.opgehaald = Date.now();
 }
-function laadUitBestand(van, tot) {
-  for (let w = startOfWeek(van); w < tot; w = addDays(w, 7)) {
-    if (DATA.weken.has(w.getTime())) continue;
+// Snelle start: weken uit de bewaarde kopie, het bestand later
+function startUitBewaard(b, kopie) {
+  BESTAND = { naam: b.naam, datum: b.datum };
+  kopie.events.forEach((e) => DATA.ruw.set(e.id, e));
+  kopie.weken.forEach((w) => DATA.weken.add(w));
+  DATA.me = null; DATA.ownDomains = kopie.eigenDomeinen || []; DATA.opgehaald = Date.now();
+  const doel = BESTAND;
+  BESTAND.klaar = new Promise((ok) => setTimeout(ok, 1500)) // eerst tekenen, dan pas het zware werk
+    .then(() => leesBestand(b))
+    .then((r) => { if (BESTAND === doel) Object.assign(BESTAND, r); })
+    .catch(() => {});
+}
+let _bewaarTimer = null;
+function bewaarWeken() {
+  clearTimeout(_bewaarTimer);
+  _bewaarTimer = setTimeout(() => {
+    if (!BESTAND) return;
+    const t = startOfWeek(vandaag()).getTime();
+    const grens = BEWAAR_WEKEN * 7 * 864e5;
+    const weken = [...DATA.weken].filter((w) => Math.abs(w - t) < grens);
+    const events = [...DATA.ruw.values()].filter((e) => Math.abs(new Date(e.start).getTime() - t) < grens);
+    IDB.set('icsweken', { datum: BESTAND.datum, weken, events, eigenDomeinen: DATA.ownDomains }).catch(() => {});
+  }, 800);
+}
+async function laadUitBestand(van, tot) {
+  const nodig = [];
+  for (let w = startOfWeek(van); w < tot; w = addDays(w, 7)) if (!DATA.weken.has(w.getTime())) nodig.push(w);
+  if (!nodig.length) return;
+  await BESTAND.klaar;
+  if (!BESTAND.reeksen) return; // inlezen mislukt: houden wat er is
+  nodig.forEach((w) => {
+    if (DATA.weken.has(w.getTime())) return;
     BESTAND.omzetter.uitrollen(BESTAND.reeksen, w, addDays(w, 7)).forEach((e) => {
       const hint = e.organizer || e.attendees.length ? null : BESTAND.hintVoor(e, BESTAND.kennis, OWN_ORG_NAME);
       DATA.ruw.set(e.id, hint ? { ...e, hint } : e);
     });
     DATA.weken.add(w.getTime());
-  }
+  });
+  bewaarWeken();
 }
 async function openBestand(file) {
   if (!file) return;
@@ -314,6 +347,7 @@ async function openBestand(file) {
 }
 async function vergeetBestand() {
   await IDB.del('ics').catch(() => {});
+  await IDB.del('icsweken').catch(() => {});
   BESTAND = null;
   DATA.ruw.clear(); DATA.weken.clear();
   laad();
@@ -793,7 +827,8 @@ function render() {
   const events = afsprakenTussen(start, eind);
   zichtbaar.clear();
   events.forEach((e) => zichtbaar.set(e.id, e));
-  const geenData = !lokaal() && !DATA.weken.has(startOfWeek(start).getTime());
+  // Eigen bestand nog op de achtergrond aan het inlezen en deze week nog niet bewaard: ook 'laden' tonen
+  const geenData = (!lokaal() || (BESTAND && !BESTAND.reeksen)) && !DATA.weken.has(startOfWeek(start).getTime());
   if (geenData && ST.laden) { main.innerHTML = '<div class="laden">Agenda laden…</div>'; return; }
   if (geenData && ST.fout) { main.innerHTML = meldingHtml('Agenda niet beschikbaar', ST.fout, 'Opnieuw proberen'); $('#inhoud .knop').onclick = () => laad({ vers: true }); return; }
   // De agenda kies je in de weekkiezer (tik op de titel) of op de desktop in de zijbalk
@@ -1562,8 +1597,12 @@ if (PARAMS.has('uitloggen')) uitloggen();
   // Een eerder geopend .ics-bestand gaat voor (behalve met ?echt of ?demo)
   IDB.get('ics').catch(() => null).then(async (b) => {
     if (b && b.tekst && !PARAMS.has('echt') && !PARAMS.has('demo')) {
-      $('#inhoud').innerHTML = '<div class="laden">Agenda-bestand inlezen…</div>';
-      try { await gebruikBestand(b); } catch (e) { BESTAND = null; }
+      const kopie = await IDB.get('icsweken').catch(() => null);
+      if (kopie && kopie.datum === b.datum && kopie.weken && kopie.weken.length) startUitBewaard(b, kopie);
+      else {
+        $('#inhoud').innerHTML = '<div class="laden">Agenda-bestand inlezen…</div>';
+        try { await gebruikBestand(b); } catch (e) { BESTAND = null; }
+      }
     }
     if (!lokaal() && !SES.refresh) { ST.login = true; render(); return; }
     // Eerst tonen wat er bewaard is, daarna de nieuwe stand ophalen
@@ -1583,7 +1622,11 @@ const nieuwer = (a, b) => { const x = versieDelen(a), y = versieDelen(b); for (l
   const melding = $('#updatemelding');
   let gemeld = false, laatst = 0;
   const toon = () => { if (gemeld) return; gemeld = true; melding.hidden = false; requestAnimationFrame(() => melding.classList.add('open')); };
-  $('#vernieuwknop').addEventListener('click', () => location.reload());
+  // Vernieuwen: eerst de bewaarde app-bestanden weg, dan komt alles vers van de server
+  $('#vernieuwknop').addEventListener('click', async () => {
+    try { const ks = await caches.keys(); await Promise.all(ks.filter((k) => k.startsWith('agenda-')).map((k) => caches.delete(k))); } catch (e) { /* geen cache */ }
+    location.reload();
+  });
   $('#laterknop').addEventListener('click', () => { melding.classList.remove('open'); setTimeout(() => { melding.hidden = true; }, 250); });
   const kijk = async () => {
     if (gemeld || Date.now() - laatst < 60 * 1000) return;

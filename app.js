@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-02-1';
+const APP_VERSIE = '2026-11-02-2';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -544,25 +544,27 @@ function busyHoursByDay(list) {
 }
 
 // Overlap: alleen de afspraak die je als eerste ingaat krijgt een waarschuwing, want daar moet je misschien
-// eerder weg. De afspraak die later begint, noemen we niet. Beginnen ze tegelijk, dan geldt het voor allebei.
+// eerder weg. De afspraak die later begint, noemen we niet. Beginnen er meer tegelijk, dan noemt alleen de
+// bovenste in de lijst de overlap; in het detailscherm staat hij wel bij elk van die afspraken.
 // Hele dagen en afspraken op 'vrij' tellen niet mee; vaste overleggen die bij Opvallend verborgen zijn wel.
 function overlapVan(lijst) {
   const t = lijst.filter((e) => !e.allDay && !e.free && e.end > e.start).sort((a, b) => a.start - b.start || b.end - a.end);
   const tekst = new Map(); // afspraak → waarschuwing
   const naam = (x) => x.title || 'een afspraak';
-  t.forEach((e) => {
+  t.forEach((e, i) => {
     const tegelijk = t.filter((x) => x !== e && x.start.getTime() === e.start.getTime());
+    const inLijst = !t.slice(0, i).some((x) => x.start.getTime() === e.start.getTime());
     const later = t.filter((x) => x.start > e.start && x.start < e.end);
     // Eerst wat tegelijk begint, dan wat later begint (met de tijd erbij: dan moet je misschien eerder weg)
     const andere = [...tegelijk, ...later];
     if (!andere.length) return;
     const eerste = andere[0];
     const tijd = eerste.start > e.start ? ` om ${hhmm(eerste.start)}` : '';
-    tekst.set(e, { lang: `Overlap met ${naam(eerste)}${tijd}${andere.length > 1 ? ` en nog ${andere.length - 1}` : ''}`, tijd: tijd ? hhmm(eerste.start) : '', andere, start: e.start });
+    tekst.set(e, { lang: `Overlap met ${naam(eerste)}${tijd}${andere.length > 1 ? ` en nog ${andere.length - 1}` : ''}`, tijd: tijd ? hhmm(eerste.start) : '', andere, start: e.start, inLijst });
   });
   return tekst;
 }
-const overlapt = (e, ov) => !!(ov && ov.has(e));
+const overlapt = (e, ov) => !!(ov && ov.has(e) && ov.get(e).inLijst);
 const overlapLabel = (e, ov) => (overlapt(e, ov) ? `<span class="overlaplabel">${esc(ov.get(e).lang)}</span>` : '');
 
 /* ------------------------------------------------------------------ */

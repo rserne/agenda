@@ -52,7 +52,7 @@ Het detailscherm toont dan 'Afgeleid uit de Teams-uitnodiging' of 'Afgeleid uit 
 
 Je eigen domein komt uit `EIGEN_DOMEINEN` en `MIJN_EMAIL` bij Nhost. Staat daar niets, dan neemt de app het domein dat het vaakst onder de deelnemers voorkomt.
 
-**Overlap.** Lopen twee afspraken door elkaar, dan krijgt de afspraak die je als eerste ingaat een oranje regel, zoals 'Overlap met Weekstart om 10:30': daar moet je misschien eerder weg. De afspraak die later begint, krijgt niets. Beginnen ze tegelijk, dan staat bij allebei 'Overlap met …', zonder tijd. Vaste overleggen tellen mee, ook als Opvallend ze verbergt. In de Vooruitblik krijgt de tegel een oranje rand.
+**Overlap.** Lopen twee afspraken door elkaar, dan krijgt de afspraak die je als eerste ingaat een oranje regel, zoals 'Overlap met Weekstart om 10:30': daar moet je misschien eerder weg. De afspraak die later begint, krijgt niets. Beginnen ze tegelijk, dan staat 'Overlap met …' (zonder tijd) alleen bij de bovenste in de lijst; in het detailscherm staat het bij allebei. Vaste overleggen tellen mee, ook als Opvallend ze verbergt. In de Vooruitblik krijgt de tegel een oranje rand.
 
 **Vrij** toont de gaten tussen je afspraken, op werkdagen van 8:00 tot 18:00 en vanaf een half uur. Hele dagen, afgezegde afspraken en afspraken die op 'vrij' staan, tellen niet als bezet.
 

@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-01-62';
+const APP_VERSIE = '2026-11-02-1';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -125,7 +125,6 @@ const vastText = (n) => (n === 1 ? '1 vast overleg' : `${n} vaste overleggen`);
 const lijn = (d, w = 2.2) => `<svg class="icoon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const vol = (d) => `<svg class="icoon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">${d}</svg>`;
 const I = {
-  prik: lijn('<rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M8.5 14.5l2 2 4.5-4.5" stroke-width="2.4"/>', 1.8),
   inladen: lijn('<path d="M12 15V4M7.5 8.5 12 4l4.5 4.5"/><path d="M5 14v4.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V14"/>', 2),
   wissen: lijn('<path d="M4.5 7h15M10 11v6M14 11v6M6.5 7l1 12.5h9l1-12.5M9.5 7V4.5h5V7"/>', 2),
   min: lijn('<path d="M5 12h14"/>', 2.4),
@@ -970,7 +969,7 @@ function openWeekkiezer() {
     const greep = el.querySelector('.kiezergreep');
     [...greep.children].slice(2).forEach((n) => el.appendChild(n));
     // Onder de kalender: welke agenda je ziet, en een eigen agenda inladen (zoals in de zijbalk op de desktop)
-    el.insertAdjacentHTML('beforeend', agendaSectieHtml() + prikSectieHtml());
+    el.insertAdjacentHTML('beforeend', agendaSectieHtml());
     maakVeegbaar(el, greep, p.sluit);
     const rasterStart = startOfWeek(maand);
     const ditMaand = maand;
@@ -988,8 +987,6 @@ function openWeekkiezer() {
     }
     const rij = ev.target.closest('.weekrij');
     if (rij) { p.sluit(); kiesWeek(new Date(Number(rij.dataset.ma))); return; }
-    const peiling = ev.target.closest('[data-peiling]');
-    if (peiling) { p.sluit(); openPeiling(peiling.dataset.peiling); return; }
     const ics = ev.target.closest('[data-actie^="ics-"]');
     if (ics) {
       if (ics.dataset.actie === 'ics-openen') { $('#icsinvoer').click(); p.sluit(); }
@@ -1044,7 +1041,6 @@ function renderZijbalk() {
     <div class="minikal">${maandRasterHtml(zijMaand, gekozenMaandag(), 'zijbalk')}</div>
     <nav class="zblijst zbweergave" aria-label="Weergave"><h3>Weergave</h3>${item('week', I.week, 'Week')}${item('forecast', I.vooruit, 'Vooruitblik')}</nav>
     ${agendaSectieHtml()}
-    ${prikSectieHtml()}
   </div>`;
   const rasterStart = startOfWeek(zijMaand);
   const ditMaand = zijMaand;
@@ -1296,55 +1292,8 @@ function downloadIcs(v) {
 
 // dag: de gekozen dag (of null: eerste werkdag met ruimte).
 // blok: het vrije blok waarop is geklikt ({ start, end } in ms). Dan blijven dag en tijd binnen dat blok.
-// Voorstel voor de datumprikker: zoveel mogelijk verschillende dagen, gelijkmatig verspreid over de periode,
-// om en om ochtend en middag, op hele of halve uren, en liefst met wat lucht rond andere afspraken.
-function voorstelTijden(dagen, duur, aantal) {
-  const metRuimte = dagen.filter((g) => g.tijden.length);
-  if (!metRuimte.length) return [];
-  const score = (g, t) => {
-    const a = t, b = t + duur * 6e4;
-    let s = 0;
-    const d = new Date(t);
-    if (d.getMinutes() === 0) s += 2; else if (d.getMinutes() === 30) s += 1;
-    const krap = g.lijst.some((e) => !e.allDay && !e.free && (Math.abs(e.end.getTime() - a) < 15 * 6e4 || Math.abs(e.start.getTime() - b) < 15 * 6e4));
-    if (!krap) s += 3;
-    if (d.getHours() < 9) s -= 5; // vroeg in de ochtend liever niet
-    else if (d.getHours() >= 16) s -= 4; // en ook niet aan het eind van de dag
-    if (d.getHours() === 12) s -= 1; // lunch
-    return s;
-  };
-  // Telkens de beste tijd kiezen, met strafpunten voor een dag die al een tijd heeft of ernaast ligt,
-  // en een bonus voor afstand tot de al gekozen dagen en voor een evenwicht tussen ochtend en middag
-  const kand = [];
-  metRuimte.forEach((g, di) => g.tijden.forEach((t) => kand.push({ g, di, t, s: score(g, t) })));
-  const gekozen = [], bezet = [];
-  let ochtend = 0, middag = 0;
-  while (gekozen.length < aantal) {
-    let best = null, bestS = -Infinity;
-    kand.forEach((c) => {
-      if (gekozen.some((x) => Math.abs(x - c.t) < duur * 6e4)) return;
-      let w = c.s;
-      const zelfde = bezet.filter((d) => d === c.di).length;
-      w -= zelfde * 8;
-      if (bezet.length) {
-        const afstand = Math.min(...bezet.map((d) => Math.abs(d - c.di)));
-        w += Math.min(afstand, 4) * 1.2;
-        if (afstand === 1) w -= 3;
-      }
-      const isOchtend = new Date(c.t).getHours() < 12;
-      if ((isOchtend && ochtend <= middag) || (!isOchtend && middag <= ochtend)) w += 1.5;
-      if (w > bestS) { bestS = w; best = c; }
-    });
-    if (!best) break;
-    gekozen.push(best.t); bezet.push(best.di);
-    if (new Date(best.t).getHours() < 12) ochtend++; else middag++;
-  }
-  return gekozen.sort((a, b) => a - b);
-}
-
-async function openNieuw({ dag = null, blok = null, prik = false } = {}) {
-  // prik: datumprikker in plaats van één afspraak; keuzes: de begintijden die genodigden voorgelegd krijgen
-  const v = { titel: '', locatie: '', deelnemers: '', notitie: '', duur: 60, start: null, eigen: false, dag: null, blok, prik: !!prik, keuzes: new Set() };
+async function openNieuw({ dag = null, blok = null } = {}) {
+  const v = { titel: '', locatie: '', deelnemers: '', notitie: '', duur: 60, start: null, eigen: false, dag: null, blok };
   if (blok) {
     v.dag = startOfDay(new Date(blok.start));
     v.max = Math.floor((blok.end - blok.start) / 9e5) * 15; // duur hoogstens het hele blok, in kwartieren
@@ -1363,16 +1312,13 @@ async function openNieuw({ dag = null, blok = null, prik = false } = {}) {
   el.innerHTML = `<div class="detailgreep"><div class="greep"></div>
       <div class="detailnav"><button class="rond glas" data-actie="sluit" aria-label="Sluiten">${I.kruis}</button></div></div>
     <div class="detailinhoud">
-      <div class="dkop"><h2 class="dtitel" id="nkop">Nieuwe afspraak</h2></div>
-      <div class="soortkeuze" role="tablist" aria-label="Soort">
-        <button data-soort="afspraak" role="tab">Afspraak</button><button data-soort="prik" role="tab">Datumprikker</button>
-      </div>
+      <div class="dkop"><h2 class="dtitel">Nieuwe afspraak</h2></div>
       <div class="formkaart">
         <label class="frij"><span class="flabel">Onderwerp</span><input name="titel" placeholder="Waar gaat het over?" autocomplete="off" enterkeyhint="next"></label>
         <label class="frij"><span class="flabel">Locatie</span><input name="locatie" placeholder="Ruimte, adres of Teams" autocomplete="off" enterkeyhint="next"></label>
       </div>
       <div class="formkaart">
-        <div class="frij alleenafspraak"><span class="flabel">Dag</span>${blok
+        <div class="frij"><span class="flabel">Dag</span>${blok
           ? `<span class="fwaarde"><span>${dagTekst(v.dag)}</span><span class="fsub num">Vrij ${hhmm(new Date(blok.start))} – ${hhmm(new Date(blok.end))}</span></span>`
           : `<span class="fwaarde dagkeuze">
               <button class="mini" data-dag="-1" aria-label="Dag eerder">${I.terug}</button>
@@ -1382,25 +1328,17 @@ async function openNieuw({ dag = null, blok = null, prik = false } = {}) {
         <div class="frij"><span class="flabel">Duur</span><span class="fwaarde stapper">
           <button class="mini" data-stap="-15" aria-label="Korter">${I.min}</button><span id="nduur" class="num" aria-live="polite"></span><button class="mini" data-stap="15" aria-label="Langer">${I.plus}</button>
         </span></div>
-        <div class="frij kolom"><span class="flabel" id="nbegintijd">Begintijd</span><div id="ntijden"></div></div>
+        <div class="frij kolom"><span class="flabel">Begintijd</span><div id="ntijden"></div></div>
       </div>
       <div class="formkaart">
-        <label class="frij alleenafspraak"><span class="flabel">Deelnemers</span><input name="deelnemers" type="text" inputmode="email" placeholder="E-mailadressen" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+        <label class="frij"><span class="flabel">Deelnemers</span><input name="deelnemers" type="text" inputmode="email" placeholder="E-mailadressen" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
         <label class="frij boven"><span class="flabel">Notitie</span><textarea name="notitie" rows="3" placeholder="Optioneel"></textarea></label>
       </div>
       <div class="dvoet">
         <div class="nsamenvatting" id="nsamen"></div>
-        <div class="formkaart priklogin alleenprik" hidden>
-          <div class="frij"><span class="fsub">Log in met je account bij Nhost om een peiling te maken.</span></div>
-          <label class="frij"><span class="flabel">E-mail</span><input name="pemail" type="email" autocomplete="username" autocapitalize="off" spellcheck="false"></label>
-          <label class="frij"><span class="flabel">Wachtwoord</span><input name="pww" type="password" autocomplete="current-password"></label>
-        </div>
-        <div class="fout alleenprik" id="nprikfout" hidden></div>
-        <a class="groteknop vol alleenafspraak" id="noutlook" target="_blank" rel="noopener">${I.extern}Verder in Outlook</a>
-        <button class="groteknop alleenafspraak" id="nics">${I.kalender}Downloaden als .ics</button>
-        <button class="groteknop vol alleenprik" id="nprik">${I.prik}Peiling maken</button>
-        <p class="voetnoot alleenafspraak">Deze app leest je agenda alleen. Outlook opent met alles ingevuld; daar sla je de afspraak op en verstuur je de uitnodiging.</p>
-        <p class="voetnoot alleenprik">Genodigden kiezen via een link, zonder account. Ze zien alleen deze tijden, niets van je agenda.</p>
+        <a class="groteknop vol" id="noutlook" target="_blank" rel="noopener">${I.extern}Verder in Outlook</a>
+        <button class="groteknop" id="nics">${I.kalender}Downloaden als .ics</button>
+        <p class="voetnoot">Deze app leest je agenda alleen. Outlook opent met alles ingevuld; daar sla je de afspraak op en verstuur je de uitnodiging.</p>
       </div>
     </div>`;
 
@@ -1410,23 +1348,7 @@ async function openNieuw({ dag = null, blok = null, prik = false } = {}) {
     $('[data-stap="-15"]', el).disabled = v.duur <= 15;
     $('[data-stap="15"]', el).disabled = v.duur >= v.max;
   };
-  const tekenSoort = () => {
-    el.classList.toggle('prik', v.prik);
-    $('#nkop', el).textContent = v.prik ? 'Datumprikker' : 'Nieuwe afspraak';
-    $('#nbegintijd', el).textContent = v.prik ? 'Tijden om uit te kiezen' : 'Begintijd';
-    el.querySelectorAll('[data-soort]').forEach((b) => { const aan = (b.dataset.soort === 'prik') === v.prik; b.classList.toggle('aan', aan); b.setAttribute('aria-selected', String(aan)); });
-  };
   const tekenSamen = () => {
-    if (v.prik) {
-      // Datumprikker: de gekozen tijden als lijstje, elk weg te tikken
-      const k = [...v.keuzes].sort((a, b) => a - b);
-      $('#nsamen', el).innerHTML = k.length
-        ? `<div>${k.length === 1 ? '1 tijd' : `${k.length} tijden`} om uit te kiezen</div><div class="chips gekozen">${k.map((t) => `<button class="chip keuze num" data-weg="${t}" aria-label="${esc(kortMoment(t))} weghalen">${esc(kortMoment(t))}<span aria-hidden="true">×</span></button>`).join('')}</div>`
-        : '<div class="leeg">Tik een of meer tijden aan, ook op verschillende dagen</div>';
-      $('#nprik', el).disabled = k.length === 0;
-      $('.priklogin', el).hidden = ingelogd();
-      return;
-    }
     const ok = v.start != null;
     const link = $('#noutlook', el);
     link.classList.toggle('uit', !ok);
@@ -1441,53 +1363,8 @@ async function openNieuw({ dag = null, blok = null, prik = false } = {}) {
     }
     $('#nsamen', el).innerHTML = `<div class="${ok ? '' : 'leeg'}">${esc(tekst)}</div>${ov}`;
   };
-  const chip = (t) => `<button class="chip num${(v.prik ? v.keuzes.has(t) : !v.eigen && t === v.start) ? ' aan' : ''}" data-start="${t}"${v.prik ? ` aria-pressed="${v.keuzes.has(t)}"` : ''}>${hhmm(new Date(t))}</button>`;
-  // Datumprikker: de werkdagen van de komende twee weken onder elkaar, per dag één rij begintijden.
-  // Het scherm begint met een voorstel van de app (verspreid over dagen, ochtend en middag); jij past het aan.
-  v.aantal = 5;
-  v.handmatig = false;
-  let prikDagen = [];
-  const laadPrikDagen = async () => {
-    const t = vandaag();
-    const week = ST.tab === 'week' ? startOfWeek(ST.anker) : ST.fcStart;
-    const van = blok ? startOfDay(new Date(blok.start)) : (week > t ? week : t);
-    const tot = addDays(van, 15);
-    try { await zorgVoor(startOfWeek(van), addDays(startOfWeek(tot), 7)); } catch (e) { /* zonder verbinding: wat er al is */ }
-    prikDagen = [];
-    for (let d = van; d < tot && prikDagen.length < 10; d = addDays(d, 1)) {
-      if (d.getDay() === 0 || d.getDay() === 6) continue;
-      const lijstDag = afsprakenTussen(d, addDays(d, 1));
-      prikDagen.push({ d, lijst: lijstDag, tijden: startTijden(lijstDag, d, v.duur).flatMap((b) => b.tijden) });
-    }
-  };
-  const tekenPrik = async () => {
-    const ditDuur = v.duur;
-    await laadPrikDagen();
-    if (ditDuur !== v.duur || !v.prik) return;
-    const alle = new Set(prikDagen.flatMap((g) => g.tijden));
-    [...v.keuzes].forEach((k) => { if (!alle.has(k)) v.keuzes.delete(k); }); // past niet meer bij de nieuwe duur
-    if (!v.handmatig) v.keuzes = new Set(voorstelTijden(prikDagen, v.duur, v.aantal));
-    const metRuimte = prikDagen.filter((g) => g.tijden.length);
-    $('#ntijden', el).innerHTML = `
-      <div class="prikbalk"><span>Voorstel</span>
-        <span class="stapper"><button class="mini" data-aantal="-1" aria-label="Minder tijden"${v.aantal <= 1 ? ' disabled' : ''}>${I.min}</button><span class="num">${v.aantal} tijden</span><button class="mini" data-aantal="1" aria-label="Meer tijden"${v.aantal >= 10 ? ' disabled' : ''}>${I.plus}</button></span>
-        <button class="link" data-actie="opnieuw">${v.handmatig ? 'Opnieuw voorstellen' : 'Wissen'}</button></div>
-      ${metRuimte.length ? metRuimte.map((g) => {
-        const n = g.tijden.filter((x) => v.keuzes.has(x)).length;
-        return `<div class="prikdag${n ? ' heeft' : ''}"><div class="prikdagkop"><span class="dg">${sameDay(g.d, vandaag()) ? 'Vandaag' : cap(DAYS_SHORT[g.d.getDay()])}</span><span class="nr num">${g.d.getDate()} ${MONTHS_SHORT[g.d.getMonth()]}</span>${n ? `<span class="tel">${n}</span>` : ''}</div>
-          <div class="chips rij">${g.tijden.map(chip).join('')}</div></div>`;
-      }).join('') : `<div class="ngeen">Geen vrije blokken van ${duurKort(v.duur)} in de komende twee weken.</div>`}`;
-    // Op de telefoon schuift elke rij zo dat de aangevinkte tijd in beeld staat
-    el.querySelectorAll('.chips.rij').forEach((r) => {
-      const a = r.querySelector('.aan');
-      if (a && a.offsetLeft + a.offsetWidth > r.clientWidth - 24) r.scrollLeft = a.offsetLeft - r.offsetLeft - 48;
-      const rand = () => r.classList.toggle('links', r.scrollLeft > 2);
-      rand(); r.addEventListener('scroll', rand, { passive: true });
-    });
-    tekenSamen();
-  };
+  const chip = (t) => `<button class="chip num${!v.eigen && t === v.start ? ' aan' : ''}" data-start="${t}">${hhmm(new Date(t))}</button>`;
   const tekenTijden = async () => {
-    if (v.prik) return tekenPrik();
     const d = v.dag;
     if (!blok) {
       // Op een smal scherm de korte vorm, anders past hij niet tussen de pijltjes
@@ -1514,7 +1391,7 @@ async function openNieuw({ dag = null, blok = null, prik = false } = {}) {
       }
       const eigenWaarde = v.eigen && v.start != null ? hhmm(new Date(v.start)) : '';
       // Andere tijd staat gewoon achteraan in dezelfde rij
-      html += v.prik ? (alle.length ? `<div class="chips">${alle.map(chip).join('')}</div>` : '') : `<div class="chips${blokken.length ? '' : ' na'}">${alle.map(chip).join('')}<button class="chip${v.eigen ? ' aan' : ''}" data-actie="eigen">Andere tijd</button>${v.eigen ? `<input class="eigeninvoer" type="time" step="900" id="neigen" value="${eigenWaarde}" aria-label="Begintijd">` : ''}</div>`;
+      html += `<div class="chips${blokken.length ? '' : ' na'}">${alle.map(chip).join('')}<button class="chip${v.eigen ? ' aan' : ''}" data-actie="eigen">Andere tijd</button>${v.eigen ? `<input class="eigeninvoer" type="time" step="900" id="neigen" value="${eigenWaarde}" aria-label="Begintijd">` : ''}</div>`;
     }
     $('#ntijden', el).innerHTML = html;
     tekenSamen();
@@ -1527,30 +1404,8 @@ async function openNieuw({ dag = null, blok = null, prik = false } = {}) {
   };
 
   tekenDuur();
-  tekenSoort();
   const p = openPaneel(el, { greepSelector: '.detailgreep' });
   tekenTijden();
-
-  // Peiling aanmaken (zo nodig eerst inloggen) en daarna de link tonen
-  const maakPeiling = async () => {
-    const knop = $('#nprik', el), fout = $('#nprikfout', el);
-    fout.hidden = true; knop.disabled = true; knop.lastChild.textContent = 'Bezig…';
-    try {
-      if (!ingelogd()) await inloggen(($('input[name="pemail"]', el).value || '').trim(), $('input[name="pww"]', el).value || '');
-      const id = await peilingMaken(v);
-      laadPeilingen();
-      const url = prikLink(id);
-      $('.dvoet', el).innerHTML = `<div class="prikklaar"><div class="t1">Peiling gemaakt</div><div class="t2">Deel deze link met de genodigden. In de weekkiezer (en op de desktop in de zijbalk) zie je wie wanneer kan.</div>
-        <input class="priklink" readonly value="${esc(url)}" aria-label="Link naar de peiling"></div>
-        <button class="groteknop vol" data-actie="delen">${I.extern}Link delen</button>
-        <button class="groteknop" data-actie="sluit">Klaar</button>`;
-      v.gemaakt = { id, titel: v.titel.trim() || 'Afspraak' };
-    } catch (e) {
-      fout.textContent = e instanceof NietIngelogd ? 'Log eerst in.' : e.message; fout.hidden = false;
-      knop.disabled = false; knop.lastChild.textContent = 'Peiling maken';
-      tekenSamen();
-    }
-  };
 
   el.addEventListener('input', (ev) => {
     const n = ev.target.name;
@@ -1569,18 +1424,8 @@ async function openNieuw({ dag = null, blok = null, prik = false } = {}) {
     if (t.closest('[data-actie="sluit"]')) { p.sluit(); return; }
     const stapper = t.closest('[data-stap]');
     if (stapper) { v.duur = Math.min(v.max, Math.max(15, v.duur + Number(stapper.dataset.stap))); tekenDuur(); tekenTijden(); return; }
-    const soort = t.closest('[data-soort]');
-    if (soort) { v.prik = soort.dataset.soort === 'prik'; tekenSoort(); tekenTijden(); return; }
     const st = t.closest('[data-start]');
-    if (st && v.prik) { const n = Number(st.dataset.start); if (v.keuzes.has(n)) v.keuzes.delete(n); else v.keuzes.add(n); v.handmatig = true; tekenTijden(); return; }
-    const aantal = t.closest('[data-aantal]');
-    if (aantal) { v.aantal = Math.min(10, Math.max(1, v.aantal + Number(aantal.dataset.aantal))); v.handmatig = false; tekenTijden(); return; }
-    if (t.closest('[data-actie="opnieuw"]')) { if (v.handmatig) v.handmatig = false; else { v.keuzes.clear(); v.handmatig = true; } tekenTijden(); return; }
     if (st) { v.start = Number(st.dataset.start); v.eigen = false; tekenTijden(); return; }
-    const weg = t.closest('[data-weg]');
-    if (weg) { v.keuzes.delete(Number(weg.dataset.weg)); v.handmatig = true; tekenTijden(); return; }
-    if (t.closest('#nprik')) { maakPeiling(); return; }
-    if (t.closest('[data-actie="delen"]') && v.gemaakt) { deelLink(v.gemaakt); return; }
     if (t.closest('[data-actie="eigen"]')) { v.eigen = !v.eigen; if (!v.eigen) v.start = null; tekenTijden().then(() => { const i = $('#neigen', el); if (i) i.focus(); }); return; }
     const stap = t.closest('[data-dag]');
     if (stap) { zetDag(addDays(v.dag, Number(stap.dataset.dag))); return; }
@@ -1592,152 +1437,6 @@ async function openNieuw({ dag = null, blok = null, prik = false } = {}) {
     if (t.closest('#noutlook') && v.start == null) ev.preventDefault();
   });
   if (isDesktop()) setTimeout(() => { const i = $('input[name="titel"]', el); if (i) i.focus(); }, 60);
-}
-
-/* ------------------------------------------------------------------ */
-/*  Datumprikker: peilingen bij Nhost (tabellen, zie database/)        */
-/* ------------------------------------------------------------------ */
-
-const NH_GQL = `https://${NHOST_SUB}.graphql.${NHOST_REG}.nhost.run/v1`;
-const PRIK = { lijst: [], geladen: false, fout: null };
-
-async function gql(query, variables = {}) {
-  const sleutel = await toegangssleutel();
-  if (!sleutel) throw new NietIngelogd();
-  const r = await fetch(NH_GQL, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sleutel}` }, body: JSON.stringify({ query, variables }) });
-  const d = await r.json().catch(() => ({}));
-  const fout = d.errors && d.errors[0] && d.errors[0].message;
-  if (!r.ok || fout) {
-    if (/not found in type|no such type|field .* not found/i.test(fout || '')) throw new Error('De tabellen voor de datumprikker staan nog niet in Nhost. Zie database/README.md.');
-    throw new Error(fout || `Nhost gaf ${r.status}`);
-  }
-  return d.data;
-}
-const prikLink = (id) => new URL(`prik.html?p=${id}`, location.href).href;
-const ingelogd = () => !!SES.refresh;
-
-async function peilingMaken(v) {
-  const opties = [...v.keuzes].sort((a, b) => a - b).map((t) => new Date(t).toISOString());
-  const d = await gql('mutation ($o: peilingen_insert_input!) { insert_peilingen_one(object: $o) { id } }', {
-    o: { titel: v.titel.trim() || 'Afspraak', organisator: (SES.user && SES.user.displayName) || null, duur_min: v.duur, locatie: v.locatie.trim() || null, notitie: v.notitie.trim() || null, opties },
-  });
-  return d.insert_peilingen_one.id;
-}
-async function laadPeilingen() {
-  if (!ingelogd()) return;
-  try {
-    const d = await gql(`query { peilingen(order_by: { aangemaakt: desc }, limit: 30) {
-      id titel duur_min locatie notitie opties gesloten gekozen aangemaakt
-      stemmen(order_by: { aangemaakt: asc }) { naam email keuzes aangemaakt } } }`);
-    PRIK.lijst = d.peilingen;
-    PRIK.fout = null;
-  } catch (e) { PRIK.fout = e.message; }
-  PRIK.geladen = true;
-  if (isDesktop()) renderZijbalk();
-  // Staat de weekkiezer open, dan daar het lijstje bijwerken
-  const open = document.querySelector('.kiezer .zbprik');
-  if (open) open.outerHTML = prikSectieHtml();
-}
-async function peilingSluiten(id, gekozen) {
-  await gql('mutation ($id: uuid!, $g: timestamptz) { update_peilingen_by_pk(pk_columns: { id: $id }, _set: { gesloten: true, gekozen: $g }) { id } }', { id, g: gekozen ? new Date(gekozen).toISOString() : null });
-}
-async function peilingVerwijderen(id) {
-  await gql('mutation ($id: uuid!) { delete_peilingen_by_pk(id: $id) { id } }', { id });
-}
-
-// Per begintijd: wie kan (ja), wie misschien. Bij twee stemmen met dezelfde naam telt de laatste.
-function uitslag(p) {
-  const perNaam = new Map();
-  (p.stemmen || []).forEach((s) => perNaam.set(s.naam.trim().toLowerCase(), s));
-  const stemmen = [...perNaam.values()];
-  return p.opties.map((iso) => {
-    const ja = stemmen.filter((s) => s.keuzes[iso] === 'ja');
-    const mis = stemmen.filter((s) => s.keuzes[iso] === 'misschien');
-    return { iso, t: new Date(iso).getTime(), ja, mis, score: ja.length * 2 + mis.length };
-  }).sort((a, b) => b.score - a.score || a.t - b.t).map((o, i, alle) => ({ ...o, beste: i === 0 && o.score > 0, stemmen }));
-}
-const kortMoment = (t) => { const d = new Date(t); return `${cap(DAYS_SHORT[d.getDay()])} ${d.getDate()} ${MONTHS_SHORT[d.getMonth()]} · ${hhmm(d)}`; };
-
-// Zijbalk en weekkiezer: lijstje met je peilingen
-function prikSectieHtml() {
-  if (!ingelogd() && !PRIK.lijst.length) return '';
-  if (!PRIK.geladen) laadPeilingen();
-  // Open peilingen, en de drie laatst gesloten (om de uitslag terug te zien of op te ruimen)
-  const open = [...PRIK.lijst.filter((p) => !p.gesloten), ...PRIK.lijst.filter((p) => p.gesloten).slice(0, 3)];
-  const rij = (p) => {
-    const n = new Set((p.stemmen || []).map((s) => s.naam.trim().toLowerCase())).size;
-    return `<button data-peiling="${esc(p.id)}">${I.prik}<span class="prikrij"><span class="t1">${esc(p.titel)}</span><span class="t2">${n === 0 ? 'Nog geen stemmen' : n === 1 ? '1 stem' : `${n} stemmen`}${p.gesloten ? ' · gesloten' : ''}</span></span></button>`;
-  };
-  return `<nav class="zblijst zbagenda zbprik" aria-label="Datumprikkers"><h3>Datumprikkers</h3>
-    ${PRIK.fout ? `<div class="zbbron"><span><span class="t2">${esc(PRIK.fout)}</span></span></div>` : ''}
-    ${open.length ? open.map(rij).join('') : PRIK.geladen && !PRIK.fout ? '<div class="zbbron"><span><span class="t2">Nog geen peilingen. Maak er een via + en kies Datumprikker.</span></span></div>' : ''}
-  </nav>`;
-}
-
-// Uitslag van één peiling, met per tijd Inplannen (door naar Outlook)
-function openPeiling(id) {
-  const p = PRIK.lijst.find((x) => x.id === id);
-  if (!p) return;
-  const el = document.createElement('div');
-  el.className = 'paneel detail nieuw prikuitslag' + (isDesktop() ? ' dialoog' : '');
-  const teken = () => {
-    const opties = uitslag(p);
-    const stemmers = opties.length ? opties[0].stemmen : [];
-    const duur = p.duur_min;
-    el.innerHTML = `<div class="detailgreep"><div class="greep"></div>
-        <div class="detailnav"><button class="rond glas" data-actie="sluit" aria-label="Sluiten">${I.kruis}</button></div></div>
-      <div class="detailinhoud">
-        <div class="dkop"><span class="stip prik"></span><div class="dkopinhoud">
-          <h2 class="dtitel">${esc(p.titel)}</h2>
-          <div class="dmeta"><div>Datumprikker · ${duurKort(duur)}</div>${p.locatie ? `<div>${esc(p.locatie)}</div>` : ''}
-          <div>${stemmers.length ? `${stemmers.length} ${stemmers.length === 1 ? 'stem' : 'stemmen'}: ${esc(stemmers.map((s) => s.naam).join(', '))}` : 'Nog geen stemmen'}</div>
-          ${p.gesloten ? `<div class="dgesloten">${p.gekozen ? `Ingepland op ${esc(kortMoment(p.gekozen))}` : 'Gesloten'}</div>` : ''}</div>
-        </div></div>
-        <section class="sectie"><h3>Tijden</h3><div class="kaart prikopties">
-          ${opties.map((o) => {
-            const eind = new Date(o.t + duur * 6e4);
-            const mails = [...new Set([...o.ja, ...o.mis].map((s) => s.email).filter(Boolean))];
-            const link = outlookNieuwLink({ titel: p.titel, start: o.t, duur, locatie: p.locatie || '', notitie: p.notitie || '', deelnemers: mails.join(',') });
-            return `<div class="prikoptie${o.beste ? ' beste' : ''}">
-              <div class="prikkop"><span class="num">${esc(kortMoment(o.t))} – ${hhmm(eind)}</span>${o.beste ? '<span class="bestelabel">Beste keuze</span>' : ''}</div>
-              <div class="prikteller"><span class="ja">${o.ja.length} ja</span><span class="mis">${o.mis.length} misschien</span></div>
-              ${o.ja.length || o.mis.length ? `<div class="priknamen">${o.ja.map((s) => esc(s.naam)).join(', ')}${o.mis.length ? `${o.ja.length ? ' · ' : ''}<i>${o.mis.map((s) => esc(s.naam)).join(', ')} (misschien)</i>` : ''}</div>` : ''}
-              ${p.gesloten ? '' : `<a class="actie zacht" href="${link}" target="_blank" rel="noopener" data-inplannen="${o.t}">Inplannen</a>`}
-            </div>`;
-          }).join('')}
-        </div></section>
-        <div class="dvoet">
-          ${p.gesloten ? '' : `<button class="groteknop vol" data-actie="delen">${I.extern}Link delen</button>`}
-          <button class="groteknop rood" data-actie="weg">${I.wissen}Peiling verwijderen</button>
-          <p class="voetnoot">${p.gesloten ? 'Deze peiling is gesloten; genodigden kunnen niet meer stemmen.' : 'Inplannen opent Outlook met deze tijd en de mailadressen van wie ja of misschien zei, en sluit de peiling.'}</p>
-        </div>
-      </div>`;
-  };
-  teken();
-  const pn = openPaneel(el, { greepSelector: '.detailgreep' });
-  el.addEventListener('click', async (ev) => {
-    const t = ev.target;
-    if (t.closest('[data-actie="sluit"]')) { pn.sluit(); return; }
-    if (t.closest('[data-actie="delen"]')) { deelLink(p); return; }
-    const inpl = t.closest('[data-inplannen]');
-    if (inpl) {
-      // De link naar Outlook opent zelf; daarnaast de peiling sluiten
-      const g = Number(inpl.dataset.inplannen);
-      peilingSluiten(p.id, g).then(() => { p.gesloten = true; p.gekozen = new Date(g).toISOString(); teken(); if (isDesktop()) renderZijbalk(); }).catch((e) => alert(`Sluiten lukt niet: ${e.message}`));
-      return;
-    }
-    if (t.closest('[data-actie="weg"]')) {
-      if (!confirm(`De peiling ‘${p.titel}’ en alle stemmen verwijderen?`)) return;
-      try { await peilingVerwijderen(p.id); PRIK.lijst = PRIK.lijst.filter((x) => x.id !== p.id); pn.sluit(); if (isDesktop()) renderZijbalk(); } catch (e) { alert(`Verwijderen lukt niet: ${e.message}`); }
-    }
-  });
-}
-
-async function deelLink(p) {
-  const url = prikLink(p.id);
-  const tekst = `Wil je aangeven wanneer je kunt voor ‘${p.titel}’?`;
-  if (navigator.share) { try { await navigator.share({ title: p.titel, text: tekst, url }); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
-  try { await navigator.clipboard.writeText(url); alert('De link staat op het klembord.'); } catch (e) { prompt('Kopieer de link:', url); }
 }
 
 /* ------------------------------------------------------------------ */
@@ -1820,8 +1519,6 @@ function koppel() {
       renderZijbalk();
       return;
     }
-    const peiling = ev.target.closest('#zijbalk [data-peiling]');
-    if (peiling) { openPeiling(peiling.dataset.peiling); return; }
     const rij = ev.target.closest('#zijbalk .weekrij');
     if (rij) { kiesWeek(new Date(Number(rij.dataset.ma))); return; }
     const vrij = ev.target.closest('#inhoud [data-vrij]');
@@ -1847,7 +1544,6 @@ function koppel() {
     if (!sameDay(t, ST.dag)) { ST.dag = t; ST.anker = defaultWeekAnchor(t); ST.fcStart = t; zijMaand = null; }
     if (!lokaal() && Date.now() - DATA.opgehaald > VERS_MS) laad({ vers: true });
     else render();
-    if (ingelogd()) laadPeilingen(); // nieuwe stemmen bij terugkomen
   });
   window.addEventListener('online', () => { if (!lokaal()) laad({ vers: true }); });
 }

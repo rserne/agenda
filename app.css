@@ -588,8 +588,8 @@ label.frij:focus-within .flabel { color: var(--accent); }
 /* ================================================================ Desktop (vanaf 1200): ontwerp A, in de stijl van Agenda op de Mac */
 .zijbalk { display: none; }
 @media (min-width: 1200px) {
-  :root { --maxW: none; --zbBg: #F5F5F7; --deskBg: #FBFBFD; --werkbalk: rgba(255, 255, 255, 0.82); }
-  @media (prefers-color-scheme: dark) { :root { --zbBg: #232325; --deskBg: #161618; --werkbalk: rgba(30, 30, 32, 0.82); } }
+  :root { --maxW: none; --zbBg: #F5F5F7; --deskBg: #FBFBFD; --werkbalk: rgba(251, 251, 253, 0.7); }
+  @media (prefers-color-scheme: dark) { :root { --zbBg: #232325; --deskBg: #161618; --werkbalk: rgba(22, 22, 24, 0.7); } }
   body, body.vooruitblik { background: var(--deskBg); }
   .shell { display: grid; grid-template-columns: 248px minmax(0, 1fr); min-height: 100vh; }
 
@@ -637,7 +637,7 @@ label.frij:focus-within .flabel { color: var(--accent); }
   body.desktop main.kolom > .legenda { margin-top: auto; position: sticky; bottom: 0; z-index: 4; justify-content: flex-start; gap: 6px 18px; padding: 24px 2px 14px; background: linear-gradient(to bottom, transparent, var(--deskBg) 14px); }
 
   /* Werkbalk: titel, datum, filter en ‹ Vandaag › op één regel */
-  .kop { padding: 0; background: var(--werkbalk); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); border-bottom: 0.5px solid var(--separator); }
+  .kop { padding: 0; background: var(--werkbalk); -webkit-backdrop-filter: saturate(200%) blur(28px); backdrop-filter: saturate(200%) blur(28px); border-bottom: 0.5px solid var(--separator); }
   body.vooruitblik .kop { background: var(--werkbalk); }
   .kop .kolom { flex-direction: row; align-items: center; gap: 14px; height: 52px; padding: 0 20px; }
   .kopblok, .kopregel { display: contents; }
@@ -645,15 +645,17 @@ label.frij:focus-within .flabel { color: var(--accent); }
   .titelknop .icoon { display: none; }
   .titel { font-size: 17px; line-height: 22px; letter-spacing: -0.2px; }
   .datumregel { order: 2; font-size: 15px; line-height: 22px; font-weight: 500; color: var(--label); opacity: 0.72; margin: 0; position: relative; top: 1px; }
-  .kop #schakelaar { order: 3; margin-left: auto; height: 26px; padding: 2px; border-radius: 7px; background: var(--fill); border: 0; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
-  .kop #schakelaar button { flex: none; padding: 0 12px; border-radius: 5px; font-size: 12px; font-weight: 500; color: var(--label); }
-  .kop #schakelaar button.aan { background: var(--card); color: var(--label); font-weight: 600; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15), 0 0 0 0.5px rgba(0, 0, 0, 0.05); }
-  #capsule { order: 4; height: 26px; border-radius: 7px; padding: 0; background: var(--card); border: 0; box-shadow: 0 0 0 0.5px var(--separator), 0 1px 1px rgba(0, 0, 0, 0.04); -webkit-backdrop-filter: none; backdrop-filter: none; }
-  #capsule button { width: auto; height: 26px; padding: 0 8px; border-radius: 0; color: var(--label); }
+  /* Glazen pillen, net als op de telefoon, maar op desktopmaat */
+  .kop #schakelaar { order: 3; margin-left: auto; height: 32px; padding: 3px; border-radius: 16px; background: var(--glass); border: 0.5px solid var(--glassBorder); box-shadow: var(--glassShadow); -webkit-backdrop-filter: var(--glassBlur); backdrop-filter: var(--glassBlur); }
+  .kop #schakelaar button { flex: none; padding: 0 14px; border-radius: 13px; font-size: 12.5px; font-weight: 600; color: var(--tabText); }
+  .kop #schakelaar button:hover:not(.aan) { background: var(--fill); }
+  .kop #schakelaar button.aan { background: var(--selBg); color: var(--selText); font-weight: 700; box-shadow: none; }
+  #capsule { order: 4; height: 32px; border-radius: 16px; padding: 0 2px; background: var(--glass); border: 0.5px solid var(--glassBorder); box-shadow: var(--glassShadow); -webkit-backdrop-filter: var(--glassBlur); backdrop-filter: var(--glassBlur); }
+  #capsule button { width: 30px; height: 28px; margin-top: 2px; padding: 0; border-radius: 14px; color: var(--label); }
   #capsule button:hover { background: var(--fill); }
-  #capsule button[data-nav="0"] { border-left: 0.5px solid var(--separator); border-right: 0.5px solid var(--separator); padding: 0 10px; }
+  #capsule button[data-nav="0"] { width: auto; padding: 0 10px; }
   #capsule button[data-nav="0"] .icoon { display: none; }
-  #capsule .vandaagtekst { display: inline; font-size: 12px; font-weight: 500; }
+  #capsule .vandaagtekst { display: inline; font-size: 12.5px; font-weight: 600; }
   #capsule .icoon { width: 14px; height: 14px; }
   .tabbalk { display: none; }
   main.kolom { padding: 14px 16px 40px; }
@@ -728,7 +730,7 @@ label.frij:focus-within .flabel { color: var(--accent); }
   .paneel.detail.dialoog .detailnav { padding-top: 14px; }
   .paneel.detail.dialoog .dkop { padding-top: 0; }
   /* Nieuwe afspraak: knop in de werkbalk, vrije blokken met hover */
-  .nieuwknop { display: flex; align-items: center; order: 5; width: auto; height: 26px; border-radius: 7px; padding: 0 10px 0 7px; gap: 4px; background: var(--accent); color: var(--onAccent); border: 0; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; font-size: 12px; font-weight: 600; }
+  .nieuwknop { display: flex; align-items: center; order: 5; width: auto; height: 32px; border-radius: 16px; padding: 0 14px 0 10px; gap: 5px; background: var(--accent); color: var(--onAccent); border: 0; box-shadow: 0 4px 14px rgba(31, 114, 160, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3); -webkit-backdrop-filter: none; backdrop-filter: none; font-size: 12.5px; font-weight: 600; }
   .nieuwknop .icoon { width: 13px; height: 13px; }
   .nieuwknop span { display: inline; }
   .nieuwknop:hover { filter: brightness(1.08); }

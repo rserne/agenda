@@ -3,7 +3,7 @@
 Je week in één oogopslag, als web-app (PWA) voor iPhone, iPad en laptop. De app leest je Outlook-agenda via een gepubliceerde iCal-feed en laat zien wat opvalt: externe overleggen en interne afspraken die niet vast zijn. Daarnaast toont hij alles, of juist waar je nog tijd hebt.
 
 - **Week:** per dag een lijst, met Opvallend, Alles en Vrij. De dagkop blijft bovenaan staan tijdens het scrollen.
-- **Vooruitblik:** zeven dagen vanaf vandaag in tegels.
+- **Vooruitblik:** zeven dagen vanaf vandaag in tegels. Van vandaag staan alleen de afspraken die nog komen of nu bezig zijn; wat al voorbij is, verdwijnt vanzelf.
 - **Weekkiezer:** tik op de titel. Elke werkdag kleurt mee met hoe vol hij is (een heatmap): grijs bij een rustige dag, geel vanaf drie uur en rood vanaf zes uur aan afspraken (`MID_HOURS`, `FULL_HOURS`).
 - **Detailscherm:** locatie, Teams-link, organisator en deelnemers per organisatie, notities, en mailen naar één of alle deelnemers.
 

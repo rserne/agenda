@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-03-2';
+const APP_VERSIE = '2026-11-03-3';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -770,19 +770,22 @@ function vooruitblikHtml(events) {
   for (let i = 0; i < 7; i++) {
     const d = addDays(start, i);
     const lijst = eventsForDay(events, d);
+    const isVandaag = sameDay(d, t);
+    // Vandaag: alleen wat nog komt of nu bezig is; afgelopen afspraken vallen weg
+    const nuMs = nu().getTime();
     const heleDag = lijst.filter((e) => e.allDay);
-    const getimed = lijst.filter((e) => !e.allDay);
+    const getimed = lijst.filter((e) => !e.allDay && (!isVandaag || e.end.getTime() > nuMs));
+    const afgelopen = isVandaag && lijst.some((e) => !e.allDay && e.end.getTime() <= nuMs);
     const tegels = ST.filter === 'notable' ? getimed.filter((e) => e.notable) : getimed;
     const verborgen = getimed.length - tegels.length;
     const werkdag = d.getDay() >= 1 && d.getDay() <= 5;
     const vrij = ST.filter === 'free' && werkdag && d >= t ? freeSlots(lijst, d) : [];
     const items = [...tegels.map((e) => ({ t: e.start.getTime(), e })), ...vrij.map((f) => ({ t: f.start.getTime(), f }))].sort((a, b) => a.t - b.t);
-    const isVandaag = sameDay(d, t);
     const ov = overlapVan(lijst);
     html += `<section class="vbdag">
       <div class="vbdatum${isVandaag ? ' vandaag' : ''}"><span class="dow">${DAYS_SHORT[d.getDay()].toUpperCase()}</span><span class="nr">${d.getDate()}</span>${i === 0 || d.getDate() === 1 ? `<span class="mnd">${MONTHS_SHORT[d.getMonth()]}</span>` : ''}</div>
       <div class="vbinhoud">
-        ${!lijst.length && !vrij.length ? `<div class="vbleeg">${isVandaag ? 'Geen afspraken vandaag' : 'Geen afspraken'}</div>` : ''}
+        ${!heleDag.length && !getimed.length && !vrij.length ? `<div class="vbleeg">${isVandaag ? (afgelopen ? 'Geen afspraken meer vandaag' : 'Geen afspraken vandaag') : 'Geen afspraken'}</div>` : ''}
         ${heleDag.map((e) => `<button class="vbheledag" data-id="${esc(e.id)}"><span class="t">${esc(e.title)}</span><span class="h">hele dag</span></button>`).join('')}
         ${items.length ? `<div class="tegels">${items.map((it) => (it.e ? tegel(it.e, d, ov) : vrijeTegel(it.f))).join('')}</div>` : ''}
         ${verborgen > 0 ? `<div class="vbrest">+ ${vastText(verborgen)}</div>` : ''}
@@ -1575,6 +1578,11 @@ function koppel() {
   DESKTOP.addEventListener('change', () => { panelen.slice().forEach((p) => p.sluit()); render(); });
 
   // Terug in de app: nieuwe dag? Dan terug naar vandaag. Gegevens ouder dan vijf minuten: opnieuw ophalen.
+  // Vooruitblik: afgelopen afspraken van vandaag verdwijnen vanzelf, ook als de app open blijft staan
+  setInterval(() => {
+    if (ST.tab === 'forecast' && document.visibilityState === 'visible' && !panelen.length && !ST.login) render();
+  }, 60 * 1000);
+
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState !== 'visible') return;
     const t = vandaag();

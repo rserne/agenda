@@ -329,7 +329,7 @@ button.rij:active { background: var(--fill); }
 }
 .paneel.open { transform: translate(-50%, 0); }
 .paneel.sleept { transition: none; }
-.greep { display: block; width: 36px; height: 5px; border-radius: 3px; background: var(--grabber); margin: 6px auto 0; flex-shrink: 0; }
+.greep { display: block; width: 52px; height: 5px; border-radius: 3px; background: var(--grabber); margin: 6px auto 0; flex-shrink: 0; }
 
 /* Weekkiezer */
 .kiezer { background: var(--card); max-width: 560px; padding: 0 16px calc(env(safe-area-inset-bottom, 0px) + 18px); }

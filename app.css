@@ -384,6 +384,10 @@ button.rij:active { background: var(--fill); }
 
 /* Detailscherm */
 .detail { background: var(--sheetBg); max-width: 680px; }
+/* Bij weinig inhoud: toch een fatsoenlijke hoogte, met de knoppen onderaan */
+.paneel.detail { min-height: min(50vh, 420px); }
+.paneel.detail .detailinhoud { flex: 1 1 auto; }
+.paneel.detail .dvoet { margin-top: auto; }
 /* Alleen een sluitknop, rechts naast de eerste regel: de rij zelf neemt geen hoogte in */
 .detailnav { display: flex; justify-content: flex-end; align-items: flex-start; height: 0; overflow: visible; padding: 6px 16px 0; flex-shrink: 0; position: relative; z-index: 2; touch-action: none; }
 .detail .dkop { padding-top: 0; padding-right: 52px; }
@@ -722,6 +726,7 @@ label.frij:focus-within .flabel { color: var(--accent); }
   /* Detail: een dialoog midden in beeld */
   .paneel.detail.dialoog {
     top: 50%; bottom: auto; border-radius: 16px; max-height: min(86vh, 900px); width: min(620px, calc(100% - 64px));
+    min-height: min(420px, 86vh); /* ook bij weinig inhoud een volwaardig venster */
     transform: translate(-50%, -48%) scale(0.98); opacity: 0;
     transition: transform 0.2s ease, opacity 0.2s ease;
     box-shadow: 0 24px 64px rgba(0, 0, 0, 0.28), 0 0 0 0.5px rgba(0, 0, 0, 0.1);

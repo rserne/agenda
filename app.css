@@ -678,7 +678,8 @@ label.frij:focus-within .flabel { color: var(--accent); }
   .dagkolom.vandaag .kolomkop .nr { font-weight: 700; }
   .dagkolom.vandaag .kolomkop .dow { font-weight: 600; }
   .dagkolom.voorbij .kolomkop .nr { color: var(--secondary); font-weight: 500; }
-  .dagkolom .kaart { padding: 3px; border-radius: 11px; border: 0; box-shadow: 0 0 0 0.5px var(--cardBorder), 0 1px 2px rgba(0, 0, 0, 0.04); }
+  /* Echte rand in plaats van een schaduwrand: die viel bovenaan weg onder de plakkende kolomkop */
+  .dagkolom .kaart { padding: 3px; border-radius: 11px; border: 0.5px solid var(--cardBorder); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04); }
   .krij { display: flex; align-items: stretch; gap: 7px; padding: 6px 7px; width: 100%; text-align: left; border-radius: 7px; }
   button.krij:hover { background: var(--fill); }
   .krij .stip { width: 3px; height: auto; border-radius: 2px; margin: 0; flex-shrink: 0; }

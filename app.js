@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-03-5';
+const APP_VERSIE = '2026-11-03-6';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -916,11 +916,14 @@ function openPaneel(el, { greepSelector, boven = false } = {}) {
 }
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && panelen.length) panelen[panelen.length - 1].sluit(); });
 
-// Omlaag vegen aan de greep of de kop van een paneel sluit het
+// Omlaag vegen sluit een paneel. Met de vinger kan dat overal op het paneel (zoals een iOS-sheet),
+// zolang de inhoud bovenaan staat; met muis of pen alleen aan de greep.
 function maakVeegbaar(paneel, greep, sluit) {
+  veegMetVinger(paneel, sluit);
   if (!greep) return;
   let y0 = null, dy = 0, t0 = 0;
   greep.addEventListener('pointerdown', (e) => {
+    if (e.pointerType === 'touch') return;
     if (e.target.closest('button') && e.pointerType === 'mouse') return;
     y0 = e.clientY; dy = 0; t0 = Date.now();
     paneel.classList.add('sleept');
@@ -941,6 +944,47 @@ function maakVeegbaar(paneel, greep, sluit) {
   };
   greep.addEventListener('pointerup', los);
   greep.addEventListener('pointercancel', los);
+}
+
+function veegMetVinger(paneel, sluit) {
+  if (paneel.dataset.veeg) return; // één keer per paneel, ook als de inhoud opnieuw getekend wordt
+  paneel.dataset.veeg = '1';
+  let x0 = 0, y0 = null, dy = 0, t0 = 0, sleept = false;
+  // Staat de vinger in iets dat al omlaag gescrold is? Dan scrollt de inhoud eerst terug.
+  const gescrold = (doel) => {
+    for (let n = doel; n && n !== paneel.parentNode; n = n.parentNode) if (n.scrollTop > 0) return true;
+    return false;
+  };
+  paneel.addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 1 || paneel.classList.contains('dialoog') || e.target.closest('input, textarea, select')) { y0 = null; return; }
+    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; dy = 0; sleept = false;
+    if (gescrold(e.target)) y0 = null;
+  }, { passive: true });
+  paneel.addEventListener('touchmove', (e) => {
+    if (y0 === null) return;
+    const t = e.touches[0], d = t.clientY - y0;
+    if (!sleept) {
+      if (Math.abs(t.clientX - x0) > Math.abs(d)) { y0 = null; return; } // horizontaal vegen (tijdchips) laten we met rust
+      if (d < 0) { y0 = null; return; } // omhoog: gewoon scrollen
+      if (d < 8) return;
+      sleept = true; y0 = t.clientY; t0 = Date.now();
+      paneel.classList.add('sleept');
+    }
+    e.preventDefault();
+    dy = Math.max(0, t.clientY - y0);
+    paneel.style.transform = `translate(-50%, ${dy}px)`;
+  }, { passive: false });
+  const los = () => {
+    if (sleept) {
+      paneel.classList.remove('sleept');
+      paneel.style.transform = '';
+      const snel = dy / Math.max(1, Date.now() - t0) > 0.6;
+      if (dy > 110 || (snel && dy > 30)) sluit();
+    }
+    y0 = null; sleept = false;
+  };
+  paneel.addEventListener('touchend', los);
+  paneel.addEventListener('touchcancel', los);
 }
 
 /* ------------------------------------------------------------------ */

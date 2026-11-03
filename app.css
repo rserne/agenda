@@ -393,6 +393,10 @@ button.rij:active { background: var(--fill); }
 /* Alleen een sluitknop, rechts naast de eerste regel: de rij zelf neemt geen hoogte in */
 .detailnav { display: flex; justify-content: flex-end; align-items: flex-start; height: 0; overflow: visible; padding: 6px 16px 0; flex-shrink: 0; position: relative; z-index: 2; touch-action: none; }
 .detail .dkop { padding-top: 0; padding-right: 52px; }
+/* Als paneel van onderen geen sluitknop: omlaag vegen of naast het paneel tikken sluit het. Het venster op desktop en iPad liggend houdt de knop. */
+.paneel.detail:not(.dialoog) .detailnav { display: none; }
+.paneel.detail:not(.dialoog) .dkop { padding-right: 0; }
+.paneel.detail:not(.dialoog) .detailgreep { padding-bottom: 14px; }
 .detail .dtitel { margin-top: -3px; }
 .rond { width: 36px; height: 36px; border-radius: 18px; display: flex; align-items: center; justify-content: center; color: var(--label); }
 .rond .icoon { width: 17px; height: 17px; }

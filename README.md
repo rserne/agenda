@@ -104,6 +104,9 @@ geeft. Hij bewaart niets. Gratis, zonder betaalkaart.
    gevraagd wordt.
 4. In de app, Agenda-link opgeven: `https://<worker>.<account>.workers.dev/?sleutel=<SLEUTEL>`.
 
+Koppel je de Worker liever aan GitHub (Import a repository), dan gebruikt Cloudflare `wrangler.jsonc` en plaatst
+het alleen de Worker. De naam in dat bestand (`agenda`) moet gelijk zijn aan de naam van de Worker in Cloudflare.
+
 Die Worker-link is net zo geheim als de Outlook-link. Een nieuwe sleutel instellen maakt de oude link ongeldig.
 
 ## Eigen .ics-bestand openen

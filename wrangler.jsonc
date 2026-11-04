@@ -1,0 +1,10 @@
+// Cloudflare Worker voor de agenda-link (zie cloudflare/worker.js en README.md, 'Tussenstap: Cloudflare Worker').
+// Dit bestand zorgt dat Cloudflare bij een koppeling met GitHub alleen de Worker plaatst, niet de hele app.
+// De geheimen ICS_URL en SLEUTEL staan bij de Worker in Cloudflare (Settings, Variables and Secrets), niet hier.
+{
+  "name": "agenda",
+  "main": "cloudflare/worker.js",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": true,
+  "keep_vars": true
+}

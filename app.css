@@ -215,6 +215,11 @@ main.kolom { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--barH,
   white-space: nowrap; overflow: hidden;
 }
 .dagkop.eerste { margin-top: 0; padding-top: 4px; }
+/* Leeg weekend in de weeklijst: één ingetogen regel in plaats van twee lege dagen */
+.weekendregel { display: flex; align-items: baseline; gap: 8px; margin-top: 18px; padding: 0 16px; color: var(--secondary); font-size: 15px; white-space: nowrap; }
+.weekendregel .nr { font-size: 20px; font-weight: 500; letter-spacing: -0.3px; }
+.weekendregel .dow { font-weight: 500; }
+.weekendregel .leeg::before { content: '·'; margin-right: 8px; }
 /* Groot dagnummer met de dag ernaast op dezelfde grondlijn, net als de kolomkoppen op de desktop */
 .dagkop .nr { color: var(--label); font-size: 26px; font-weight: 600; letter-spacing: -0.5px; line-height: 26px; }
 .dagkop .dow { overflow: hidden; text-overflow: ellipsis; }

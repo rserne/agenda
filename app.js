@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-04-16';
+const APP_VERSIE = '2026-11-04-17';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -976,10 +976,23 @@ function weekHtml(events) {
   const t = vandaag();
   let html = '';
   let eerste = true;
+  // Lege weekenddagen: geen eigen kop en kaart, maar één ingetogen regel ('14–15 Weekend · geen afspraken')
+  const leegWeekend = [5, 6].filter((i) => !eventsForDay(events, addDays(start, i)).length);
+  const weekendRegel = (dagen) => {
+    const [a, b] = dagen.map((i) => addDays(start, i));
+    const nr = b ? `${a.getDate()}–${b.getDate()}` : `${a.getDate()}`;
+    const naam = b ? 'Weekend' : cap(DAYS_LONG[a.getDay()]);
+    const voluit = b ? `Zaterdag ${a.getDate()} en zondag ${b.getDate()} ${MONTHS_LONG[b.getMonth()]}` : `${cap(DAYS_LONG[a.getDay()])} ${a.getDate()} ${MONTHS_LONG[a.getMonth()]}`;
+    return `<div class="weekendregel" role="note" aria-label="${voluit}: geen afspraken"><span class="nr num">${nr}</span><span class="dow">${naam}</span><span class="leeg">geen afspraken</span></div>`;
+  };
   for (let i = 0; i < 7; i++) {
     const d = addDays(start, i);
     const lijst = eventsForDay(events, d);
-    if (i >= 5 && !lijst.length) continue; // lege weekenddagen weglaten
+    if (i >= 5 && !lijst.length) {
+      // Beide dagen leeg: één regel bij zaterdag. Alleen deze dag leeg: een regel voor deze dag.
+      if (leegWeekend.length === 2) { if (i === 5) html += weekendRegel([5, 6]); } else html += weekendRegel([i]);
+      continue;
+    }
     const heleDag = lijst.filter((e) => e.allDay);
     const getimed = lijst.filter((e) => !e.allDay);
     const getoond = ST.filter === 'notable' ? getimed.filter((e) => e.notable) : getimed;

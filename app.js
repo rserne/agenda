@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-04-23';
+const APP_VERSIE = '2026-11-04-24';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -1589,7 +1589,7 @@ function openDetail(e) {
       return { ...g, shown: g.people.slice(0, take) };
     }).filter((g) => g.shown.length);
 
-    // Alleen 'Extern' zonder naam: geen apart kopje, de bron staat bij het label bovenaan
+    // Alleen 'Extern' zonder naam: geen apart kopje, het label bovenaan zegt genoeg
     const alleenExtern = !org && e.afgeleid && e.afgeleid.orgs[0] === 'Extern';
     const afgeleidHtml = !org && e.afgeleid && !alleenExtern ? `<section class="sectie"><h3>Organisator</h3><div class="kaart"><div class="drij persoon">
       <span class="avatar ext">${esc(initialsOf(e.afgeleid.orgs[0]))}</span>
@@ -1623,7 +1623,7 @@ function openDetail(e) {
             ${e.mode !== 'none' ? `<div>${MODE_LABEL[e.mode]}</div>` : ''}
             ${ovLine ? `<div class="doverlap">${esc(ovLine)}</div>` : ''}
           </div>
-          ${e.external ? `<div class="dbadges">${e.orgs.map((o) => `<span>${esc(o)}</span>`).join('')}${alleenExtern ? `<em>${e.afgeleid.bron === 'teams' ? 'uit de Teams-uitnodiging' : 'uit de titel'}</em>` : ''}</div>` : ''}
+          ${e.external ? `<div class="dbadges">${e.orgs.map((o) => `<span>${esc(o)}</span>`).join('')}</div>` : ''}
           </div>
         </div>
         ${plekken.length ? `<section class="sectie"><h3>Locatie</h3><div class="kaart">${plekken.join('')}</div></section>` : ''}

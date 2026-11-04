@@ -434,7 +434,6 @@ main.kolom.trekt { transition: none; }
 .dmeta .doverlap { color: var(--overlap); font-weight: 500; margin-top: 6px; }
 .dbadges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .dbadges span { background: var(--badgeBg); color: var(--badgeText); border-radius: 7px; padding: 3px 9px; font-size: 13px; font-weight: 600; }
-.dbadges em { align-self: center; font-style: normal; color: var(--secondary); font-size: 13px; }
 .sectie h3 { margin: 0 0 6px; padding: 0 16px; color: var(--secondary); font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.2px; }
 .sectie .kaart { border: 0; }
 .drij { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 10px 0; width: 100%; text-align: left; }

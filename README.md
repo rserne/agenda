@@ -90,7 +90,21 @@ Onder Agenda kun je ook de link van je gepubliceerde Outlook-agenda opgeven (`we
 De app haalt de agenda dan zelf op: bij het opstarten en als je na een kwartier terugkomt in de app. De link is
 geheim (wie hem heeft, ziet je agenda) en blijft alleen op het toestel, in IndexedDB. Hij komt nooit in de code of
 de repo. Lukt rechtstreeks ophalen niet omdat Outlook geen CORS toestaat, dan meldt de app dat; dan is een tussenstap
-op een server nodig (zoals de Nhost-functie).
+op een server nodig. Bij Outlook is dat zo.
+
+### Tussenstap: Cloudflare Worker
+
+`cloudflare/worker.js` haalt de agenda op en geeft hem door aan de app, met de CORS-toestemming die Outlook niet
+geeft. Hij bewaart niets. Gratis, zonder betaalkaart.
+
+1. cloudflare.com, gratis account, **Workers & Pages**, **Create**, **Worker** (Start with Hello World).
+2. **Edit code**: vervang de code door `cloudflare/worker.js` en kies **Deploy**.
+3. **Settings**, **Variables and Secrets**, twee keer **Add**, type *Secret*:
+   `ICS_URL` (de ICS-link uit Outlook) en `SLEUTEL` (een lange willekeurige tekst). Opnieuw **Deploy** als daarom
+   gevraagd wordt.
+4. In de app, Agenda-link opgeven: `https://<worker>.<account>.workers.dev/?sleutel=<SLEUTEL>`.
+
+Die Worker-link is net zo geheim als de Outlook-link. Een nieuwe sleutel instellen maakt de oude link ongeldig.
 
 ## Eigen .ics-bestand openen
 

@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-04-7';
+const APP_VERSIE = '2026-11-04-8';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -361,7 +361,13 @@ async function haalLinkTekst(link) {
     if (navigator.onLine === false) throw new Error('Je bent offline.');
     throw new Error('De browser mag deze link niet rechtstreeks ophalen. Outlook staat dat niet toe vanaf een andere website (CORS). Dan is er een tussenstap op een server nodig.');
   }
-  if (!r.ok) throw new Error(r.status === 404 ? 'Deze link bestaat niet (meer). Is de agenda nog gepubliceerd in Outlook?' : `De link gaf fout ${r.status}.`);
+  if (!r.ok) {
+    // De Cloudflare Worker (cloudflare/worker.js) geeft een korte uitleg mee
+    const uitleg = (await r.text().catch(() => '')).trim().slice(0, 120);
+    if (r.status === 403) throw new Error('Geen toegang. Klopt de sleutel in de link?');
+    if (r.status === 404) throw new Error('Deze link bestaat niet (meer). Is de agenda nog gepubliceerd in Outlook?');
+    throw new Error(uitleg && !/^</.test(uitleg) ? `${uitleg} (fout ${r.status}).` : `De link gaf fout ${r.status}.`);
+  }
   const tekst = await r.text();
   if (!/BEGIN:VCALENDAR/.test(tekst)) throw new Error('Op deze link staat geen agenda (.ics).');
   return tekst;

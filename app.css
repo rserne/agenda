@@ -292,7 +292,7 @@ main.kolom.trekt { transition: none; }
 .vbdatum .mnd { color: var(--secondary); font-size: 11px; font-weight: 500; }
 .vbdatum.vandaag .dow, .vbdatum.vandaag .nr, .vbdatum.vandaag .mnd { color: var(--accent); }
 .vbinhoud { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
-.vbleeg { height: 64px; border-radius: 14px; background: var(--tileEmpty); border: 1px solid var(--cardBorder); display: flex; align-items: center; justify-content: center; font-size: 15px; color: var(--secondary); }
+.vbleeg { padding: 8px 0 0 2px; font-size: 13px; color: var(--secondary); } /* lege dag: net zo ingetogen als '+ 3 vaste overleggen' */
 .vbheledag { display: flex; align-items: center; gap: 8px; min-height: 38px; padding: 7px 12px; border-radius: 12px; background: var(--card); border: 1px solid var(--cardBorder); text-align: left; }
 .vbheledag .t { flex: 1; min-width: 0; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .vbheledag .h { color: var(--secondary); font-size: 12px; }
@@ -778,7 +778,7 @@ label.frij:focus-within .flabel { color: var(--accent); }
   .tegel .tit { font-size: 13px; line-height: 16px; -webkit-line-clamp: 2; max-height: 32px; }
   .tegel.ext .tit { -webkit-line-clamp: 2; max-height: 32px; }
   .tegel .iconen .icoon { width: 12px; height: 12px; }
-  .vbleeg { height: 36px; border-radius: 10px; font-size: 13px; }
+  .vbleeg { padding-top: 3px; font-size: 12px; }
   .vbheledag { min-height: 32px; padding: 5px 10px; border-radius: 10px; }
   .vbheledag .t { font-size: 13px; }
   .vbrest { font-size: 12px; }
@@ -877,8 +877,8 @@ label.frij:focus-within .flabel { color: var(--accent); }
   .tegel .tit { font-size: 15px; line-height: 19px; max-height: 38px; }
   .tegel.ext .tit { -webkit-line-clamp: 2; max-height: 38px; }
   .tegel .iconen .icoon { width: 14px; height: 14px; }
-  .vbleeg, .vbheledag .t { font-size: 15px; }
-  .vbleeg { height: 44px; }
+  .vbheledag .t { font-size: 15px; }
+  .vbleeg { padding-top: 6px; }
   body.desktop main.kolom > .legenda span { font-size: 14px; }
   .tegel.vrij .plus, .krij.vrij .plus { opacity: 0.8; }
 }

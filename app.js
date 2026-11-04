@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-04-24';
+const APP_VERSIE = '2026-11-04-25';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -1589,12 +1589,7 @@ function openDetail(e) {
       return { ...g, shown: g.people.slice(0, take) };
     }).filter((g) => g.shown.length);
 
-    // Alleen 'Extern' zonder naam: geen apart kopje, het label bovenaan zegt genoeg
-    const alleenExtern = !org && e.afgeleid && e.afgeleid.orgs[0] === 'Extern';
-    const afgeleidHtml = !org && e.afgeleid && !alleenExtern ? `<section class="sectie"><h3>Organisator</h3><div class="kaart"><div class="drij persoon">
-      <span class="avatar ext">${esc(initialsOf(e.afgeleid.orgs[0]))}</span>
-      <span class="tekst"><div class="t1">${esc(e.afgeleid.orgs[0] === 'Extern' ? 'Externe organisatie' : e.afgeleid.orgs[0])}</div><div class="t2">${e.afgeleid.bron === 'teams' ? 'Afgeleid uit de Teams-uitnodiging' : 'Afgeleid uit de titel'}</div></span>
-    </div></div></section>` : '';
+    // Afgeleide organisatie (gepubliceerde agenda zonder organisator): geen apart kopje, het label bovenaan zegt genoeg
     const orgHtml = org ? `<section class="sectie"><h3>Organisator</h3><div class="kaart">${persoonRij(org, {
       idx: kaartje(org, { org: orgDomain ? (orgExternal ? orgLabel(orgDomain) : OWN_ORG_NAME) : null, external: orgExternal, role: 'Organisator' }),
       external: orgExternal, badge: orgExternal ? orgLabel(orgDomain) : null,
@@ -1627,7 +1622,7 @@ function openDetail(e) {
           </div>
         </div>
         ${plekken.length ? `<section class="sectie"><h3>Locatie</h3><div class="kaart">${plekken.join('')}</div></section>` : ''}
-        ${orgHtml || afgeleidHtml}
+        ${orgHtml}
         ${deelnHtml}
         ${notes ? `<section class="sectie"><h3>Notities</h3><div class="kaart"><div class="notities"><p class="${lang && !meerNotities ? 'kort' : ''}">${esc(notes)}</p>${lang ? `<button data-actie="notities">${meerNotities ? 'Minder tonen' : 'Meer tonen'}</button>` : ''}</div></div></section>` : ''}
         <div class="dvoet">

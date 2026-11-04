@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-04-15';
+const APP_VERSIE = '2026-11-04-16';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -948,7 +948,7 @@ function weekKolommenHtml(events) {
     const lijst = eventsForDay(events, d);
     // Een leeg weekend krijgt een smalle kolom: de werkdagen hebben de ruimte harder nodig
     const smal = i >= 5 && !lijst.length;
-    breedtes.push(smal ? '96px' : 'minmax(0, 1fr)');
+    breedtes.push(smal ? 'minmax(64px, 0.35fr)' : 'minmax(0, 1fr)');
     const heleDag = lijst.filter((e) => e.allDay);
     const getimed = lijst.filter((e) => !e.allDay);
     const getoond = ST.filter === 'notable' ? getimed.filter((e) => e.notable) : getimed;
@@ -960,11 +960,11 @@ function weekKolommenHtml(events) {
     const ov = overlapVan(lijst);
     rijen += items.map((it) => (it.e ? kolomRij(it.e, ov) : kolomVrij(it.f))).join('');
     if (verborgen > 0) rijen += `<div class="krij rest"><span class="stip"></span><span>${vastText(verborgen)}</span></div>`;
-    if (!rijen) rijen = `<div class="krij rest leeg">${smal ? 'Leeg' : 'Geen afspraken'}</div>`;
+    if (!rijen) rijen = smal ? '' : '<div class="krij rest leeg">Geen afspraken</div>';
     const isVandaag = sameDay(d, t);
     kolommen.push(`<section class="dagkolom${isVandaag ? ' vandaag' : ''}${d < t ? ' voorbij' : ''}${i >= 5 ? ' weekend' : ''}${smal ? ' smal' : ''}">
-      <h2 class="kolomkop" aria-label="${isVandaag ? 'Vandaag, ' : ''}${DAYS_LONG[d.getDay()]} ${d.getDate()} ${MONTHS_LONG[d.getMonth()]}"><span class="nr num">${d.getDate()}</span><span class="dow">${cap(DAYS_LONG[d.getDay()])}</span>${d.getDate() === 1 && i > 0 ? `<span class="mnd">${MONTHS_SHORT[d.getMonth()]}</span>` : ''}</h2>
-      <div class="kaart">${rijen}</div>
+      <h2 class="kolomkop" aria-label="${isVandaag ? 'Vandaag, ' : ''}${DAYS_LONG[d.getDay()]} ${d.getDate()} ${MONTHS_LONG[d.getMonth()]}"><span class="nr num">${d.getDate()}</span><span class="dow">${smal ? cap(DAYS_SHORT[d.getDay()]) : cap(DAYS_LONG[d.getDay()])}</span>${d.getDate() === 1 && i > 0 ? `<span class="mnd">${MONTHS_SHORT[d.getMonth()]}</span>` : ''}</h2>
+      ${rijen ? `<div class="kaart">${rijen}</div>` : ''}
     </section>`);
   }
   return `<div class="weekraster" style="grid-template-columns:${breedtes.join(' ')}">${kolommen.join('')}</div>${legendaWeek()}`;

@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-04-14';
+const APP_VERSIE = '2026-11-04-15';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -1751,9 +1751,9 @@ async function openNieuw({ dag = null, blok = null } = {}) {
       <div class="nvast">
         <div class="nsamenvatting" id="nsamen"></div>
         <a class="groteknop vol" id="noutlook" target="_blank" rel="noopener">${I.extern}Verder in Outlook</a>
+        <button class="tekstknop" id="nics">of download als .ics-bestand</button>
       </div>
       <div class="dvoet">
-        <button class="groteknop" id="nics">${I.kalender}Downloaden als .ics</button>
         <p class="voetnoot">Deze app leest je agenda alleen. Outlook opent met alles ingevuld; daar sla je de afspraak op en verstuur je de uitnodiging.</p>
       </div>
     </div>`;

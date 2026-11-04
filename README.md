@@ -86,7 +86,8 @@ Open de app in Safari, tik op Delen, Zet op beginscherm. Log in met je Australie
 
 ## Agenda-link opgeven (webcal)
 
-Onder Agenda kun je ook de link van je gepubliceerde Outlook-agenda opgeven (`webcal://…` of `https://…/calendar.ics`).
+Onder Agenda kun je de link van je Cloudflare Worker opgeven (zie hieronder), met de sleutel erin. De link van je
+gepubliceerde Outlook-agenda zelf werkt niet: Outlook staat niet toe dat een andere website hem ophaalt (CORS).
 De app haalt de agenda dan zelf op, altijd op de achtergrond: bij het opstarten, elk kwartier zolang de app open
 is, als je na een kwartier terugkomt in de app en als de verbinding terugkomt. Is er niets veranderd (alleen de
 DTSTAMP), dan leest hij niets opnieuw in. Is er wel iets veranderd, dan leest hij het nieuwe bestand naast het oude

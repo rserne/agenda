@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-04-9';
+const APP_VERSIE = '2026-11-04-10';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -422,7 +422,7 @@ async function haalLinkTekst(link) {
     clearTimeout(klok);
     if (navigator.onLine === false) throw new Error('Je bent offline.');
     if (e.name === 'AbortError') throw new Error('Outlook reageert niet. Later lukt het vast wel.');
-    throw new Error('De browser mag deze link niet rechtstreeks ophalen. Outlook staat dat niet toe vanaf een andere website (CORS). Dan is er een tussenstap op een server nodig.');
+    throw new Error('De app kan deze link niet ophalen. Klopt de link van je Cloudflare Worker?');
   }
   try {
     if (!r.ok) {
@@ -537,9 +537,9 @@ function openLinkPaneel(voorstel = '') {
       <div class="detailnav"><button class="rond glas" data-actie="sluit" aria-label="Sluiten">${I.kruis}</button></div></div>
     <div class="detailinhoud">
       <div class="dkop"><h2 class="dtitel">Agenda-link</h2></div>
-      <p class="linkuitleg">Plak de link naar je agenda: de link van je Cloudflare Worker, of de ICS-link van je gepubliceerde agenda uit Outlook.</p>
+      <p class="linkuitleg">Plak de link van je Cloudflare Worker, met de sleutel erin.</p>
       <div class="formkaart">
-        <label class="frij kolom"><span class="flabel">Link</span><input id="linkinvoer" type="url" inputmode="url" placeholder="https://… of webcal://…" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="go" value="${esc(huidig)}"></label>
+        <label class="frij kolom"><span class="flabel">Link</span><input id="linkinvoer" type="url" inputmode="url" placeholder="https://agenda.rserne.workers.dev/?sleutel=…" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="go" value="${esc(huidig)}"></label>
       </div>
       <p class="linkfout" id="linkfout" hidden></p>
       <div class="dvoet">
@@ -551,7 +551,10 @@ function openLinkPaneel(voorstel = '') {
   const invoer = $('#linkinvoer', el), fout = $('#linkfout', el);
   const haal = () => {
     const link = invoer.value.trim();
-    if (!/^(webcals?|https?):\/\/\S+$/i.test(link)) { fout.textContent = 'Dit is geen geldige link. Hij begint met https:// of webcal://.'; fout.hidden = false; return; }
+    const melding = /^webcals?:|outlook\.(office365|office|live)\.com/i.test(link)
+      ? 'Een Outlook-link kan de app niet rechtstreeks ophalen. Gebruik de link van je Cloudflare Worker.'
+      : !/^https:\/\/\S+$/i.test(link) ? 'Dit is geen geldige link. Hij begint met https://.' : null;
+    if (melding) { fout.textContent = melding; fout.hidden = false; return; }
     p.sluit();
     gebruikLink(link);
   };

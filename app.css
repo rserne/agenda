@@ -17,6 +17,7 @@
   --regularTile: #D1D1D6;
   --regularTileText: rgba(0, 0, 0, 0.72);
   --externDot: #D04F42;
+  --externText: #B8392C; /* als tekst: 5,7:1 op wit (de streep mag lichter) */
   --internDot: #1F72A0;
   --regularDot: rgba(60, 60, 67, 0.42);
   --regularText: rgba(60, 60, 67, 0.84);
@@ -27,21 +28,21 @@
   --fill: rgba(120, 120, 128, 0.16);
   --badgeBg: rgba(208, 79, 66, 0.14);
   --badgeText: #B0372C; /* 5,1:1 op het badgevlak */
-  --avatarGrey: #8E8E93;
+  --avatarGrey: #6E6E73; /* witte initialen: 5,1:1 */
   /* Glas: doorzichtiger, sterker vervaagd en met een lichte rand bovenin, zoals Liquid Glass van iOS */
   --glass: linear-gradient(180deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0.4));
   --glassBorder: rgba(255, 255, 255, 0.55);
   --glassShadow: 0 6px 24px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.85), inset 0 -1px 0 rgba(0, 0, 0, 0.03);
   --glassBlur: blur(32px) saturate(210%) brightness(1.04);
   --selBg: rgba(44, 134, 184, 0.14);
-  --selText: #1F72A0;
+  --selText: #185E85; /* 6,0:1 op de gekozen week, 5,5:1 in de zijbalk */
   --tabText: rgba(60, 60, 67, 0.85);
   --grabber: rgba(60, 60, 67, 0.3);
   --meta: rgba(60, 60, 67, 0.85);
   --notes: rgba(0, 0, 0, 0.85);
   --ringTrack: rgba(60, 60, 67, 0.12);
   --ringFill: rgba(60, 60, 67, 0.55);
-  --statusYes: #248A3D;
+  --statusYes: #1E7B34; /* 5,3:1 op wit */
   --statusNo: #D70015;
   --statusMaybe: #C93400;
   --tileText: #1E1D24;
@@ -82,6 +83,7 @@
     --regularTile: #3A3A3C;
     --regularTileText: rgba(255, 255, 255, 0.78);
     --externDot: #EB8479;
+    --externText: #EB8479;
     --internDot: #84BEDC;
     --regularDot: rgba(235, 235, 245, 0.3);
     --regularText: rgba(235, 235, 245, 0.64);
@@ -452,7 +454,7 @@ button.drij:active { opacity: 0.6; }
 .avatar.ext { background: var(--externTile); color: var(--tileText); }
 .status { font-size: 13px; flex-shrink: 0; }
 .groep { font-size: 12px; font-weight: 600; padding-top: 12px; color: var(--secondary); }
-.groep.ext { color: var(--externDot); }
+.groep.ext { color: var(--externText); }
 .meerknop { color: var(--accent); font-size: 15px; padding: 14px 0; width: 100%; text-align: left; border-top: 0.5px solid var(--separator); }
 .notities { padding: 14px 0; display: flex; flex-direction: column; gap: 8px; }
 .notities p { margin: 0; color: var(--notes); font-size: 15px; line-height: 21px; white-space: pre-wrap; overflow-wrap: anywhere; }

@@ -84,6 +84,14 @@ Een gratis Nhost-organisatie mag maar één actief project hebben. Daarom draait
 
 Open de app in Safari, tik op Delen, Zet op beginscherm. Log in met je AustralieApp-account.
 
+## Agenda-link opgeven (webcal)
+
+Onder Agenda kun je ook de link van je gepubliceerde Outlook-agenda opgeven (`webcal://…` of `https://…/calendar.ics`).
+De app haalt de agenda dan zelf op: bij het opstarten en als je na een kwartier terugkomt in de app. De link is
+geheim (wie hem heeft, ziet je agenda) en blijft alleen op het toestel, in IndexedDB. Hij komt nooit in de code of
+de repo. Lukt rechtstreeks ophalen niet omdat Outlook geen CORS toestaat, dan meldt de app dat; dan is een tussenstap
+op een server nodig (zoals de Nhost-functie).
+
 ## Eigen .ics-bestand openen
 
 Onder **Agenda** staat **Eigen agenda inladen**: op de telefoon en tablet in de weekkiezer (tik op de titel), op de desktop in de zijbalk. De app leest het bestand in de browser, bewaart het in IndexedDB op dat toestel en toont je echte agenda, zonder Nhost en zonder inloggen. Het bestand wordt nergens naartoe gestuurd. Met **Wissen** gaat de app terug naar de voorbeeldgegevens. Het inlezen van een groot bestand kost op een telefoon enkele seconden. Daarom bewaart de app de uitgerolde weken (een halfjaar terug en vooruit) ook in IndexedDB: bij het opstarten staan die meteen in beeld, en het bestand zelf wordt pas daarna op de achtergrond ingelezen voor weken daarbuiten.

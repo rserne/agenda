@@ -447,6 +447,20 @@ button.drij:active { opacity: 0.6; }
 .linkpaneel .frij.kolom input { font-size: 16px; padding: 2px 0; }
 .linkfout { margin: -6px 4px 0; color: var(--overlap, #C2410C); font-size: 14px; line-height: 19px; }
 .groteknop.hoofd { background: var(--accent); color: var(--onAccent); }
+/* Agenda kiezen */
+.bronlijst { padding: 0; overflow: hidden; }
+.bronoptie { display: flex; align-items: center; gap: 14px; width: 100%; min-height: 64px; padding: 10px 16px; text-align: left; color: var(--label); }
+.bronoptie + .bronoptie { border-top: 0.5px solid var(--separator); }
+.bronoptie:active { background: var(--fill); }
+.bronoptie .bronicoon { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 10px; background: var(--fill); color: var(--accent); flex-shrink: 0; }
+.bronoptie .bronicoon .icoon { width: 20px; height: 20px; }
+.bronoptie .tekst { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.bronoptie .t1 { font-size: 16px; font-weight: 600; }
+.bronoptie .t2 { font-size: 13px; color: var(--secondary); line-height: 17px; overflow: hidden; text-overflow: ellipsis; }
+.bronoptie .bronvink { color: var(--accent); flex-shrink: 0; }
+.bronoptie .bronvink .icoon { width: 20px; height: 20px; }
+.bronpaneel .detailinhoud { gap: 16px; }
+.zbagenda button:disabled { opacity: 0.5; }
 .groteknop:disabled { opacity: 0.6; }
 
 /* Visitekaartje */
@@ -876,3 +890,6 @@ label.frij:focus-within .flabel { color: var(--accent); }
   body.desktop main.kolom { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--barH) + 28px); }
   body.desktop main.kolom > .legenda { position: static; background: none; padding: 28px 2px 0; }
 }
+
+/* Korte panelen (agenda kiezen, agenda-link): zo hoog als de inhoud, zonder de minimale hoogte van het detailscherm */
+.paneel.detail.bronpaneel, .paneel.detail.linkpaneel, .paneel.detail.dialoog.bronpaneel, .paneel.detail.dialoog.linkpaneel { min-height: 0; }

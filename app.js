@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-04-10';
+const APP_VERSIE = '2026-11-04-11';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -142,6 +142,7 @@ const I = {
   week: lijn('<rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M3.5 9h17M9.2 9v10.5M14.8 9v10.5"/>', 1.8),
   vooruit: lijn('<rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M3.5 9h17M7.5 13h9M7.5 16.5h6"/>', 1.8),
   extern: lijn('<path d="M14 4h6v6M20 4l-9 9M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/>', 2),
+  vink: lijn('<path d="M5 12.5l4.5 4.5L19 7.5"/>', 2.6),
   koppel: lijn('<path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1"/>', 2),
 };
 
@@ -529,6 +530,14 @@ async function vernieuwLink({ ookAlsVers = false } = {}) {
     renderZijbalk();
   }
 }
+// 'Nu bijwerken': hetzelfde als op de achtergrond, maar met een melding onderin
+async function nuBijwerken() {
+  if (LINK_BEZIG) return;
+  toonStatus('Agenda bijwerken…');
+  await vernieuwLink({ ookAlsVers: true });
+  if (BESTAND && BESTAND.linkFout) toonStatus(BESTAND.linkFout, { soort: 'fout', actie: ['Link aanpassen', () => openLinkPaneel()] });
+  else toonStatus('Je agenda is bijgewerkt.', { soort: 'klaar', duur: 2000 });
+}
 function openLinkPaneel(voorstel = '') {
   const el = document.createElement('div');
   el.className = 'paneel detail nieuw linkpaneel' + (isDesktop() ? ' dialoog' : '');
@@ -562,6 +571,38 @@ function openLinkPaneel(voorstel = '') {
   invoer.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') haal(); });
   el.addEventListener('click', (ev) => { if (ev.target.closest('[data-actie="sluit"]')) p.sluit(); });
   if (!huidig) setTimeout(() => invoer.focus(), 350);
+}
+
+// Kiezen waar de afspraken vandaan komen: de Cloudflare-link (werkt zichzelf bij), een .ics-bestand of de voorbeeldgegevens
+function openBronPaneel() {
+  const nu = BESTAND && BESTAND.link ? 'link' : BESTAND ? 'bestand' : 'voorbeeld';
+  const optie = (id, icoon, titel, sub) => `<button class="bronoptie${nu === id ? ' aan' : ''}" data-bron="${id}" aria-pressed="${nu === id}">
+      <span class="bronicoon">${icoon}</span><span class="tekst"><span class="t1">${titel}</span><span class="t2">${sub}</span></span>${nu === id ? `<span class="bronvink">${I.vink}</span>` : ''}</button>`;
+  const el = document.createElement('div');
+  el.className = 'paneel detail nieuw bronpaneel' + (isDesktop() ? ' dialoog' : '');
+  el.innerHTML = `<div class="detailgreep"><div class="greep"></div>
+      <div class="detailnav"><button class="rond glas" data-actie="sluit" aria-label="Sluiten">${I.kruis}</button></div></div>
+    <div class="detailinhoud">
+      <div class="dkop"><h2 class="dtitel">Agenda kiezen</h2></div>
+      <div class="formkaart bronlijst">
+        ${optie('link', I.koppel, 'Via je Cloudflare-link', 'Wordt vanzelf bijgewerkt')}
+        ${optie('bestand', I.inladen, 'Uit een .ics-bestand', 'Eenmalig; zelf opnieuw inladen')}
+        ${optie('voorbeeld', I.kalender, 'Voorbeeldgegevens', 'Verzonnen afspraken en namen')}
+      </div>
+      <p class="voetnoot">Je agenda blijft alleen op dit toestel. In Outlook verandert er niets.</p>
+    </div>`;
+  const p = openPaneel(el, { greepSelector: '.detailgreep' });
+  el.addEventListener('click', (ev) => {
+    if (ev.target.closest('[data-actie="sluit"]')) { p.sluit(); return; }
+    const k = ev.target.closest('[data-bron]');
+    if (!k) return;
+    const keuze = k.dataset.bron;
+    // Het bestandsvenster moet direct bij de tik openen (iOS), dus vóór het sluiten van het paneel
+    if (keuze === 'bestand') { $('#icsinvoer').click(); p.sluit(); return; }
+    p.sluit();
+    if (keuze === 'link') setTimeout(() => openLinkPaneel(), 250);
+    else if (keuze === 'voorbeeld' && nu !== 'voorbeeld' && confirm(wisVraag())) vergeetBestand();
+  });
 }
 
 const wisVraag = () => (BESTAND && BESTAND.link
@@ -1350,8 +1391,8 @@ function openWeekkiezer() {
     const ics = ev.target.closest('[data-actie^="ics-"]');
     if (ics) {
       if (ics.dataset.actie === 'ics-openen') { $('#icsinvoer').click(); p.sluit(); }
-      else if (ics.dataset.actie === 'ics-link') { p.sluit(); setTimeout(openLinkPaneel, 200); }
-      else if (confirm(wisVraag())) { p.sluit(); vergeetBestand(); }
+      else if (ics.dataset.actie === 'ics-kies') { p.sluit(); setTimeout(openBronPaneel, 250); }
+      else if (ics.dataset.actie === 'ics-nu') nuBijwerken();
     }
   });
 }
@@ -1389,13 +1430,15 @@ function agendaSectieHtml() {
     bron = [esc(BESTAND.naam), `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]} · alleen op dit toestel`];
   } else if (DEMO) bron = ['Voorbeeldgegevens', 'Verzonnen afspraken en namen'];
   else bron = ['Outlook', DATA.opgehaald ? `Bijgewerkt om ${hhmm(new Date(DATA.opgehaald))}` : 'Via Nhost'];
-  const knoppen = DEMO || BESTAND
-    ? `<button data-actie="ics-link">${I.koppel}<span>${BESTAND && BESTAND.link ? 'Link wijzigen' : 'Agenda-link opgeven'}</span></button>`
-      + `<button data-actie="ics-openen">${I.inladen}<span>${BESTAND && !BESTAND.link ? 'Ander bestand inladen' : 'Bestand inladen'}</span></button>`
-      + `${BESTAND ? `<button data-actie="ics-wissen">${I.wissen}<span>Wissen</span></button>` : ''}`
-    : '';
+  // Eerst de bron die je nu gebruikt, met de handeling die daarbij hoort; daarna één knop om een andere bron te kiezen
+  let knoppen = '';
+  if (DEMO || BESTAND) {
+    if (BESTAND && BESTAND.link) knoppen += `<button data-actie="ics-nu"${LINK_BEZIG ? ' disabled' : ''}>${I.herhaal}<span>Nu bijwerken</span></button>`;
+    else if (BESTAND) knoppen += `<button data-actie="ics-openen">${I.inladen}<span>Nieuwer bestand inladen</span></button>`;
+    knoppen += `<button data-actie="ics-kies">${I.kalender}<span>${BESTAND ? 'Andere bron kiezen' : 'Je eigen agenda kiezen'}</span></button>`;
+  }
   return `<nav class="zblijst zbagenda" aria-label="Agenda"><h3>Agenda</h3>
-    <div class="zbbron">${I.kalender}<span><span class="t1">${bron[0]}</span><span class="t2">${bron[1]}</span></span></div>
+    <div class="zbbron">${BESTAND && BESTAND.link ? I.koppel : BESTAND ? I.inladen : I.kalender}<span><span class="t1">${bron[0]}</span><span class="t2">${bron[1]}</span></span></div>
     ${knoppen}
   </nav>`;
 }
@@ -1866,8 +1909,8 @@ function koppel() {
     const actie = ev.target.closest('[data-actie^="ics-"]');
     if (actie) {
       if (actie.dataset.actie === 'ics-openen') $('#icsinvoer').click();
-      else if (actie.dataset.actie === 'ics-link') openLinkPaneel();
-      else if (confirm(wisVraag())) vergeetBestand();
+      else if (actie.dataset.actie === 'ics-kies') openBronPaneel();
+      else if (actie.dataset.actie === 'ics-nu') nuBijwerken();
       return;
     }
     const f = ev.target.closest('[data-filter]');

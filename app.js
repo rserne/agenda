@@ -1,9 +1,9 @@
 // Agenda, de app
-// Leest je agenda via de Nhost-functie /v1/agenda (die de iCal-feed van Outlook ophaalt) en toont
+// Leest je agenda rechtstreeks uit Microsoft 365 (Graph), uit een eigen .ics-bestand of via de Nhost-functie, en toont
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-04-3';
+const APP_VERSIE = '2026-11-04-4';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -15,6 +15,12 @@ const BRON = 'voorbeeld';
 // Nhost-project (Settings, General). Voorlopig het project van de AustralieApp (Frankfurt).
 const NHOST_SUB = 'gjqqtpteurwdbealgmqh';
 const NHOST_REG = 'eu-central-1';
+
+// Microsoft 365: je agenda rechtstreeks uit Outlook via Microsoft Graph, ingelogd met je eigen werkaccount (delegated).
+// Er is geen geheim nodig: de app logt in met PKCE. Client-ID en tenant zijn niet geheim.
+const MS_CLIENT_ID = '71ec3b01-2db5-4417-b611-3057a4a8c5f1';
+const MS_TENANT_STANDAARD = 'organizations'; // tenant-ID of maildomein; ook te kiezen met ?tenant=… achter het adres
+const MS_SCOPES = ['Calendars.Read', 'User.Read'];
 
 const OWN_ORG_NAME = 'CACI'; // naam van je eigen organisatie bij de deelnemers
 const OWN_DOMAINS_EXTRA = []; // extra eigen maildomeinen, bijvoorbeeld ['caci.nl']
@@ -36,8 +42,13 @@ const PARAMS = new URLSearchParams(location.search);
 // Formaat: telefoon (smal), tablet (vanaf 768) en desktop (vanaf 1200, met zijbalk en dagkolommen)
 const DESKTOP = window.matchMedia('(min-width: 1200px)');
 const isDesktop = () => DESKTOP.matches;
+const lsLees = (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } };
+if (PARAMS.get('tenant')) { try { localStorage.setItem('ag_ms_tenant', JSON.stringify(PARAMS.get('tenant'))); } catch (e) { /* geblokkeerd */ } }
+const MS_TENANT = lsLees('ag_ms_tenant') || MS_TENANT_STANDAARD;
+// Microsoft 365 gekoppeld? Dan komen de afspraken uit Graph (met ?demo toch de voorbeeldgegevens)
+const MSBRON = !!lsLees('ag_ms') && !PARAMS.has('demo');
 // LOKAAL: geen inloggen; de afspraken komen uit voorbeeld.js of uit een .ics-bestand op dit toestel
-const DEMO = !NHOST_SUB || (BRON === 'voorbeeld' ? !PARAMS.has('echt') : PARAMS.has('demo'));
+const DEMO = !MSBRON && (!NHOST_SUB || (BRON === 'voorbeeld' ? !PARAMS.has('echt') : PARAMS.has('demo')));
 let BESTAND = null; // { naam, datum, reeksen, kennis, omzetter, hintVoor } als je zelf een .ics hebt geopend
 const lokaal = () => DEMO || !!BESTAND;
 
@@ -142,6 +153,8 @@ const I = {
   week: lijn('<rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M3.5 9h17M9.2 9v10.5M14.8 9v10.5"/>', 1.8),
   vooruit: lijn('<rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M3.5 9h17M7.5 13h9M7.5 16.5h6"/>', 1.8),
   extern: lijn('<path d="M14 4h6v6M20 4l-9 9M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/>', 2),
+  koppel: lijn('<path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1"/>', 2),
+  afmelden: lijn('<path d="M14 4h3.5A2.5 2.5 0 0 1 20 6.5v11a2.5 2.5 0 0 1-2.5 2.5H14"/><path d="M10 16.5L5.5 12 10 7.5M5.5 12H15"/>', 2),
 };
 
 /* ------------------------------------------------------------------ */
@@ -355,6 +368,22 @@ async function vergeetBestand() {
 class NietIngelogd extends Error {}
 
 async function haalOp(van, tot) {
+  const d = MSBRON ? await graphOphalen(van, tot) : await nhostOphalen(van, tot);
+  // Alles wat in deze weken lag vervangen door de nieuwe stand (ook verwijderde afspraken verdwijnen zo)
+  const a = van.getTime(), b = tot.getTime();
+  for (const [id, e] of DATA.ruw) {
+    const s = new Date(e.allDay ? parseYmd(e.start) : e.start).getTime();
+    if (s >= a && s < b) DATA.ruw.delete(id);
+  }
+  d.events.forEach((e) => DATA.ruw.set(e.id, e));
+  for (let w = startOfWeek(van); w < tot; w = addDays(w, 7)) DATA.weken.add(w.getTime());
+  DATA.me = d.me || DATA.me;
+  DATA.ownDomains = d.ownDomains || DATA.ownDomains;
+  DATA.opgehaald = Date.now();
+  bewaar();
+}
+
+async function nhostOphalen(van, tot) {
   const sleutel = await toegangssleutel();
   if (!sleutel) throw new NietIngelogd();
   const url = `${API}?van=${ymd(van)}&tot=${ymd(tot)}`;
@@ -368,19 +397,133 @@ async function haalOp(van, tot) {
     const fout = await r.json().catch(() => ({}));
     throw new Error(fout.error || `De agenda gaf fout ${r.status}`);
   }
-  const d = await r.json();
-  // Alles wat in deze weken lag vervangen door de nieuwe stand (ook verwijderde afspraken verdwijnen zo)
-  const a = van.getTime(), b = tot.getTime();
-  for (const [id, e] of DATA.ruw) {
-    const s = new Date(e.allDay ? parseYmd(e.start) : e.start).getTime();
-    if (s >= a && s < b) DATA.ruw.delete(id);
+  return r.json();
+}
+
+/* ------------------------------------------------------------------ */
+/*  Microsoft 365: inloggen (MSAL, PKCE) en afspraken via Graph        */
+/* ------------------------------------------------------------------ */
+
+// Hierheen stuurt Microsoft je na het inloggen terug. Dit adres moet in de app-registratie staan
+// (Authentication, Single-page application), bijvoorbeeld https://rserne.github.io/agenda/
+const MS_TERUG = location.origin + location.pathname.replace(/[^/]*$/, '');
+let _ms = null, _graphCode = null, MS_FOUT = null;
+const graphCode = () => (_graphCode = _graphCode || import('./functions/_graph.js'));
+const laadScript = (src) => new Promise((ok, fout) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = () => fout(new Error(`${src} niet geladen`)); document.head.appendChild(s); });
+
+// MSAL pas laden als je Microsoft 365 gebruikt (ruim 300 kB). Komt je net terug van het inloggen, dan verwerkt
+// handleRedirectPromise het antwoord van Microsoft.
+function msApp() {
+  if (!_ms) {
+    _ms = (async () => {
+      const [, code] = await Promise.all([window.msal ? null : laadScript('vendor/msal-browser.min.js'), graphCode()]);
+      const app = new msal.PublicClientApplication({
+        auth: { clientId: MS_CLIENT_ID, authority: `https://login.microsoftonline.com/${MS_TENANT}`, redirectUri: MS_TERUG },
+        cache: { cacheLocation: 'localStorage' }, // blijft bewaard als je de app sluit
+      });
+      await app.initialize();
+      try {
+        const r = await app.handleRedirectPromise();
+        if (r && r.account) app.setActiveAccount(r.account);
+      } catch (e) { MS_FOUT = code.msUitleg(e, MS_TERUG); }
+      if (!app.getActiveAccount() && app.getAllAccounts().length) app.setActiveAccount(app.getAllAccounts()[0]);
+      return app;
+    })();
+    _ms.catch(() => { _ms = null; });
   }
-  d.events.forEach((e) => DATA.ruw.set(e.id, e));
-  for (let w = startOfWeek(van); w < tot; w = addDays(w, 7)) DATA.weken.add(w.getTime());
-  DATA.me = d.me || DATA.me;
-  DATA.ownDomains = d.ownDomains || DATA.ownDomains;
-  DATA.opgehaald = Date.now();
-  bewaar();
+  return _ms;
+}
+async function msToken() {
+  const app = await msApp();
+  if (MS_FOUT) { const f = MS_FOUT; MS_FOUT = null; throw new NietIngelogd(f); }
+  const account = app.getActiveAccount();
+  if (!account) throw new NietIngelogd();
+  try {
+    return (await app.acquireTokenSilent({ scopes: MS_SCOPES, account })).accessToken;
+  } catch (e) {
+    // Verversen lukt niet meer (een webapp krijgt van Microsoft hooguit 24 uur): opnieuw inloggen
+    if (e instanceof msal.InteractionRequiredAuthError || /interaction_required|login_required|consent_required|no_tokens_found|token_refresh_required/i.test(`${e.errorCode} ${e.message}`)) throw new NietIngelogd();
+    throw new Error((await graphCode()).msUitleg(e, MS_TERUG));
+  }
+}
+async function msInloggen() {
+  LS.set('ag_ms', true);
+  const app = await msApp();
+  const account = app.getActiveAccount();
+  await app.loginRedirect({ scopes: MS_SCOPES, ...(account ? { loginHint: account.username } : { prompt: 'select_account' }) });
+}
+// Knoppen voor Microsoft 365 (zijbalk, weekkiezer, inlogscherm en balk)
+function msActie(knop) {
+  if (knop.dataset.actie === 'ms-afmelden') {
+    if (ST.login || confirm('Afmelden bij Microsoft? De app toont dan weer voorbeeldgegevens. Je afspraken blijven gewoon in Outlook staan.')) msAfmelden();
+    return;
+  }
+  // ms-koppelen en ms-inloggen: door naar het inlogscherm van Microsoft
+  knop.disabled = true;
+  const tekst = knop.querySelector('span') || knop;
+  tekst.textContent = 'Naar Microsoft…';
+  msInloggen().catch(async (e) => {
+    knop.disabled = false;
+    tekst.textContent = 'Opnieuw proberen';
+    alert((await graphCode()).msUitleg(e, MS_TERUG));
+  });
+}
+async function msAfmelden() {
+  try { const app = await msApp(); await app.clearCache(); } catch (e) { /* toch lokaal afmelden */ }
+  ['ag_ms', 'ag_data', 'ag_ms_reeksen'].forEach((k) => LS.del(k));
+  location.reload();
+}
+
+async function graphOphalen(van, tot) {
+  const [token, code] = await Promise.all([msToken(), graphCode()]);
+  const vraag = async (url, opties = {}) => {
+    const r = await fetch(url, { ...opties, headers: { Authorization: `Bearer ${token}`, ...(opties.headers || {}) } });
+    if (r.status === 401) throw new NietIngelogd();
+    if (!r.ok) {
+      const f = await r.json().catch(() => ({}));
+      const tekst = f.error && f.error.message ? `: ${f.error.message}` : '';
+      throw new Error(r.status === 403 ? `Microsoft geeft geen toegang tot je agenda. Mag deze app Calendars.Read gebruiken?${tekst}` : `Microsoft Graph gaf fout ${r.status}${tekst}`);
+    }
+    return r.json();
+  };
+  // Herhalingen komen al uitgerold terug; tijden in UTC, notities als platte tekst
+  const voorkeur = { Prefer: 'outlook.timezone="UTC", outlook.body-content-type="text"' };
+  const ruw = [];
+  let url = `https://graph.microsoft.com/v1.0/me/calendarView?startDateTime=${van.toISOString()}&endDateTime=${tot.toISOString()}&$select=${code.GRAPH_VELDEN}&$orderby=start/dateTime&$top=500`;
+  while (url) {
+    const d = await vraag(url, { headers: voorkeur });
+    ruw.push(...(d.value || []));
+    url = d['@odata.nextLink'] || null;
+  }
+  let me = DATA.me;
+  if (!me) {
+    const ik = await vraag('https://graph.microsoft.com/v1.0/me?$select=mail,userPrincipalName').catch((e) => { if (e instanceof NietIngelogd) throw e; return {}; });
+    me = String(ik.mail || ik.userPrincipalName || '').toLowerCase() || null;
+  }
+  const reeksen = await graphReeksen(ruw, vraag, code);
+  return { events: ruw.map((g) => code.vanGraph(g, reeksen)), me, ownDomains: me ? [domainOf(me)] : [] };
+}
+// Hoe vaak een reeks terugkomt ('elke week') staat alleen bij de hoofdafspraak. Die vragen we per twintig tegelijk
+// op ($batch) en onthouden we, zodat het maar één keer per reeks gebeurt.
+async function graphReeksen(ruw, vraag, code) {
+  const bekend = LS.get('ag_ms_reeksen') || {};
+  const nodig = [...new Set(ruw.map((g) => g.seriesMasterId).filter((id) => id && !(id in bekend)))];
+  for (let i = 0; i < nodig.length; i += 20) {
+    const deel = nodig.slice(i, i + 20);
+    try {
+      const d = await vraag('https://graph.microsoft.com/v1.0/$batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requests: deel.map((id, n) => ({ id: String(n), method: 'GET', url: `/me/events/${encodeURIComponent(id)}?$select=recurrence` })) }),
+      });
+      (d.responses || []).forEach((r) => { if (r.status === 200 && r.body) bekend[deel[Number(r.id)]] = code.herhalingVan(r.body.recurrence); });
+    } catch (e) {
+      if (e instanceof NietIngelogd) throw e;
+      break; // dan maar 'terugkerend' zonder 'elke week'
+    }
+  }
+  LS.set('ag_ms_reeksen', bekend);
+  return new Map(Object.entries(bekend));
 }
 
 // Zorg dat de weken van van t/m tot er zijn. Ontbreekt er iets, dan halen we meteen een flink blok op.
@@ -826,17 +969,20 @@ function render() {
   renderKop();
   renderZijbalk();
   const main = $('#inhoud');
-  if (ST.login) { main.innerHTML = loginHtml(); koppelLogin(); return; }
   const { start, eind } = periode();
+  // Microsoft-inlog verlopen terwijl deze week al bewaard is: de afspraken tonen, met een balk om opnieuw in te loggen
+  const metBalk = ST.login && MSBRON && DATA.weken.has(startOfWeek(start).getTime());
+  if (ST.login && !metBalk) { main.style.minHeight = ''; window.scrollTo(0, 0); main.innerHTML = loginHtml(); koppelLogin(); return; }
   const events = afsprakenTussen(start, eind);
   zichtbaar.clear();
   events.forEach((e) => zichtbaar.set(e.id, e));
   // Eigen bestand nog op de achtergrond aan het inlezen en deze week nog niet bewaard: ook 'laden' tonen
   const geenData = (!lokaal() || (BESTAND && !BESTAND.reeksen)) && !DATA.weken.has(startOfWeek(start).getTime());
-  if (geenData && ST.laden) { main.innerHTML = '<div class="laden">Agenda laden…</div>'; return; }
+  // (ook vóór het eerste ophalen: anders staat er heel even een lege week)
+  if (geenData && !ST.fout) { main.innerHTML = '<div class="laden">Agenda laden…</div>'; return; }
   if (geenData && ST.fout) { main.innerHTML = meldingHtml('Agenda niet beschikbaar', ST.fout, 'Opnieuw proberen'); $('#inhoud .knop').onclick = () => laad({ vers: true }); return; }
   // De agenda kies je in de weekkiezer (tik op de titel) of op de desktop in de zijbalk
-  main.innerHTML = ST.tab === 'week' ? weekHtml(events) : vooruitblikHtml(events);
+  main.innerHTML = (metBalk ? msBalkHtml() : '') + (ST.tab === 'week' ? weekHtml(events) : vooruitblikHtml(events));
   if (ST.naarVandaag) scrollNaarVandaag();
 }
 
@@ -893,7 +1039,18 @@ function behoudDag(teken) {
 function meldingHtml(titel, tekst, knop) {
   return `<div class="melding"><div class="doos"><h2>${esc(titel)}</h2><p>${esc(tekst)}</p>${knop ? `<button class="knop" style="padding:0 20px">${esc(knop)}</button>` : ''}</div></div>`;
 }
+function msBalkHtml() {
+  return `<div class="msbalk" role="status"><span>${esc(ST.loginMelding || 'Je Microsoft-inlog is verlopen.')}</span><button data-actie="ms-inloggen">Inloggen</button></div>`;
+}
 function loginHtml() {
+  if (MSBRON) {
+    return `<div class="melding"><div class="doos">
+      <h2>Inloggen bij Microsoft</h2>
+      <p>${esc(ST.loginMelding || 'Log in met je werkaccount. De app leest dan je agenda uit Outlook, alleen op dit toestel.')}</p>
+      <button class="knop" data-actie="ms-inloggen">Inloggen met Microsoft</button>
+      <button class="knop tweede" data-actie="ms-afmelden">Terug naar de voorbeeldgegevens</button>
+    </div></div>`;
+  }
   return `<div class="melding"><div class="doos">
     <h2>Inloggen</h2>
     <p>Log in met hetzelfde account als in de AustralieApp.</p>
@@ -906,6 +1063,7 @@ function loginHtml() {
   </div></div>`;
 }
 function koppelLogin() {
+  if (!$('#loginform')) return;
   $('#loginform').addEventListener('submit', async (ev) => {
     ev.preventDefault();
     const f = ev.target;
@@ -928,11 +1086,12 @@ async function laad({ vers = false } = {}) {
   const { start, eind } = periode();
   ST.laden = true;
   ST.fout = null;
+  if (MSBRON) ST.login = false;
   render();
   try {
     await zorgVoor(addDays(start, -7 * LOOK_AROUND_WEEKS), addDays(eind, 7 * LOOK_AROUND_WEEKS), { vers });
   } catch (e) {
-    if (e instanceof NietIngelogd) ST.login = true;
+    if (e instanceof NietIngelogd) { ST.login = true; ST.loginMelding = e.message || null; }
     else ST.fout = navigator.onLine === false ? 'Je bent offline. Zodra er verbinding is, wordt je agenda bijgewerkt.' : e.message;
   }
   ST.laden = false;
@@ -1124,6 +1283,8 @@ function openWeekkiezer() {
     }
     const rij = ev.target.closest('.weekrij');
     if (rij) { p.sluit(); kiesWeek(new Date(Number(rij.dataset.ma))); return; }
+    const ms = ev.target.closest('[data-actie^="ms-"]');
+    if (ms) { msActie(ms); return; }
     const ics = ev.target.closest('[data-actie^="ics-"]');
     if (ics) {
       if (ics.dataset.actie === 'ics-openen') { $('#icsinvoer').click(); p.sluit(); }
@@ -1160,10 +1321,14 @@ function agendaSectieHtml() {
     const d = new Date(BESTAND.datum);
     bron = [esc(BESTAND.naam), `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]} · alleen op dit toestel`];
   } else if (DEMO) bron = ['Voorbeeldgegevens', 'Verzonnen afspraken en namen'];
+  else if (MSBRON) bron = ['Microsoft 365', DATA.opgehaald ? `Bijgewerkt om ${hhmm(new Date(DATA.opgehaald))}` : 'Outlook via Microsoft Graph'];
   else bron = ['Outlook', DATA.opgehaald ? `Bijgewerkt om ${hhmm(new Date(DATA.opgehaald))}` : 'Via Nhost'];
-  const knoppen = DEMO || BESTAND
-    ? `<button data-actie="ics-openen">${I.inladen}<span>${BESTAND ? 'Ander bestand inladen' : 'Eigen agenda inladen'}</span></button>${BESTAND ? `<button data-actie="ics-wissen">${I.wissen}<span>Wissen</span></button>` : ''}`
-    : '';
+  let knoppen = '';
+  if (MSBRON) knoppen = `<button data-actie="ms-afmelden">${I.afmelden}<span>Afmelden bij Microsoft</span></button>`;
+  else if (DEMO || BESTAND) {
+    knoppen = `<button data-actie="ms-koppelen">${I.koppel}<span>Microsoft 365 koppelen</span></button>`
+      + `<button data-actie="ics-openen">${I.inladen}<span>${BESTAND ? 'Ander bestand inladen' : 'Eigen agenda inladen'}</span></button>${BESTAND ? `<button data-actie="ics-wissen">${I.wissen}<span>Wissen</span></button>` : ''}`;
+  }
   return `<nav class="zblijst zbagenda" aria-label="Agenda"><h3>Agenda</h3>
     <div class="zbbron">${I.kalender}<span><span class="t1">${bron[0]}</span><span class="t2">${bron[1]}</span></span></div>
     ${knoppen}
@@ -1337,7 +1502,7 @@ function openDetail(e) {
         ${notes ? `<section class="sectie"><h3>Notities</h3><div class="kaart"><div class="notities"><p class="${lang && !meerNotities ? 'kort' : ''}">${esc(notes)}</p>${lang ? `<button data-actie="notities">${meerNotities ? 'Minder tonen' : 'Meer tonen'}</button>` : ''}</div></div></section>` : ''}
         <div class="dvoet">
           ${mailTo.length ? `<a class="groteknop" href="${mailLink(mailTo, e.title)}">${I.mail}${mailTo.length === 1 ? 'Mail de deelnemer' : `Mail alle deelnemers (${mailTo.length})`}</a>` : ''}
-          <a class="groteknop" href="${OUTLOOK_URL}" target="_blank" rel="noopener">${I.extern}Openen in Outlook</a>
+          <a class="groteknop" href="${esc(e.webLink || OUTLOOK_URL)}" target="_blank" rel="noopener">${I.extern}Openen in Outlook</a>
           <p class="voetnoot">Accepteren, misschien of weigeren doe je in Outlook.</p>
         </div>
       </div>`;
@@ -1633,6 +1798,8 @@ function koppel() {
     if (ev.target.closest('#lagen')) return; // panelen regelen hun eigen knoppen
     const nav = ev.target.closest('[data-nav]');
     if (nav) { verschuif(Number(nav.dataset.nav)); return; }
+    const ms = ev.target.closest('[data-actie^="ms-"]');
+    if (ms) { msActie(ms); return; }
     const actie = ev.target.closest('[data-actie^="ics-"]');
     if (actie) {
       if (actie.dataset.actie === 'ics-openen') $('#icsinvoer').click();
@@ -1705,7 +1872,7 @@ if (PARAMS.has('uitloggen')) uitloggen();
   koppel();
   // Een eerder geopend .ics-bestand gaat voor (behalve met ?echt of ?demo)
   IDB.get('ics').catch(() => null).then(async (b) => {
-    if (b && b.tekst && !PARAMS.has('echt') && !PARAMS.has('demo')) {
+    if (b && b.tekst && !MSBRON && !PARAMS.has('echt') && !PARAMS.has('demo')) {
       const kopie = await IDB.get('icsweken').catch(() => null);
       if (kopie && kopie.datum === b.datum && kopie.weken && kopie.weken.length) startUitBewaard(b, kopie);
       else {
@@ -1713,7 +1880,7 @@ if (PARAMS.has('uitloggen')) uitloggen();
         try { await gebruikBestand(b); } catch (e) { BESTAND = null; }
       }
     }
-    if (!lokaal() && !SES.refresh) { ST.login = true; render(); return; }
+    if (!lokaal() && !MSBRON && !SES.refresh) { ST.login = true; render(); return; }
     // Eerst tonen wat er bewaard is, daarna de nieuwe stand ophalen
     render();
     laad({ vers: !lokaal() });

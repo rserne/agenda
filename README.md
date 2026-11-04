@@ -84,6 +84,32 @@ Een gratis Nhost-organisatie mag maar één actief project hebben. Daarom draait
 
 Open de app in Safari, tik op Delen, Zet op beginscherm. Log in met je AustralieApp-account.
 
+## Microsoft 365 koppelen (Graph)
+
+De app kan je agenda ook rechtstreeks uit Outlook lezen via Microsoft Graph. Je logt in met je eigen werkaccount;
+de app leest dan namens jou (delegated, alleen `Calendars.Read` en `User.Read`). Er is geen client secret: een app
+in de browser kan geen geheim bewaren, daarom logt MSAL.js in met PKCE. Client-ID en tenant zijn niet geheim.
+
+In de app: tik op de titel (telefoon) of kijk in de zijbalk (desktop), onder Agenda, op **Microsoft 365 koppelen**.
+
+Eenmalig in Entra ID (App registrations, de registratie met `MS_CLIENT_ID` uit `app.js`):
+
+- **Authentication**: platform *Single-page application*, met als redirect-URI's `https://rserne.github.io/agenda/`
+  en `http://localhost:8080/` (om lokaal te testen).
+- **API permissions**: *Delegated* `Calendars.Read` en `User.Read`. Vraagt je organisatie om admin consent, dan moet
+  een beheerder die eenmalig geven.
+- Geen client secret of certificaat nodig.
+
+De tenant staat in `MS_TENANT_STANDAARD` (`organizations` werkt alleen voor registraties voor meerdere organisaties).
+Je kunt hem ook kiezen met `?tenant=jouwdomein.nl` of `?tenant=<tenant-ID>` achter het adres; dat onthoudt de app.
+
+Goed om te weten:
+- Microsoft geeft een app in de browser een verversingstoken van hooguit 24 uur. Daarna toont de app je bewaarde
+  afspraken met een balk om opnieuw in te loggen.
+- Gegevens en tokens blijven op dit toestel (localStorage). Afmelden wist ze.
+- `functions/_graph.js` zet een Graph-afspraak om naar dezelfde vorm als een afspraak uit een .ics-bestand.
+- MSAL.js staat in `vendor/msal-browser.min.js` (v4.30.0) en wordt alleen geladen als je Microsoft 365 gebruikt.
+
 ## Eigen .ics-bestand openen
 
 Onder **Agenda** staat **Eigen agenda inladen**: op de telefoon en tablet in de weekkiezer (tik op de titel), op de desktop in de zijbalk. De app leest het bestand in de browser, bewaart het in IndexedDB op dat toestel en toont je echte agenda, zonder Nhost en zonder inloggen. Het bestand wordt nergens naartoe gestuurd. Met **Wissen** gaat de app terug naar de voorbeeldgegevens. Het inlezen van een groot bestand kost op een telefoon enkele seconden. Daarom bewaart de app de uitgerolde weken (een halfjaar terug en vooruit) ook in IndexedDB: bij het opstarten staan die meteen in beeld, en het bestand zelf wordt pas daarna op de achtergrond ingelezen voor weken daarbuiten.

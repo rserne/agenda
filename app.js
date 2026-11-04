@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-04-26';
+const APP_VERSIE = '2026-11-04-27';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -398,7 +398,7 @@ async function laadUitBestand(van, tot) {
 async function openBestand(file) {
   if (!file) return;
   const tekst = await file.text();
-  if (!/BEGIN:VCALENDAR/.test(tekst)) { alert('Dit is geen agenda-bestand (.ics).'); return; }
+  if (!/BEGIN:VCALENDAR/.test(tekst)) { alert('Dit is geen agenda-bestand. Kies een .ics-bestand.'); return; }
   const b = { naam: file.name, datum: Date.now(), tekst };
   try { await IDB.set('ics', b); } catch (e) { /* privévenster: dan alleen voor deze sessie */ }
   await gebruikBestand(b);
@@ -421,8 +421,8 @@ async function haalLinkTekst(link) {
     r = await fetch(httpsVan(link), { cache: 'no-store', credentials: 'omit', signal: stop.signal });
   } catch (e) {
     clearTimeout(klok);
-    if (navigator.onLine === false) throw new Error('Je bent offline.');
-    if (e.name === 'AbortError') throw new Error('Outlook reageert niet. Later lukt het vast wel.');
+    if (navigator.onLine === false) throw new Error('Je bent offline. De app werkt je agenda bij zodra er weer verbinding is.');
+    if (e.name === 'AbortError') throw new Error('Outlook reageert niet. De app probeert het over een kwartier opnieuw.');
     throw new Error('De app kan deze link niet ophalen. Klopt de link van je Cloudflare Worker?');
   }
   try {
@@ -430,7 +430,8 @@ async function haalLinkTekst(link) {
       // De Cloudflare Worker (cloudflare/worker.js) geeft een korte uitleg mee
       const uitleg = (await r.text().catch(() => '')).trim().slice(0, 120);
       if (r.status === 403) throw new Error('Geen toegang. Klopt de sleutel in de link?');
-      if (r.status === 404) throw new Error('Deze link bestaat niet (meer). Is de agenda nog gepubliceerd in Outlook?');
+      if (r.status === 404 || /Outlook gaf fout 40[34]/.test(uitleg)) throw new Error('Outlook kent je agenda niet meer. Staat de publicatie in Outlook nog aan?');
+      if (/Outlook gaf fout/.test(uitleg)) throw new Error('Outlook reageert niet goed. De app probeert het over een kwartier opnieuw.');
       throw new Error(uitleg && !/^</.test(uitleg) ? `${uitleg} (fout ${r.status}).` : `De link gaf fout ${r.status}.`);
     }
     const tekst = await r.text();
@@ -480,7 +481,7 @@ async function gebruikLink(link) {
     ST.naarVandaag = true;
     LINK_BEZIG = false;
     await laad();
-    toonStatus('Je agenda staat erin.', { soort: 'klaar', duur: 2500 });
+    toonStatus('Je agenda is ingeladen.', { soort: 'klaar', duur: 2500 });
   } catch (e) {
     toonStatus(e.message, { soort: 'fout', actie: ['Link aanpassen', () => openLinkPaneel(link)] });
   } finally {
@@ -552,8 +553,8 @@ function openLinkPaneel(voorstel = '') {
       </div>
       <p class="linkfout" id="linkfout" hidden></p>
       <div class="dvoet">
-        <button class="groteknop hoofd" id="linkknop">Ophalen</button>
-        <p class="voetnoot">Het ophalen gebeurt op de achtergrond; je kunt de app gewoon blijven gebruiken. De link blijft alleen op dit toestel. Iedereen met deze link kan je agenda zien, dus deel hem niet.</p>
+        <button class="groteknop hoofd" id="linkknop">Agenda ophalen</button>
+        <p class="voetnoot">De link blijft op dit toestel. Wie de link heeft, ziet je agenda: deel hem dus niet.</p>
       </div>
     </div>`;
   const p = openPaneel(el, { greepSelector: '.detailgreep' });
@@ -585,8 +586,8 @@ function openBronPaneel() {
     <div class="detailinhoud">
       <div class="dkop"><h2 class="dtitel">Agenda kiezen</h2></div>
       <div class="formkaart bronlijst">
-        ${optie('link', I.koppel, 'Via je Cloudflare-link', 'Wordt vanzelf bijgewerkt')}
-        ${optie('bestand', I.inladen, 'Uit een .ics-bestand', 'Eenmalig; zelf opnieuw inladen')}
+        ${optie('link', I.koppel, 'Via je agenda-link', 'Wordt vanzelf bijgewerkt')}
+        ${optie('bestand', I.inladen, 'Uit een .ics-bestand', 'Bijwerken doe je zelf')}
         ${optie('voorbeeld', I.kalender, 'Voorbeeldgegevens', 'Verzonnen afspraken en namen')}
       </div>
       <p class="voetnoot">Je agenda blijft alleen op dit toestel. In Outlook verandert er niets.</p>
@@ -858,7 +859,7 @@ function overlapVan(lijst) {
     if (!andere.length) return;
     const eerste = andere[0];
     const tijd = eerste.start > e.start ? ` om ${hhmm(eerste.start)}` : '';
-    tekst.set(e, { lang: `Overlap met ${naam(eerste)}${tijd}${andere.length > 1 ? ` en nog ${andere.length - 1}` : ''}`, tijd: tijd ? hhmm(eerste.start) : '', andere, start: e.start, inLijst });
+    tekst.set(e, { lang: `Overlap met ${naam(eerste)}${tijd}${andere.length > 1 ? ` en ${andere.length - 1} andere` : ''}`, tijd: tijd ? hhmm(eerste.start) : '', andere, start: e.start, inLijst });
   });
   return tekst;
 }
@@ -904,7 +905,7 @@ function weekRij(e, ov) {
     <span class="stip ${e.kind}"></span>
     <span class="tijdkolom"><div class="tijd">${hhmm(e.start)}</div><div class="eind">${hhmm(e.end)}</div></span>
     <span class="rijtekst">
-      <span class="titelregel"><span class="rijtitel">${esc(e.title || '(geen titel)')}</span>${onSite ? `<span class="speld" aria-label="op locatie">${I.speld}</span>` : ''}</span>
+      <span class="titelregel"><span class="rijtitel">${esc(e.title || 'Zonder titel')}</span>${onSite ? `<span class="speld" aria-label="op locatie">${I.speld}</span>` : ''}</span>
       ${overlapLabel(e, ov)}${badgesHtml(e)}
     </span>
   </button>`;
@@ -926,7 +927,7 @@ function kolomRij(e, ov) {
     <span class="stip ${e.kind}"></span>
     <span class="rijtekst">
       <span class="ktijd num">${hhmm(e.start)} – ${hhmm(e.end)}${onSite ? `<span class="speld" aria-label="op locatie">${I.speld}</span>` : ''}</span>
-      <span class="rijtitel">${esc(e.title || '(geen titel)')}</span>
+      <span class="rijtitel">${esc(e.title || 'Zonder titel')}</span>
       ${overlapLabel(e, ov)}${badgesHtml(e)}
     </span>
   </button>`;
@@ -1037,7 +1038,7 @@ function tegel(e, dag, ov) {
   const o = overlapt(e, ov) ? ov.get(e) : null;
   return `<button class="tegel ${e.kind}${o ? ' overlapt' : ''}" data-id="${esc(e.id)}"${o ? ` title="${esc(o.lang)}"` : ''}>
     <span class="tegelkop"><span class="tt">${vervolg ? 'vervolg' : hhmm(e.start)}</span><span class="iconen">${onSite ? I.speld : ''}${e.external && e.regular ? I.herhaal : ''}</span></span>
-    <span class="tit">${esc(e.title || '(geen titel)')}</span>
+    <span class="tit">${esc(e.title || 'Zonder titel')}</span>
     ${e.external ? `<span class="orgregel"><span class="b">${esc(e.orgs[0])}</span>${e.orgs.length > 1 ? `<span class="m">+${e.orgs.length - 1}</span>` : ''}</span>` : ''}
     <span class="tegelvoet">${o ? `<span class="ovbadge">Overlap${o.tijd ? `<span class="ovtijd"> ${o.tijd}</span>` : ''}</span>` : ''}<span class="tt te">${hhmm(e.end)}</span></span>
   </button>`;
@@ -1180,7 +1181,7 @@ function meldingHtml(titel, tekst, knop) {
 function loginHtml() {
   return `<div class="melding"><div class="doos">
     <h2>Inloggen</h2>
-    <p>Log in met hetzelfde account als in de AustralieApp.</p>
+    <p>Log in met je Nhost-account.</p>
     <form id="loginform" autocomplete="on">
       <input type="email" name="email" placeholder="E-mailadres" autocomplete="username" required value="${esc((SES.user && SES.user.email) || '')}">
       <input type="password" name="wachtwoord" placeholder="Wachtwoord" autocomplete="current-password" required>
@@ -1217,7 +1218,7 @@ async function laad({ vers = false } = {}) {
     await zorgVoor(addDays(start, -7 * LOOK_AROUND_WEEKS), addDays(eind, 7 * LOOK_AROUND_WEEKS), { vers });
   } catch (e) {
     if (e instanceof NietIngelogd) ST.login = true;
-    else ST.fout = navigator.onLine === false ? 'Je bent offline. Zodra er verbinding is, wordt je agenda bijgewerkt.' : e.message;
+    else ST.fout = navigator.onLine === false ? 'Je bent offline. Zodra er weer verbinding is, werkt de app je agenda bij.' : e.message;
   }
   ST.laden = false;
   render();
@@ -1364,7 +1365,7 @@ function maandRasterHtml(maand, gekozen, soort = 'paneel') {
   return `<div class="kiezerkop"><h2>${cap(MONTHS_LONG[maand.getMonth()])} ${maand.getFullYear()}</h2>${knoppen}</div>
     <div class="rasterkop"><span></span>${['ma', 'di', 'wo', 'do', 'vr', 'za', 'zo'].map((d) => `<span>${d}</span>`).join('')}</div>
     ${rijen}
-    <div class="kiezerlegenda"><span><i class="rustig"></i>rustig</span><span><i class="gemiddeld"></i>${MID_HOURS}–${FULL_HOURS} uur</span><span><i class="druk"></i>${FULL_HOURS} uur of meer</span></div>`;
+    <div class="kiezerlegenda"><span><i class="rustig"></i>tot ${MID_HOURS} uur</span><span><i class="gemiddeld"></i>${MID_HOURS}–${FULL_HOURS} uur</span><span><i class="druk"></i>${FULL_HOURS} uur of meer</span></div>`;
 }
 const gekozenMaandag = () => startOfWeek(ST.tab === 'week' ? ST.anker : ST.fcStart);
 function kiesWeek(ma) {
@@ -1444,10 +1445,10 @@ function agendaSectieHtml() {
   if (BESTAND && BESTAND.link) {
     const d = new Date(BESTAND.gecontroleerd || BESTAND.datum);
     const wanneer = sameDay(d, vandaag()) ? `Bijgewerkt om ${hhmm(d)}` : `Bijgewerkt ${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}, ${hhmm(d)}`;
-    bron = ['Outlook-agenda', LINK_BEZIG ? 'Bijwerken…' : BESTAND.linkFout ? 'Bijwerken lukte niet' : `${wanneer} · via je link`];
+    bron = ['Outlook-agenda', LINK_BEZIG ? 'Bijwerken…' : BESTAND.linkFout ? 'Bijwerken lukte niet' : `${wanneer} · via je agenda-link`];
   } else if (BESTAND) {
     const d = new Date(BESTAND.datum);
-    bron = [esc(BESTAND.naam), `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]} · alleen op dit toestel`];
+    bron = [esc(BESTAND.naam), `Ingeladen op ${d.getDate()} ${MONTHS_SHORT[d.getMonth()]} · alleen op dit toestel`];
   } else if (DEMO) bron = ['Voorbeeldgegevens', 'Verzonnen afspraken en namen'];
   else bron = ['Outlook', DATA.opgehaald ? `Bijgewerkt om ${hhmm(new Date(DATA.opgehaald))}` : 'Via Nhost'];
   // Eerst de bron die je nu gebruikt, met de handeling die daarbij hoort; daarna één knop om een andere bron te kiezen
@@ -1455,7 +1456,7 @@ function agendaSectieHtml() {
   if (DEMO || BESTAND) {
     if (BESTAND && BESTAND.link) knoppen += `<button data-actie="ics-nu"${LINK_BEZIG ? ' disabled' : ''}>${I.herhaal}<span>Nu bijwerken</span></button>`;
     else if (BESTAND) knoppen += `<button data-actie="ics-openen">${I.inladen}<span>Nieuwer bestand inladen</span></button>`;
-    knoppen += `<button data-actie="ics-kies">${I.kalender}<span>${BESTAND ? 'Andere bron kiezen' : 'Je eigen agenda kiezen'}</span></button>`;
+    knoppen += `<button data-actie="ics-kies">${I.kalender}<span>${BESTAND ? 'Andere agenda kiezen' : 'Je eigen agenda kiezen'}</span></button>`;
   }
   return `<nav class="zblijst zbagenda" aria-label="Agenda"><h3>Agenda</h3>
     <div class="zbbron">${BESTAND && BESTAND.link ? I.koppel : BESTAND ? I.inladen : I.kalender}<span><span class="t1">${bron[0]}</span><span class="t2">${bron[1]}</span></span></div>
@@ -1611,7 +1612,7 @@ function openDetail(e) {
         <div class="dkop">
           <span class="stip ${e.kind}" role="img" aria-label="${kindLabel}" title="${kindLabel}"></span>
           <div class="dkopinhoud">
-          <h2 class="dtitel">${esc(e.title || '(geen titel)')}</h2>
+          <h2 class="dtitel">${esc(e.title || 'Zonder titel')}</h2>
           <div class="dmeta">
             <div>${dateLine}</div>
             <div class="num">${timeLine}${rec ? `<span class="dher" role="img" aria-label="${esc(cap(rec))}" title="${esc(cap(rec))}">${I.herhaal}</span>` : ''}</div>
@@ -1763,11 +1764,11 @@ async function openNieuw({ dag = null, blok = null } = {}) {
       </div>
       <div class="nvast">
         <div class="nsamenvatting" id="nsamen"></div>
-        <a class="groteknop vol" id="noutlook" target="_blank" rel="noopener">${I.extern}Verder in Outlook</a>
+        <a class="groteknop vol" id="noutlook" target="_blank" rel="noopener">${I.extern}Afmaken in Outlook</a>
         <button class="tekstknop" id="nics">of download als .ics-bestand</button>
       </div>
       <div class="dvoet">
-        <p class="voetnoot">Deze app leest je agenda alleen. Outlook opent met alles ingevuld; daar sla je de afspraak op en verstuur je de uitnodiging.</p>
+        <p class="voetnoot">Deze app kan je agenda alleen lezen. Outlook opent met alles al ingevuld. Daar sla je de afspraak op en verstuur je de uitnodiging.</p>
       </div>
     </div>`;
 
@@ -1788,7 +1789,7 @@ async function openNieuw({ dag = null, blok = null } = {}) {
     if (ok) {
       const a = v.start, b = v.start + v.duur * 6e4;
       const botst = lijst.filter((e) => !e.allDay && !e.free && e.start.getTime() < b && e.end.getTime() > a);
-      if (botst.length) ov = `<div class="doverlap">Overlap met ${esc(botst[0].title || 'een afspraak')} (${hhmm(botst[0].start)} – ${hhmm(botst[0].end)})${botst.length > 1 ? ` en nog ${botst.length - 1}` : ''}</div>`;
+      if (botst.length) ov = `<div class="doverlap">Overlap met ${esc(botst[0].title || 'een afspraak')} (${hhmm(botst[0].start)} – ${hhmm(botst[0].end)})${botst.length > 1 ? ` en ${botst.length - 1} andere` : ''}</div>`;
     }
     $('#nsamen', el).innerHTML = `<div class="${ok ? '' : 'leeg'}">${esc(tekst)}</div>${ov}`;
   };
@@ -1965,7 +1966,7 @@ function verschuif(n, tab) {
 function koppel() {
   $('#capsule').innerHTML = capsuleHtml('Week terug', 'Week verder');
   $('#titelknop').addEventListener('click', openWeekkiezer);
-  $('#icsinvoer').addEventListener('change', (ev) => { openBestand(ev.target.files[0]).catch((e) => alert(`Inlezen mislukt: ${e.message}`)); ev.target.value = ''; });
+  $('#icsinvoer').addEventListener('change', (ev) => { openBestand(ev.target.files[0]).catch((e) => alert('Dit bestand kan de app niet lezen. Kies een agenda-bestand (.ics) uit Outlook.')); ev.target.value = ''; });
   $('#datumregel').addEventListener('click', () => verschuif(0));
   // iPad: de zijbalk in- en uitklappen; de keuze blijft bewaard
   const zetZijbalk = (dicht) => { document.body.classList.toggle('zbdicht', dicht); $('#zijbalkknop').setAttribute('aria-expanded', String(!dicht)); };

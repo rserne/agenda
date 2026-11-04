@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-04-13';
+const APP_VERSIE = '2026-11-04-14';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -942,9 +942,13 @@ function weekKolommenHtml(events) {
   const { start } = periode();
   const t = vandaag();
   const kolommen = [];
+  const breedtes = [];
   for (let i = 0; i < 7; i++) {
     const d = addDays(start, i);
     const lijst = eventsForDay(events, d);
+    // Een leeg weekend krijgt een smalle kolom: de werkdagen hebben de ruimte harder nodig
+    const smal = i >= 5 && !lijst.length;
+    breedtes.push(smal ? '96px' : 'minmax(0, 1fr)');
     const heleDag = lijst.filter((e) => e.allDay);
     const getimed = lijst.filter((e) => !e.allDay);
     const getoond = ST.filter === 'notable' ? getimed.filter((e) => e.notable) : getimed;
@@ -956,14 +960,14 @@ function weekKolommenHtml(events) {
     const ov = overlapVan(lijst);
     rijen += items.map((it) => (it.e ? kolomRij(it.e, ov) : kolomVrij(it.f))).join('');
     if (verborgen > 0) rijen += `<div class="krij rest"><span class="stip"></span><span>${vastText(verborgen)}</span></div>`;
-    if (!rijen) rijen = '<div class="krij rest leeg">Geen afspraken</div>';
+    if (!rijen) rijen = `<div class="krij rest leeg">${smal ? 'Leeg' : 'Geen afspraken'}</div>`;
     const isVandaag = sameDay(d, t);
-    kolommen.push(`<section class="dagkolom${isVandaag ? ' vandaag' : ''}${d < t ? ' voorbij' : ''}${i >= 5 ? ' weekend' : ''}">
+    kolommen.push(`<section class="dagkolom${isVandaag ? ' vandaag' : ''}${d < t ? ' voorbij' : ''}${i >= 5 ? ' weekend' : ''}${smal ? ' smal' : ''}">
       <h2 class="kolomkop" aria-label="${isVandaag ? 'Vandaag, ' : ''}${DAYS_LONG[d.getDay()]} ${d.getDate()} ${MONTHS_LONG[d.getMonth()]}"><span class="nr num">${d.getDate()}</span><span class="dow">${cap(DAYS_LONG[d.getDay()])}</span>${d.getDate() === 1 && i > 0 ? `<span class="mnd">${MONTHS_SHORT[d.getMonth()]}</span>` : ''}</h2>
       <div class="kaart">${rijen}</div>
     </section>`);
   }
-  return `<div class="weekraster">${kolommen.join('')}</div>${legendaWeek()}`;
+  return `<div class="weekraster" style="grid-template-columns:${breedtes.join(' ')}">${kolommen.join('')}</div>${legendaWeek()}`;
 }
 
 function weekHtml(events) {
@@ -1744,9 +1748,11 @@ async function openNieuw({ dag = null, blok = null } = {}) {
         <label class="frij"><span class="flabel">Deelnemers</span><input name="deelnemers" type="text" inputmode="email" placeholder="E-mailadressen" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
         <label class="frij boven"><span class="flabel">Notitie</span><textarea name="notitie" rows="3" placeholder="Optioneel"></textarea></label>
       </div>
-      <div class="dvoet">
+      <div class="nvast">
         <div class="nsamenvatting" id="nsamen"></div>
         <a class="groteknop vol" id="noutlook" target="_blank" rel="noopener">${I.extern}Verder in Outlook</a>
+      </div>
+      <div class="dvoet">
         <button class="groteknop" id="nics">${I.kalender}Downloaden als .ics</button>
         <p class="voetnoot">Deze app leest je agenda alleen. Outlook opent met alles ingevuld; daar sla je de afspraak op en verstuur je de uitnodiging.</p>
       </div>

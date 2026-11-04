@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-04-4';
+const APP_VERSIE = '2026-11-04-5';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -19,7 +19,7 @@ const NHOST_REG = 'eu-central-1';
 // Microsoft 365: je agenda rechtstreeks uit Outlook via Microsoft Graph, ingelogd met je eigen werkaccount (delegated).
 // Er is geen geheim nodig: de app logt in met PKCE. Client-ID en tenant zijn niet geheim.
 const MS_CLIENT_ID = '71ec3b01-2db5-4417-b611-3057a4a8c5f1';
-const MS_TENANT_STANDAARD = 'organizations'; // tenant-ID of maildomein; ook te kiezen met ?tenant=… achter het adres
+const MS_TENANT_STANDAARD = 'dfd3966b-e559-4677-b93f-5960bca96645'; // tenant-ID; een andere kies je met ?tenant=… achter het adres
 const MS_SCOPES = ['Calendars.Read', 'User.Read'];
 
 const OWN_ORG_NAME = 'CACI'; // naam van je eigen organisatie bij de deelnemers

@@ -100,7 +100,7 @@ Eenmalig in Entra ID (App registrations, de registratie met `MS_CLIENT_ID` uit `
   een beheerder die eenmalig geven.
 - Geen client secret of certificaat nodig.
 
-De tenant staat in `MS_TENANT_STANDAARD` (`organizations` werkt alleen voor registraties voor meerdere organisaties).
+De tenant-ID staat in `MS_TENANT_STANDAARD`.
 Je kunt hem ook kiezen met `?tenant=jouwdomein.nl` of `?tenant=<tenant-ID>` achter het adres; dat onthoudt de app.
 
 Goed om te weten:

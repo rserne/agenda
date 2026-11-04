@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-03-8';
+const APP_VERSIE = '2026-11-04-1';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -614,6 +614,7 @@ const ST = {
   laden: false,
   fout: null,
   login: false,
+  naarVandaag: true, // telefoon: bij het openen van de week direct naar vandaag scrollen
 };
 const zichtbaar = new Map(); // id → verrijkte afspraak, voor het detailscherm
 
@@ -836,6 +837,25 @@ function render() {
   if (geenData && ST.fout) { main.innerHTML = meldingHtml('Agenda niet beschikbaar', ST.fout, 'Opnieuw proberen'); $('#inhoud .knop').onclick = () => laad({ vers: true }); return; }
   // De agenda kies je in de weekkiezer (tik op de titel) of op de desktop in de zijbalk
   main.innerHTML = ST.tab === 'week' ? weekHtml(events) : vooruitblikHtml(events);
+  if (ST.naarVandaag) scrollNaarVandaag();
+}
+
+// Telefoon, weekweergave: vandaag bovenaan zetten, direct onder de kop. Eerdere dagen staan erboven,
+// daar kun je naartoe terugscrollen. Op de desktop staan alle dagen naast elkaar, dus daar niet nodig.
+// Tot je zelf scrolt of tikt blijft vandaag bovenaan staan, ook als de agenda daarna nog wordt bijgewerkt.
+function scrollNaarVandaag() {
+  const main = $('#inhoud');
+  main.style.minHeight = '';
+  if (ST.tab !== 'week' || isDesktop()) { ST.naarVandaag = false; return; }
+  const kop = $('#inhoud .dagkop.vandaag');
+  if (!kop || kop.classList.contains('eerste')) { window.scrollTo(0, 0); return; }
+  // Gemeten aan de kaart eronder: de dagkop zelf plakt en staat dus niet altijd op zijn eigen plek
+  const kaart = kop.nextElementSibling;
+  const doel = Math.round(kaart.getBoundingClientRect().top + window.scrollY - kop.offsetHeight - $('#kop').offsetHeight);
+  // Genoeg ruimte onderaan, zodat vandaag ook in een rustige week helemaal naar boven kan
+  const tekort = doel + window.innerHeight - document.documentElement.scrollHeight;
+  if (tekort > 0) main.style.minHeight = `${main.offsetHeight + tekort}px`;
+  window.scrollTo(0, doel);
 }
 
 function meldingHtml(titel, tekst, knop) {
@@ -1036,6 +1056,7 @@ function kiesWeek(ma) {
   ST.tab = 'week';
   LS.set('ag_tab', ST.tab);
   window.scrollTo(0, 0);
+  ST.naarVandaag = true;
   laad();
 }
 
@@ -1561,6 +1582,7 @@ function verschuif(n, tab) {
   // De kalender in de zijbalk loopt mee naar de maand van de gekozen week
   if (zijMaand && firstOfMonth(addDays(gekozenMaandag(), 3)).getTime() !== zijMaand.getTime()) zijMaand = firstOfMonth(addDays(gekozenMaandag(), 3));
   window.scrollTo(0, 0);
+  ST.naarVandaag = true;
   laad();
 }
 
@@ -1592,7 +1614,7 @@ function koppel() {
     }
     const tab = ev.target.closest('[data-tab]');
     if (tab) {
-      if (tab.dataset.tab !== ST.tab) { ST.tab = tab.dataset.tab; LS.set('ag_tab', ST.tab); window.scrollTo(0, 0); laad(); }
+      if (tab.dataset.tab !== ST.tab) { ST.tab = tab.dataset.tab; LS.set('ag_tab', ST.tab); window.scrollTo(0, 0); ST.naarVandaag = true; laad(); }
       return;
     }
     const maand = ev.target.closest('#zijbalk [data-maand]');
@@ -1612,6 +1634,9 @@ function koppel() {
     if (b && zichtbaar.has(b.dataset.id)) openDetail(zichtbaar.get(b.dataset.id));
   });
 
+  // Zelf scrollen of tikken: vandaag niet meer bovenaan vasthouden
+  for (const t of ['touchstart', 'wheel', 'keydown', 'mousedown']) window.addEventListener(t, () => { ST.naarVandaag = false; }, { passive: true, capture: true });
+
   // Hoogte van de kop doorgeven, zodat de dagkoppen er precies onder blijven plakken
   const kop = $('#kop');
   const zetKop = () => document.documentElement.style.setProperty('--kopH', `${kop.offsetHeight}px`);
@@ -1630,7 +1655,7 @@ function koppel() {
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState !== 'visible') return;
     const t = vandaag();
-    if (!sameDay(t, ST.dag)) { ST.dag = t; ST.anker = defaultWeekAnchor(t); ST.fcStart = t; zijMaand = null; }
+    if (!sameDay(t, ST.dag)) { ST.dag = t; ST.anker = defaultWeekAnchor(t); ST.fcStart = t; zijMaand = null; ST.naarVandaag = true; }
     if (!lokaal() && Date.now() - DATA.opgehaald > VERS_MS) laad({ vers: true });
     else render();
   });

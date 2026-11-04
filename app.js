@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-04-1';
+const APP_VERSIE = '2026-11-04-2';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -726,7 +726,7 @@ function weekHtml(events) {
     // Zoals op de desktop: eerst het dagnummer, dan de dag; vandaag in de accentkleur, voorbije dagen grijs
     const isVandaag = sameDay(d, t);
     const kop = `<span class="nr num">${d.getDate()}</span><span class="dow">${cap(DAYS_LONG[d.getDay()])}</span>${d.getDate() === 1 && !eerste ? `<span class="mnd">${MONTHS_LONG[d.getMonth()]}</span>` : ''}`;
-    html += `<h2 class="dagkop${eerste ? ' eerste' : ''}${isVandaag ? ' vandaag' : ''}${d < t ? ' voorbij' : ''}" aria-label="${isVandaag ? 'Vandaag, ' : ''}${DAYS_LONG[d.getDay()]} ${d.getDate()} ${MONTHS_LONG[d.getMonth()]}">${kop}</h2><div class="kaart">${rijen}</div>`;
+    html += `<h2 data-dag="${d.getTime()}" class="dagkop${eerste ? ' eerste' : ''}${isVandaag ? ' vandaag' : ''}${d < t ? ' voorbij' : ''}" aria-label="${isVandaag ? 'Vandaag, ' : ''}${DAYS_LONG[d.getDay()]} ${d.getDate()} ${MONTHS_LONG[d.getMonth()]}">${kop}</h2><div class="kaart">${rijen}</div>`;
     eerste = false;
   }
   return html + legendaWeek();
@@ -849,13 +849,36 @@ function scrollNaarVandaag() {
   if (ST.tab !== 'week' || isDesktop()) { ST.naarVandaag = false; return; }
   const kop = $('#inhoud .dagkop.vandaag');
   if (!kop || kop.classList.contains('eerste')) { window.scrollTo(0, 0); return; }
+  scrollNaarDag(kop);
+}
+
+// Zet een dagkop direct onder de kop van de app
+function scrollNaarDag(kop) {
+  const main = $('#inhoud');
   // Gemeten aan de kaart eronder: de dagkop zelf plakt en staat dus niet altijd op zijn eigen plek
   const kaart = kop.nextElementSibling;
   const doel = Math.round(kaart.getBoundingClientRect().top + window.scrollY - kop.offsetHeight - $('#kop').offsetHeight);
-  // Genoeg ruimte onderaan, zodat vandaag ook in een rustige week helemaal naar boven kan
+  // Genoeg ruimte onderaan, zodat de dag ook in een rustige week helemaal naar boven kan
   const tekort = doel + window.innerHeight - document.documentElement.scrollHeight;
   if (tekort > 0) main.style.minHeight = `${main.offsetHeight + tekort}px`;
   window.scrollTo(0, doel);
+}
+
+// Telefoon, weekweergave: wisselen tussen Opvallend, Alles en Vrij houdt de dag vast die bovenaan staat.
+// Anders verschuift de lijst, omdat er boven die dag regels bijkomen of verdwijnen.
+function behoudDag(teken) {
+  const koppen = ST.tab === 'week' && !isDesktop() ? [...document.querySelectorAll('#inhoud .dagkop')] : [];
+  if (!koppen.length || window.scrollY <= 0) { teken(); return; }
+  const kopH = $('#kop').offsetHeight;
+  // De dag die nu bovenaan staat: de laatste waarvan het blok al onder de kop is begonnen
+  let boven = koppen[0];
+  for (const k of koppen) if (k.nextElementSibling.getBoundingClientRect().top - k.offsetHeight <= kopH + 1) boven = k;
+  const dag = boven.dataset.dag;
+  teken();
+  $('#inhoud').style.minHeight = '';
+  const nieuw = document.querySelector(`#inhoud .dagkop[data-dag="${dag}"]`);
+  if (!nieuw || nieuw.classList.contains('eerste')) window.scrollTo(0, 0);
+  else scrollNaarDag(nieuw);
 }
 
 function meldingHtml(titel, tekst, knop) {
@@ -1609,7 +1632,7 @@ function koppel() {
     }
     const f = ev.target.closest('[data-filter]');
     if (f) {
-      if (f.dataset.filter !== ST.filter) { ST.filter = f.dataset.filter; LS.set('ag_filter', ST.filter); render(); }
+      if (f.dataset.filter !== ST.filter) { ST.filter = f.dataset.filter; LS.set('ag_filter', ST.filter); behoudDag(render); }
       return;
     }
     const tab = ev.target.closest('[data-tab]');

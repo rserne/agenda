@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-04-2';
+const APP_VERSIE = '2026-11-04-3';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -864,21 +864,30 @@ function scrollNaarDag(kop) {
   window.scrollTo(0, doel);
 }
 
-// Telefoon, weekweergave: wisselen tussen Opvallend, Alles en Vrij houdt de dag vast die bovenaan staat.
-// Anders verschuift de lijst, omdat er boven die dag regels bijkomen of verdwijnen.
+// Telefoon, weekweergave: wisselen tussen Opvallend, Alles en Vrij laat de dag waar je naar kijkt op dezelfde
+// plek op het scherm staan. Anders verschuift de lijst, omdat er boven die dag regels bijkomen of verdwijnen.
+// Ankerdag: de eerste dag waarvan de kop zichtbaar onder de kop van de app staat. Vult één dag het hele scherm,
+// dan die dag zelf, met dezelfde afstand tot zijn kop.
 function behoudDag(teken) {
   const koppen = ST.tab === 'week' && !isDesktop() ? [...document.querySelectorAll('#inhoud .dagkop')] : [];
   if (!koppen.length || window.scrollY <= 0) { teken(); return; }
   const kopH = $('#kop').offsetHeight;
-  // De dag die nu bovenaan staat: de laatste waarvan het blok al onder de kop is begonnen
-  let boven = koppen[0];
-  for (const k of koppen) if (k.nextElementSibling.getBoundingClientRect().top - k.offsetHeight <= kopH + 1) boven = k;
-  const dag = boven.dataset.dag;
+  const blokTop = (k) => k.nextElementSibling.getBoundingClientRect().top - k.offsetHeight; // waar de dag begint, op het scherm
+  let anker = koppen.find((k) => blokTop(k) >= kopH - 1 && blokTop(k) < window.innerHeight - 40);
+  if (!anker) anker = koppen.filter((k) => blokTop(k) < kopH).pop() || koppen[0];
+  const dag = anker.dataset.dag;
+  const y0 = blokTop(anker);
   teken();
-  $('#inhoud').style.minHeight = '';
   const nieuw = document.querySelector(`#inhoud .dagkop[data-dag="${dag}"]`);
-  if (!nieuw || nieuw.classList.contains('eerste')) window.scrollTo(0, 0);
-  else scrollNaarDag(nieuw);
+  if (!nieuw) return;
+  const main = $('#inhoud');
+  main.style.minHeight = '';
+  // Zat je halverwege een dag en is die korter geworden, dan niet voorbij het einde van die dag
+  const y = Math.max(y0, kopH - nieuw.nextElementSibling.offsetHeight);
+  const doel = Math.round(window.scrollY + blokTop(nieuw) - y);
+  const tekort = doel + window.innerHeight - document.documentElement.scrollHeight;
+  if (tekort > 0) main.style.minHeight = `${main.offsetHeight + tekort}px`;
+  window.scrollTo(0, Math.max(0, doel));
 }
 
 function meldingHtml(titel, tekst, knop) {

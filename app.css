@@ -765,7 +765,7 @@ label.frij:focus-within .flabel { color: var(--accent); }
   .krij.vrij .rijtitel span { color: var(--secondary); font-weight: 400; }
 
   /* Vooruitblik: zoveel tegels als er passen */
-  .vb { gap: 10px; padding-top: 0; }
+  .vb { gap: 18px; padding-top: 0; }
   .vbdag { gap: 10px; }
   .vbdatum { width: 44px; padding-top: 0; }
   .vbdatum .dow { font-size: 10px; }
@@ -868,11 +868,14 @@ label.frij:focus-within .flabel { color: var(--accent); }
   .vbdatum .dow { font-size: 12px; }
   .vbdatum .nr { font-size: 22px; line-height: 26px; }
   .vbdatum .mnd { font-size: 12px; }
-  .tegels { grid-template-columns: repeat(auto-fill, minmax(176px, 1fr)); gap: 8px; }
-  .tegel { height: 100px; border-radius: 12px; padding: 8px 10px 7px; }
+  /* Meer lucht tussen de dagen en de tegels, zoals op de iPhone */
+  .vb { gap: 26px; }
+  .vbinhoud { gap: 8px; }
+  .tegels { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+  .tegel { height: 108px; border-radius: 12px; padding: 8px 10px 7px; }
   .tegel .tt { font-size: 14px; line-height: 17px; }
   .tegel .tit { font-size: 15px; line-height: 19px; max-height: 38px; }
-  .tegel.ext .tit { max-height: 19px; }
+  .tegel.ext .tit { -webkit-line-clamp: 2; max-height: 38px; }
   .tegel .iconen .icoon { width: 14px; height: 14px; }
   .vbleeg, .vbheledag .t { font-size: 15px; }
   .vbleeg { height: 44px; }

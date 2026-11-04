@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-04-11';
+const APP_VERSIE = '2026-11-04-12';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -993,7 +993,23 @@ function weekHtml(events) {
     html += `<h2 data-dag="${d.getTime()}" class="dagkop${eerste ? ' eerste' : ''}${isVandaag ? ' vandaag' : ''}${d < t ? ' voorbij' : ''}" aria-label="${isVandaag ? 'Vandaag, ' : ''}${DAYS_LONG[d.getDay()]} ${d.getDate()} ${MONTHS_LONG[d.getMonth()]}">${kop}</h2><div class="kaart">${rijen}</div>`;
     eerste = false;
   }
-  return html + legendaWeek();
+  return html + volgendeWeekHtml(start) + legendaWeek();
+}
+// Telefoon: onder de laatste dag een kaart naar de volgende week, met een voorproefje van hoe druk die is
+function volgendeWeekHtml(start) {
+  if (isDesktop()) return '';
+  const ma = addDays(start, 7);
+  const uren = busyHoursByDay(afsprakenTussen(ma, addDays(ma, 5)));
+  const cellen = [0, 1, 2, 3, 4].map((i) => {
+    const d = addDays(ma, i);
+    const h = uren[d.getTime()] || 0;
+    return `<span class="dagcel ${niveau(h)}${h ? ' gevuld' : ''}" style="--a:${tint(h).toFixed(3)}"><span>${d.getDate()}</span></span>`;
+  }).join('');
+  return `<button class="volgendeweek" data-nav="1" aria-label="Naar week ${isoWeek(ma)}, ${rangeLong(ma, addDays(ma, 6))}">
+    <span class="vwkop"><span class="vwlabel" data-week="${isoWeek(ma)}">Volgende week</span><span class="vwtitel">Week ${isoWeek(ma)} <span class="vwdatum">${rangeLong(ma, addDays(ma, 6))}</span></span></span>
+    <span class="vwdagen">${cellen}</span>
+    <span class="vwpijl">${I.verder}</span>
+  </button>`;
 }
 // Legenda onderaan bij de afspraken zelf: streepjes in de week, de tegelkleuren in de Vooruitblik
 const legendaWeek = () => `<div class="legenda">
@@ -1875,6 +1891,45 @@ function openVisitekaartje(k) {
 /*  Bediening                                                          */
 /* ------------------------------------------------------------------ */
 
+// Telefoon, weekweergave: onderaan de lijst verder omhoog trekken en loslaten gaat naar de volgende week
+// (het omgekeerde van 'trek om te verversen'). De lijst schuift mee met weerstand; de kaart 'Volgende week'
+// zegt wanneer je los kunt laten.
+const TREK_DREMPEL = 70;
+function koppelDoortrekken() {
+  let y0 = null, trek = 0;
+  const kan = () => ST.tab === 'week' && !isDesktop() && !panelen.length && !ST.login;
+  const onderaan = () => window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 4;
+  const zet = (px) => {
+    trek = px;
+    const main = $('#inhoud');
+    main.style.transform = px ? `translateY(${-px}px)` : '';
+    const label = $('#inhoud .vwlabel');
+    if (label) label.textContent = px >= TREK_DREMPEL ? `Loslaten voor week ${label.dataset.week}` : 'Volgende week';
+    document.body.classList.toggle('doortrek', px >= TREK_DREMPEL);
+  };
+  window.addEventListener('touchstart', (e) => {
+    y0 = e.touches.length === 1 && kan() && onderaan() ? e.touches[0].clientY : null;
+    trek = 0;
+  }, { passive: true });
+  window.addEventListener('touchmove', (e) => {
+    if (y0 === null) return;
+    const d = y0 - e.touches[0].clientY; // positief: vinger gaat omhoog
+    if (d <= 0 || !onderaan()) { if (trek) zet(0); y0 = d <= 0 && trek === 0 ? null : y0; return; }
+    e.preventDefault(); // niet het gewone verende scrollen van iOS
+    $('#inhoud').classList.add('trekt');
+    zet(Math.min(140, d * 0.45));
+  }, { passive: false });
+  const los = () => {
+    if (y0 === null) return;
+    y0 = null;
+    const main = $('#inhoud');
+    main.classList.remove('trekt');
+    if (trek >= TREK_DREMPEL) { zet(0); verschuif(1); } else zet(0);
+  };
+  window.addEventListener('touchend', los, { passive: true });
+  window.addEventListener('touchcancel', los, { passive: true });
+}
+
 function verschuif(n, tab) {
   if (tab) { ST.tab = tab; LS.set('ag_tab', tab); }
   if (n === 0) {
@@ -1939,6 +1994,8 @@ function koppel() {
     const b = ev.target.closest('#inhoud [data-id]');
     if (b && zichtbaar.has(b.dataset.id)) openDetail(zichtbaar.get(b.dataset.id));
   });
+
+  koppelDoortrekken();
 
   // Agenda via een link: elke minuut kijken of het kwartier om is (alleen als de app in beeld is)
   $('#statussluit').addEventListener('click', verbergStatus);

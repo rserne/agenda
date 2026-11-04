@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-04-22';
+const APP_VERSIE = '2026-11-04-23';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -1589,7 +1589,9 @@ function openDetail(e) {
       return { ...g, shown: g.people.slice(0, take) };
     }).filter((g) => g.shown.length);
 
-    const afgeleidHtml = !org && e.afgeleid ? `<section class="sectie"><h3>Organisator</h3><div class="kaart"><div class="drij persoon">
+    // Alleen 'Extern' zonder naam: geen apart kopje, de bron staat bij het label bovenaan
+    const alleenExtern = !org && e.afgeleid && e.afgeleid.orgs[0] === 'Extern';
+    const afgeleidHtml = !org && e.afgeleid && !alleenExtern ? `<section class="sectie"><h3>Organisator</h3><div class="kaart"><div class="drij persoon">
       <span class="avatar ext">${esc(initialsOf(e.afgeleid.orgs[0]))}</span>
       <span class="tekst"><div class="t1">${esc(e.afgeleid.orgs[0] === 'Extern' ? 'Externe organisatie' : e.afgeleid.orgs[0])}</div><div class="t2">${e.afgeleid.bron === 'teams' ? 'Afgeleid uit de Teams-uitnodiging' : 'Afgeleid uit de titel'}</div></span>
     </div></div></section>` : '';
@@ -1621,7 +1623,7 @@ function openDetail(e) {
             ${e.mode !== 'none' ? `<div>${MODE_LABEL[e.mode]}</div>` : ''}
             ${ovLine ? `<div class="doverlap">${esc(ovLine)}</div>` : ''}
           </div>
-          ${e.external ? `<div class="dbadges">${e.orgs.map((o) => `<span>${esc(o)}</span>`).join('')}</div>` : ''}
+          ${e.external ? `<div class="dbadges">${e.orgs.map((o) => `<span>${esc(o)}</span>`).join('')}${alleenExtern ? `<em>${e.afgeleid.bron === 'teams' ? 'uit de Teams-uitnodiging' : 'uit de titel'}</em>` : ''}</div>` : ''}
           </div>
         </div>
         ${plekken.length ? `<section class="sectie"><h3>Locatie</h3><div class="kaart">${plekken.join('')}</div></section>` : ''}
@@ -1972,8 +1974,9 @@ function koppel() {
   $('#datumregel').addEventListener('click', () => verschuif(0));
   // iPad: de zijbalk in- en uitklappen; de keuze blijft bewaard
   const zetZijbalk = (dicht) => { document.body.classList.toggle('zbdicht', dicht); $('#zijbalkknop').setAttribute('aria-expanded', String(!dicht)); };
-  zetZijbalk(LS.get('ag_zijbalk') === 'dicht');
-  $('#zijbalkknop').addEventListener('click', () => { const dicht = !document.body.classList.contains('zbdicht'); zetZijbalk(dicht); LS.set('ag_zijbalk', dicht ? 'dicht' : 'open'); });
+  // Standaard dicht: zo krijgen de dagkolommen de breedte. Je keuze onthoudt de app daarna.
+  zetZijbalk((LS.get('ag_zijbalk2') || 'dicht') === 'dicht');
+  $('#zijbalkknop').addEventListener('click', () => { const dicht = !document.body.classList.contains('zbdicht'); zetZijbalk(dicht); LS.set('ag_zijbalk2', dicht ? 'dicht' : 'open'); });
 
   // Eén luisteraar voor alle knoppen in kop, zijbalk, tabbalk en inhoud
   document.addEventListener('click', (ev) => {

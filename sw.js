@@ -1,7 +1,7 @@
 // Agenda, service worker
 // Bewaart de app zelf op het toestel, zodat hij ook zonder verbinding opent. Je afspraken bewaart app.js
 // (localStorage); die komen nooit in deze cache. Hoog VERSION op bij elke uitgave, samen met APP_VERSIE in app.js.
-const VERSION = 'v96';
+const VERSION = 'v97';
 const CACHE = 'agenda-' + VERSION;
 const BESTANDEN = ['./', './index.html', './app.css', './app.js', './manifest.webmanifest', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png', './favicon-64.png', './voorbeeld.js', './vendor/ical.min.js', './functions/_ical.js', './functions/_verrijk.js', './ics-werker.js'];
 

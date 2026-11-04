@@ -301,7 +301,7 @@ main.kolom.trekt { transition: none; }
 @media (prefers-color-scheme: dark) { .vbheledag { background: var(--tileEmpty); border-color: transparent; } }
 .tegels { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .tegel {
-  height: 124px; border-radius: 12px; padding: 8px 8px 7px; display: flex; flex-direction: column; gap: 2px;
+  min-height: 124px; border-radius: 12px; padding: 8px 8px 7px; display: flex; flex-direction: column; gap: 2px;
   text-align: left; color: var(--tileText); overflow: hidden;
 }
 .tegel:active { opacity: 0.85; }
@@ -313,11 +313,13 @@ main.kolom.trekt { transition: none; }
 .tegel .iconen { display: flex; gap: 3px; }
 .tegel .iconen .icoon { width: 13px; height: 13px; }
 .tegel .tit {
-  flex: none; max-height: 68px; font-size: 14px; line-height: 17px; font-weight: 500; letter-spacing: -0.1px;
-  display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
-  overflow-wrap: break-word; hyphens: manual; /* alleen een heel lang woord mag breken, niet elk woord midden in */
+  flex: none; font-size: 14px; line-height: 17px; font-weight: 500; letter-spacing: -0.1px;
+  display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden;
+  /* Alleen een lang woord afbreken, met een streepje op een goede plek ('resultaatterug-koppeling'), niet elk woord */
+  overflow-wrap: break-word; -webkit-hyphens: auto; hyphens: auto;
+  hyphenate-limit-chars: 12 5 5; -webkit-hyphenate-limit-before: 5; -webkit-hyphenate-limit-after: 5;
 }
-.tegel.ext .tit { -webkit-line-clamp: 3; max-height: 51px; }
+.tegel.ext .tit { -webkit-line-clamp: 5; }
 /* Eindtijd (en de organisatie) onderaan de tegel */
 .tegel .tit + .te, .tegel .orgregel { margin-top: auto; }
 .tegel .orgregel { display: flex; align-items: center; gap: 4px; min-width: 0; }
@@ -432,6 +434,7 @@ main.kolom.trekt { transition: none; }
 .dmeta .doverlap { color: var(--overlap); font-weight: 500; margin-top: 6px; }
 .dbadges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .dbadges span { background: var(--badgeBg); color: var(--badgeText); border-radius: 7px; padding: 3px 9px; font-size: 13px; font-weight: 600; }
+.dbadges em { align-self: center; font-style: normal; color: var(--secondary); font-size: 13px; }
 .sectie h3 { margin: 0 0 6px; padding: 0 16px; color: var(--secondary); font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.2px; }
 .sectie .kaart { border: 0; }
 .drij { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 10px 0; width: 100%; text-align: left; }
@@ -532,12 +535,11 @@ button.drij:active { opacity: 0.6; }
 .tegelvoet { margin-top: auto; display: flex; align-items: center; justify-content: flex-end; gap: 4px; min-width: 0; }
 .tegel .orgregel + .tegelvoet { margin-top: 2px; }
 .ovbadge { margin-right: auto; border: 1px solid var(--tileBadgeLijn); border-radius: 5px; padding: 0 4px; font-size: 11px; font-weight: 700; line-height: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-/* Op de telefoon is de tegel smal: de badge op een eigen regel, de titel dan hoogstens twee regels */
+/* Op de telefoon is de tegel smal: de badge op een eigen regel; de tegel groeit mee met de titel */
 @media (max-width: 767px) {
   .ovtijd { display: none; }
   .tegel.overlapt .tegelvoet { flex-direction: column; align-items: flex-start; gap: 2px; }
   .tegel.overlapt .tegelvoet .te { align-self: flex-end; }
-  .tegel.overlapt .tit { -webkit-line-clamp: 2; max-height: 34px; }
 }
 @media (min-width: 1200px) {
   .krij .overlaplabel { font-size: 11.5px; line-height: 15px; margin-top: 2px; }
@@ -754,7 +756,11 @@ label.frij:focus-within .flabel { color: var(--accent); }
   .krij .rijtekst { gap: 1px; }
   .ktijd { display: flex; align-items: center; gap: 4px; color: var(--secondary); font-size: 11px; font-weight: 500; font-variant-numeric: tabular-nums; }
   .ktijd .speld { width: 11px; height: 11px; margin: 0; }
-  .krij .rijtitel { font-size: 12.5px; line-height: 16px; -webkit-line-clamp: 3; overflow-wrap: break-word; -webkit-hyphens: auto; hyphens: auto; }
+  .krij .rijtitel {
+    font-size: 12.5px; line-height: 16px; -webkit-line-clamp: 3; overflow-wrap: break-word; -webkit-hyphens: auto; hyphens: auto;
+    /* Alleen lange woorden afbreken (zoals 'Resultaatterugkoppeling'), en nooit vlak na het begin of vlak voor het eind */
+    hyphenate-limit-chars: 12 5 5; -webkit-hyphenate-limit-before: 5; -webkit-hyphenate-limit-after: 5;
+  }
   .krij .badges { margin-top: 4px; }
   .krij .badge { font-size: 10.5px; padding: 1px 6px; border-radius: 4px; }
   .krij .badges .herhaal { width: 12px; height: 12px; }
@@ -776,10 +782,10 @@ label.frij:focus-within .flabel { color: var(--accent); }
   .vbdatum .mnd { font-size: 10px; }
   .vbinhoud { gap: 6px; }
   .tegels { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 6px; }
-  .tegel { height: 96px; border-radius: 10px; padding: 6px 9px; gap: 1px; }
+  .tegel { min-height: 96px; border-radius: 10px; padding: 6px 9px; gap: 1px; }
   .tegel .tt { font-size: 12px; line-height: 15px; }
-  .tegel .tit { font-size: 13px; line-height: 16px; -webkit-line-clamp: 2; max-height: 32px; }
-  .tegel.ext .tit { -webkit-line-clamp: 2; max-height: 32px; }
+  .tegel .tit { font-size: 13px; line-height: 16px; -webkit-line-clamp: 3; }
+  .tegel.ext .tit { -webkit-line-clamp: 3; }
   .tegel .iconen .icoon { width: 12px; height: 12px; }
   .vbleeg { padding-top: 0; margin-top: -1.5px; font-size: 12px; }
   .vbinhoud > .vbrest:first-child { padding-top: 0; margin-top: -1.5px; }
@@ -876,10 +882,10 @@ label.frij:focus-within .flabel { color: var(--accent); }
   .vb { gap: 26px; }
   .vbinhoud { gap: 8px; }
   .tegels { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
-  .tegel { height: 108px; border-radius: 12px; padding: 8px 10px 7px; }
+  .tegel { min-height: 108px; border-radius: 12px; padding: 8px 10px 7px; }
   .tegel .tt { font-size: 14px; line-height: 17px; }
-  .tegel .tit { font-size: 15px; line-height: 19px; max-height: 38px; }
-  .tegel.ext .tit { -webkit-line-clamp: 2; max-height: 38px; }
+  .tegel .tit { font-size: 15px; line-height: 19px; -webkit-line-clamp: 3; }
+  .tegel.ext .tit { -webkit-line-clamp: 3; }
   .tegel .iconen .icoon { width: 14px; height: 14px; }
   .vbheledag .t { font-size: 15px; }
   .vbleeg, .vbinhoud > .vbrest:first-child { padding-top: 0; margin-top: 0; }

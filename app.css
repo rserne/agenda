@@ -584,6 +584,14 @@ label.frij:focus-within .flabel { color: var(--accent); }
 .updatemelding[hidden] { display: none; }
 .updatemelding .vernieuw { background: var(--accent); color: var(--onAccent); font-size: 14px; font-weight: 600; border-radius: 18px; padding: 8px 14px; }
 .updatemelding .later { width: 32px; height: 32px; border-radius: 16px; color: var(--secondary); font-size: 22px; line-height: 1; }
+/* Voortgang bij het ophalen van de agenda-link; staat boven de updatemelding als die er ook is */
+.statusmelding { z-index: 61; }
+.statusmelding #statustekst { white-space: normal; line-height: 19px; padding: 6px 0; }
+.statusmelding.fout #statustekst { color: var(--overlap); }
+.statusmelding .draaier { display: none; width: 16px; height: 16px; flex-shrink: 0; border-radius: 50%; border: 2px solid var(--separator); border-top-color: var(--accent); animation: draai 0.8s linear infinite; }
+.statusmelding.bezig .draaier { display: block; }
+@keyframes draai { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .statusmelding .draaier { animation-duration: 2.4s; } }
 @media (min-width: 1200px) {
   .updatemelding { left: auto; right: 24px; bottom: 24px; transform: translateY(12px); }
   @media (pointer: coarse) { .updatemelding { bottom: calc(env(safe-area-inset-bottom, 0px) + var(--barH) + 24px); } } /* iPad: boven de tabbalk */

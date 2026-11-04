@@ -87,7 +87,11 @@ Open de app in Safari, tik op Delen, Zet op beginscherm. Log in met je Australie
 ## Agenda-link opgeven (webcal)
 
 Onder Agenda kun je ook de link van je gepubliceerde Outlook-agenda opgeven (`webcal://…` of `https://…/calendar.ics`).
-De app haalt de agenda dan zelf op: bij het opstarten en als je na een kwartier terugkomt in de app. De link is
+De app haalt de agenda dan zelf op, altijd op de achtergrond: bij het opstarten, elk kwartier zolang de app open
+is, als je na een kwartier terugkomt in de app en als de verbinding terugkomt. Is er niets veranderd (alleen de
+DTSTAMP), dan leest hij niets opnieuw in. Is er wel iets veranderd, dan leest hij het nieuwe bestand naast het oude
+in en wisselt hij pas als alles klaar is. Het inlezen gebeurt in een Web Worker (`ics-werker.js`), zodat de app
+blijft reageren; zonder worker (oude browsers) gebeurt het in de app zelf. De link is
 geheim (wie hem heeft, ziet je agenda) en blijft alleen op het toestel, in IndexedDB. Hij komt nooit in de code of
 de repo. Lukt rechtstreeks ophalen niet omdat Outlook geen CORS toestaat, dan meldt de app dat; dan is een tussenstap
 op een server nodig. Bij Outlook is dat zo.

@@ -69,6 +69,13 @@
   <button class="vernieuw" id="vernieuwknop">Vernieuwen</button>
   <button class="later" id="laterknop" aria-label="Later">×</button>
 </div>
+<!-- Voortgang en fouten bij het ophalen van je agenda via een link -->
+<div class="updatemelding glas statusmelding" id="statusmelding" role="status" aria-live="polite" hidden>
+  <span class="draaier" aria-hidden="true"></span>
+  <span id="statustekst"></span>
+  <button class="vernieuw" id="statusactie" hidden></button>
+  <button class="later" id="statussluit" aria-label="Sluiten">×</button>
+</div>
 <!-- Eigen agenda-bestand: wordt alleen op dit toestel bewaard, nooit verstuurd -->
 <input type="file" id="icsinvoer" accept=".ics,text/calendar" hidden>
 

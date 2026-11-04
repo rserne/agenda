@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-04-8';
+const APP_VERSIE = '2026-11-04-9';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -38,7 +38,7 @@ const DESKTOP = window.matchMedia('(min-width: 1200px)');
 const isDesktop = () => DESKTOP.matches;
 // LOKAAL: geen inloggen; de afspraken komen uit voorbeeld.js of uit een .ics-bestand op dit toestel
 const DEMO = !NHOST_SUB || (BRON === 'voorbeeld' ? !PARAMS.has('echt') : PARAMS.has('demo'));
-let BESTAND = null; // { naam, datum, reeksen, kennis, omzetter, hintVoor } als je zelf een .ics hebt geopend
+let BESTAND = null; // { naam, datum, link, lezer, klaar, gelezen } als je zelf een .ics of een agenda-link gebruikt
 const lokaal = () => DEMO || !!BESTAND;
 
 /* ------------------------------------------------------------------ */
@@ -269,7 +269,7 @@ const IDB = {
   },
 };
 
-// ical.js en de omzetcode pas laden als je een bestand opent
+// ical.js en de omzetcode pas laden als je een bestand opent (alleen nodig als er geen Web Worker kan)
 let _icalKlaar = null;
 function laadIcalCode() {
   if (!_icalKlaar) {
@@ -284,30 +284,87 @@ function laadIcalCode() {
   return _icalKlaar;
 }
 
-// Het bestand inlezen kost op een telefoon enkele seconden (1 à 2 MB tekst met herhaalreeksen). Daarom bewaren we
-// de uitgerolde weken in IndexedDB ('icsweken'). Bij het opstarten staan die meteen in beeld; het bestand zelf
-// lezen we pas daarna op de achtergrond in, voor weken die nog niet bewaard zijn.
-async function leesBestand(b) {
-  const code = await laadIcalCode();
-  return { hintVoor: code.hintVoor, omzetter: code.omzetter, reeksen: code.omzetter.voorbereid(b.tekst), kennis: code.leerUitIcal(b.tekst, OWN_DOMAINS_EXTRA) };
+// Het bestand inlezen kost op een telefoon enkele seconden (1 à 2 MB tekst met herhaalreeksen). Dat gebeurt daarom
+// in een Web Worker (ics-werker.js), naast de app: scrollen en tikken gaan gewoon door. Lukt een worker niet, dan
+// doen we het hier, zoals vroeger. Daarnaast bewaren we de uitgerolde weken in IndexedDB ('icsweken'): bij het
+// opstarten staan die meteen in beeld en lezen we het bestand pas daarna in.
+function maakLezer() {
+  const hier = lezerHier();
+  let werker = null;
+  try { werker = new Worker('ics-werker.js', { type: 'module' }); } catch (e) { return hier; }
+  let teller = 0, kapot = false, laatsteTekst = null;
+  const wacht = new Map();
+  werker.onmessage = ({ data }) => {
+    const w = wacht.get(data.id);
+    if (!w) return;
+    wacht.delete(data.id);
+    if (data.ok) w.ok(data.uit); else w.fout(new Error(data.fout));
+  };
+  // Kan de worker niet starten (een oude browser zonder module-workers), dan alsnog hier inlezen
+  werker.onerror = (e) => { kapot = true; wacht.forEach((w) => w.fout(Object.assign(new Error(e.message || 'Worker mislukt'), { werker: true }))); wacht.clear(); };
+  const vraag = (bericht) => new Promise((ok, fout) => { const id = ++teller; wacht.set(id, { ok, fout }); werker.postMessage({ id, ...bericht }); });
+  const metReserve = async (opWerker, opHier) => {
+    if (!kapot) {
+      try { return await opWerker(); } catch (e) { if (!e.werker) throw e; }
+    }
+    werker.terminate();
+    return opHier();
+  };
+  return {
+    lees: (tekst) => { laatsteTekst = tekst; return metReserve(() => vraag({ soort: 'lees', tekst, eigenDomeinen: OWN_DOMAINS_EXTRA, eigenOrg: OWN_ORG_NAME }), () => hier.lees(tekst)); },
+    weken: (reeks) => metReserve(() => vraag({ soort: 'weken', weken: reeks }).then((u) => u.weken), async () => { if (!hier.gelezen()) await hier.lees(laatsteTekst); return hier.weken(reeks); }),
+    stop: () => { werker.terminate(); hier.stop(); },
+  };
+}
+// Reserve: inlezen in de app zelf (blokkeert even, maar werkt overal)
+function lezerHier() {
+  let stand = null;
+  return {
+    gelezen: () => !!stand,
+    async lees(tekst) {
+      const code = await laadIcalCode();
+      stand = { code, reeksen: code.omzetter.voorbereid(tekst), kennis: code.leerUitIcal(tekst, OWN_DOMAINS_EXTRA) };
+      return { eigenDomeinen: stand.kennis.eigenDomeinen };
+    },
+    async weken(reeks) {
+      const uit = {};
+      reeks.forEach(([van, tot]) => {
+        uit[van] = stand.code.omzetter.uitrollen(stand.reeksen, new Date(van), new Date(tot)).map((e) => {
+          const hint = e.organizer || e.attendees.length ? null : stand.code.hintVoor(e, stand.kennis, OWN_ORG_NAME);
+          return hint ? { ...e, hint } : e;
+        });
+      });
+      return uit;
+    },
+    stop() { stand = null; },
+  };
+}
+// Een bestand (of de agenda achter een link) klaarzetten: { naam, datum, link, gecontroleerd, lezer, klaar, gelezen }
+function nieuwBestand(b, { wachtEerst = 0 } = {}) {
+  const best = { naam: b.naam, datum: b.datum, link: b.link || null, gecontroleerd: b.gecontroleerd || b.datum, lezer: maakLezer(), gelezen: false, eigenDomeinen: [] };
+  best.klaar = new Promise((ok) => setTimeout(ok, wachtEerst))
+    .then(() => best.lezer.lees(b.tekst))
+    .then((r) => { best.gelezen = true; best.eigenDomeinen = r.eigenDomeinen || []; });
+  return best;
+}
+function vervangBestand(best) {
+  if (BESTAND && BESTAND !== best && BESTAND.lezer) BESTAND.lezer.stop();
+  BESTAND = best;
 }
 async function gebruikBestand(b) {
-  BESTAND = { naam: b.naam, datum: b.datum, link: b.link || null, gecontroleerd: b.gecontroleerd || b.datum, ...(await leesBestand(b)) };
-  BESTAND.klaar = Promise.resolve();
+  const best = nieuwBestand(b);
+  await best.klaar;
+  vervangBestand(best);
   DATA.ruw.clear(); DATA.weken.clear();
-  DATA.me = null; DATA.ownDomains = BESTAND.kennis.eigenDomeinen; DATA.opgehaald = Date.now();
+  DATA.me = null; DATA.ownDomains = best.eigenDomeinen; DATA.opgehaald = Date.now();
 }
 // Snelle start: weken uit de bewaarde kopie, het bestand later
 function startUitBewaard(b, kopie) {
-  BESTAND = { naam: b.naam, datum: b.datum, link: b.link || null, gecontroleerd: b.gecontroleerd || b.datum };
+  vervangBestand(nieuwBestand(b, { wachtEerst: 1500 })); // eerst tekenen, dan pas het zware werk
+  BESTAND.klaar.catch(() => {});
   kopie.events.forEach((e) => DATA.ruw.set(e.id, e));
   kopie.weken.forEach((w) => DATA.weken.add(w));
   DATA.me = null; DATA.ownDomains = kopie.eigenDomeinen || []; DATA.opgehaald = Date.now();
-  const doel = BESTAND;
-  BESTAND.klaar = new Promise((ok) => setTimeout(ok, 1500)) // eerst tekenen, dan pas het zware werk
-    .then(() => leesBestand(b))
-    .then((r) => { if (BESTAND === doel) Object.assign(BESTAND, r); })
-    .catch(() => {});
 }
 let _bewaarTimer = null;
 function bewaarWeken() {
@@ -325,14 +382,14 @@ async function laadUitBestand(van, tot) {
   const nodig = [];
   for (let w = startOfWeek(van); w < tot; w = addDays(w, 7)) if (!DATA.weken.has(w.getTime())) nodig.push(w);
   if (!nodig.length) return;
-  await BESTAND.klaar;
-  if (!BESTAND.reeksen) return; // inlezen mislukt: houden wat er is
+  const best = BESTAND;
+  try { await best.klaar; } catch (e) { return; } // inlezen mislukt: houden wat er is
+  if (best !== BESTAND) return; // intussen een ander bestand
+  const uit = await best.lezer.weken(nodig.map((w) => [w.getTime(), addDays(w, 7).getTime()]));
+  if (best !== BESTAND) return;
   nodig.forEach((w) => {
     if (DATA.weken.has(w.getTime())) return;
-    BESTAND.omzetter.uitrollen(BESTAND.reeksen, w, addDays(w, 7)).forEach((e) => {
-      const hint = e.organizer || e.attendees.length ? null : BESTAND.hintVoor(e, BESTAND.kennis, OWN_ORG_NAME);
-      DATA.ruw.set(e.id, hint ? { ...e, hint } : e);
-    });
+    (uit[w.getTime()] || []).forEach((e) => DATA.ruw.set(e.id, e));
     DATA.weken.add(w.getTime());
   });
   bewaarWeken();
@@ -349,100 +406,156 @@ async function openBestand(file) {
 /* Agenda-link (webcal) ------------------------------------------------ */
 // De gepubliceerde agenda uit Outlook rechtstreeks ophalen. De link is geheim (wie hem heeft, ziet je agenda) en
 // blijft daarom alleen op dit toestel, in IndexedDB bij het bestand. Nooit in de code of de repo.
-const LINK_VERS_MS = 15 * 60 * 1000; // bij terugkeer in de app opnieuw ophalen als het langer dan dit geleden is
+const LINK_VERS_MS = 15 * 60 * 1000; // zo vaak kijken we of er iets is veranderd, zolang de app open is
+const LINK_TIJD_MS = 90 * 1000; // Outlook kan traag zijn; langer dan dit wachten we niet
+let LINK_BEZIG = false;
 const httpsVan = (link) => link.trim().replace(/^webcals?:\/\//i, 'https://');
 // Outlook zet bij elke keer ophalen een nieuwe DTSTAMP; die tellen we niet mee als wijziging
 const zonderStempel = (t) => String(t || '').replace(/^DTSTAMP:.*$/gm, '');
 async function haalLinkTekst(link) {
+  const stop = new AbortController();
+  const klok = setTimeout(() => stop.abort(), LINK_TIJD_MS);
   let r;
   try {
-    r = await fetch(httpsVan(link), { cache: 'no-store', credentials: 'omit' });
+    r = await fetch(httpsVan(link), { cache: 'no-store', credentials: 'omit', signal: stop.signal });
   } catch (e) {
+    clearTimeout(klok);
     if (navigator.onLine === false) throw new Error('Je bent offline.');
+    if (e.name === 'AbortError') throw new Error('Outlook reageert niet. Later lukt het vast wel.');
     throw new Error('De browser mag deze link niet rechtstreeks ophalen. Outlook staat dat niet toe vanaf een andere website (CORS). Dan is er een tussenstap op een server nodig.');
   }
-  if (!r.ok) {
-    // De Cloudflare Worker (cloudflare/worker.js) geeft een korte uitleg mee
-    const uitleg = (await r.text().catch(() => '')).trim().slice(0, 120);
-    if (r.status === 403) throw new Error('Geen toegang. Klopt de sleutel in de link?');
-    if (r.status === 404) throw new Error('Deze link bestaat niet (meer). Is de agenda nog gepubliceerd in Outlook?');
-    throw new Error(uitleg && !/^</.test(uitleg) ? `${uitleg} (fout ${r.status}).` : `De link gaf fout ${r.status}.`);
+  try {
+    if (!r.ok) {
+      // De Cloudflare Worker (cloudflare/worker.js) geeft een korte uitleg mee
+      const uitleg = (await r.text().catch(() => '')).trim().slice(0, 120);
+      if (r.status === 403) throw new Error('Geen toegang. Klopt de sleutel in de link?');
+      if (r.status === 404) throw new Error('Deze link bestaat niet (meer). Is de agenda nog gepubliceerd in Outlook?');
+      throw new Error(uitleg && !/^</.test(uitleg) ? `${uitleg} (fout ${r.status}).` : `De link gaf fout ${r.status}.`);
+    }
+    const tekst = await r.text();
+    if (!/BEGIN:VCALENDAR/.test(tekst)) throw new Error('Op deze link staat geen agenda (.ics).');
+    return tekst;
+  } finally {
+    clearTimeout(klok);
   }
-  const tekst = await r.text();
-  if (!/BEGIN:VCALENDAR/.test(tekst)) throw new Error('Op deze link staat geen agenda (.ics).');
-  return tekst;
 }
+
+// Melding onderin: voortgang, klaar of een fout (met eventueel een knop)
+let _statusTimer = null;
+function toonStatus(tekst, { soort = 'bezig', actie = null, duur = 0 } = {}) {
+  const m = $('#statusmelding');
+  clearTimeout(_statusTimer);
+  $('#statustekst').textContent = tekst;
+  m.classList.toggle('bezig', soort === 'bezig');
+  m.classList.toggle('fout', soort === 'fout');
+  const knop = $('#statusactie');
+  knop.hidden = !actie;
+  if (actie) { knop.textContent = actie[0]; knop.onclick = () => { verbergStatus(); actie[1](); }; }
+  m.hidden = false;
+  requestAnimationFrame(() => m.classList.add('open'));
+  if (duur) _statusTimer = setTimeout(verbergStatus, duur);
+}
+function verbergStatus() {
+  const m = $('#statusmelding');
+  clearTimeout(_statusTimer);
+  m.classList.remove('open');
+  setTimeout(() => { if (!m.classList.contains('open')) m.hidden = true; }, 250);
+}
+
+// Een nieuwe link: ophalen en inlezen gebeuren op de achtergrond; de app blijft bruikbaar
 async function gebruikLink(link) {
-  const tekst = await haalLinkTekst(link);
-  const b = { naam: 'Outlook-agenda', datum: Date.now(), tekst, link: link.trim(), gecontroleerd: Date.now() };
-  try { await IDB.set('ics', b); } catch (e) { /* privévenster: dan alleen voor deze sessie */ }
-  await gebruikBestand(b);
-  laad();
+  if (LINK_BEZIG) return;
+  LINK_BEZIG = true;
+  renderZijbalk();
+  toonStatus('Agenda ophalen… Dit kan even duren.');
+  try {
+    const tekst = await haalLinkTekst(link);
+    toonStatus('Agenda inlezen…');
+    const nu = Date.now();
+    const b = { naam: 'Outlook-agenda', datum: nu, tekst, link: link.trim(), gecontroleerd: nu };
+    try { await IDB.set('ics', b); } catch (e) { /* privévenster: dan alleen voor deze sessie */ }
+    await IDB.del('icsweken').catch(() => {});
+    await gebruikBestand(b);
+    ST.naarVandaag = true;
+    LINK_BEZIG = false;
+    await laad();
+    toonStatus('Je agenda staat erin.', { soort: 'klaar', duur: 2500 });
+  } catch (e) {
+    toonStatus(e.message, { soort: 'fout', actie: ['Link aanpassen', () => openLinkPaneel(link)] });
+  } finally {
+    LINK_BEZIG = false;
+    renderZijbalk();
+  }
 }
-// Op de achtergrond kijken of er iets is veranderd. Zo ja: opnieuw inlezen en tekenen.
-let _linkBezig = false;
+
+// Kijken of er iets is veranderd: bij het opstarten, elk kwartier zolang de app open is, bij terugkeer in de app
+// en als de verbinding terugkomt. Is er iets veranderd, dan lezen we het nieuwe bestand naast het oude in en
+// wisselen we pas als alles klaar is. Zo blijft de agenda in beeld en verspringt er niets.
 async function vernieuwLink({ ookAlsVers = false } = {}) {
-  if (_linkBezig || !BESTAND || !BESTAND.link) return;
+  if (LINK_BEZIG || !BESTAND || !BESTAND.link || document.visibilityState === 'hidden') return;
   if (!ookAlsVers && Date.now() - (BESTAND.gecontroleerd || 0) < LINK_VERS_MS) return;
-  _linkBezig = true;
+  const oudBestand = BESTAND;
+  LINK_BEZIG = true;
+  renderZijbalk();
   try {
     const oud = await IDB.get('ics').catch(() => null);
-    if (!oud || oud.link !== BESTAND.link) return;
+    if (!oud || oud.link !== oudBestand.link) return;
     const tekst = await haalLinkTekst(oud.link);
     const nu = Date.now();
+    oudBestand.linkFout = null;
     if (zonderStempel(tekst) === zonderStempel(oud.tekst)) {
       // Niets veranderd: alleen het tijdstip bijwerken (het bewaarde bestand en de uitgerolde weken blijven geldig)
-      BESTAND.gecontroleerd = nu;
+      oudBestand.gecontroleerd = nu;
       await IDB.set('ics', { ...oud, gecontroleerd: nu }).catch(() => {});
-      renderZijbalk();
       return;
     }
     const b = { ...oud, tekst, datum: nu, gecontroleerd: nu };
+    const nieuw = nieuwBestand(b);
+    await nieuw.klaar;
+    const weken = [...DATA.weken].sort((x, y) => x - y);
+    const uit = await nieuw.lezer.weken(weken.map((w) => [w, addDays(new Date(w), 7).getTime()]));
+    if (BESTAND !== oudBestand) { nieuw.lezer.stop(); return; } // intussen een ander bestand gekozen
     await IDB.set('ics', b).catch(() => {});
-    await gebruikBestand(b);
-    const y = window.scrollY;
-    await laad();
-    window.scrollTo(0, y);
+    vervangBestand(nieuw);
+    DATA.ruw.clear();
+    weken.forEach((w) => (uit[w] || []).forEach((e) => DATA.ruw.set(e.id, e)));
+    DATA.ownDomains = nieuw.eigenDomeinen; DATA.opgehaald = nu;
+    bewaarWeken();
+    if (!panelen.length) behoudDag(render);
   } catch (e) {
-    BESTAND.linkFout = e.message;
-    renderZijbalk();
+    oudBestand.linkFout = e.message;
   } finally {
-    _linkBezig = false;
+    LINK_BEZIG = false;
+    renderZijbalk();
   }
 }
-function openLinkPaneel() {
+function openLinkPaneel(voorstel = '') {
   const el = document.createElement('div');
   el.className = 'paneel detail nieuw linkpaneel' + (isDesktop() ? ' dialoog' : '');
-  const huidig = BESTAND && BESTAND.link ? BESTAND.link : '';
+  const huidig = voorstel || (BESTAND && BESTAND.link ? BESTAND.link : '');
   el.innerHTML = `<div class="detailgreep"><div class="greep"></div>
       <div class="detailnav"><button class="rond glas" data-actie="sluit" aria-label="Sluiten">${I.kruis}</button></div></div>
     <div class="detailinhoud">
       <div class="dkop"><h2 class="dtitel">Agenda-link</h2></div>
-      <p class="linkuitleg">Plak de link van je gepubliceerde agenda uit Outlook (Instellingen, Agenda, Gedeelde agenda's, Een agenda publiceren). Gebruik de ICS-link.</p>
+      <p class="linkuitleg">Plak de link naar je agenda: de link van je Cloudflare Worker, of de ICS-link van je gepubliceerde agenda uit Outlook.</p>
       <div class="formkaart">
-        <label class="frij kolom"><span class="flabel">Link</span><input id="linkinvoer" type="url" inputmode="url" placeholder="webcal://… of https://…/calendar.ics" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="go" value="${esc(huidig)}"></label>
+        <label class="frij kolom"><span class="flabel">Link</span><input id="linkinvoer" type="url" inputmode="url" placeholder="https://… of webcal://…" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="go" value="${esc(huidig)}"></label>
       </div>
       <p class="linkfout" id="linkfout" hidden></p>
       <div class="dvoet">
         <button class="groteknop hoofd" id="linkknop">Ophalen</button>
-        <p class="voetnoot">De link blijft alleen op dit toestel. Iedereen met deze link kan je agenda zien, dus deel hem niet.</p>
+        <p class="voetnoot">Het ophalen gebeurt op de achtergrond; je kunt de app gewoon blijven gebruiken. De link blijft alleen op dit toestel. Iedereen met deze link kan je agenda zien, dus deel hem niet.</p>
       </div>
     </div>`;
   const p = openPaneel(el, { greepSelector: '.detailgreep' });
-  const invoer = $('#linkinvoer', el), knop = $('#linkknop', el), fout = $('#linkfout', el);
-  const haal = async () => {
+  const invoer = $('#linkinvoer', el), fout = $('#linkfout', el);
+  const haal = () => {
     const link = invoer.value.trim();
-    if (!/^(webcals?|https?):\/\/\S+$/i.test(link)) { fout.textContent = 'Dit is geen geldige link. Hij begint met webcal:// of https://.'; fout.hidden = false; return; }
-    knop.disabled = true; knop.textContent = 'Ophalen…'; fout.hidden = true;
-    try {
-      await gebruikLink(link);
-      p.sluit();
-    } catch (e) {
-      fout.textContent = e.message; fout.hidden = false;
-      knop.disabled = false; knop.textContent = 'Opnieuw proberen';
-    }
+    if (!/^(webcals?|https?):\/\/\S+$/i.test(link)) { fout.textContent = 'Dit is geen geldige link. Hij begint met https:// of webcal://.'; fout.hidden = false; return; }
+    p.sluit();
+    gebruikLink(link);
   };
-  knop.addEventListener('click', haal);
+  $('#linkknop', el).addEventListener('click', haal);
   invoer.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') haal(); });
   el.addEventListener('click', (ev) => { if (ev.target.closest('[data-actie="sluit"]')) p.sluit(); });
   if (!huidig) setTimeout(() => invoer.focus(), 350);
@@ -454,6 +567,7 @@ const wisVraag = () => (BESTAND && BESTAND.link
 async function vergeetBestand() {
   await IDB.del('ics').catch(() => {});
   await IDB.del('icsweken').catch(() => {});
+  if (BESTAND && BESTAND.lezer) BESTAND.lezer.stop();
   BESTAND = null;
   DATA.ruw.clear(); DATA.weken.clear();
   laad();
@@ -938,7 +1052,7 @@ function render() {
   zichtbaar.clear();
   events.forEach((e) => zichtbaar.set(e.id, e));
   // Eigen bestand nog op de achtergrond aan het inlezen en deze week nog niet bewaard: ook 'laden' tonen
-  const geenData = (!lokaal() || (BESTAND && !BESTAND.reeksen)) && !DATA.weken.has(startOfWeek(start).getTime());
+  const geenData = (!lokaal() || (BESTAND && !BESTAND.gelezen)) && !DATA.weken.has(startOfWeek(start).getTime());
   if (geenData && ST.laden) { main.innerHTML = '<div class="laden">Agenda laden…</div>'; return; }
   if (geenData && ST.fout) { main.innerHTML = meldingHtml('Agenda niet beschikbaar', ST.fout, 'Opnieuw proberen'); $('#inhoud .knop').onclick = () => laad({ vers: true }); return; }
   // De agenda kies je in de weekkiezer (tik op de titel) of op de desktop in de zijbalk
@@ -1266,7 +1380,7 @@ function agendaSectieHtml() {
   if (BESTAND && BESTAND.link) {
     const d = new Date(BESTAND.gecontroleerd || BESTAND.datum);
     const wanneer = sameDay(d, vandaag()) ? `Bijgewerkt om ${hhmm(d)}` : `Bijgewerkt ${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}, ${hhmm(d)}`;
-    bron = ['Outlook-agenda', BESTAND.linkFout ? 'Bijwerken lukte niet' : `${wanneer} · via je link`];
+    bron = ['Outlook-agenda', LINK_BEZIG ? 'Bijwerken…' : BESTAND.linkFout ? 'Bijwerken lukte niet' : `${wanneer} · via je link`];
   } else if (BESTAND) {
     const d = new Date(BESTAND.datum);
     bron = [esc(BESTAND.naam), `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]} · alleen op dit toestel`];
@@ -1779,6 +1893,10 @@ function koppel() {
     const b = ev.target.closest('#inhoud [data-id]');
     if (b && zichtbaar.has(b.dataset.id)) openDetail(zichtbaar.get(b.dataset.id));
   });
+
+  // Agenda via een link: elke minuut kijken of het kwartier om is (alleen als de app in beeld is)
+  $('#statussluit').addEventListener('click', verbergStatus);
+  setInterval(() => vernieuwLink(), 60 * 1000);
 
   // Zelf scrollen of tikken: vandaag niet meer bovenaan vasthouden
   for (const t of ['touchstart', 'wheel', 'keydown', 'mousedown']) window.addEventListener(t, () => { ST.naarVandaag = false; }, { passive: true, capture: true });

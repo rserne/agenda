@@ -264,26 +264,19 @@ button.rij:active { background: var(--fill); }
 .rij.vrij .rijtitel b { color: var(--accent); font-weight: 600; }
 .rij.vrij .rijtitel span { color: var(--secondary); font-weight: 400; }
 
-/* Telefoon: kaart naar de volgende week onder de laatste dag */
-.volgendeweek {
-  display: grid; grid-template-columns: 1fr auto; grid-template-areas: 'kop pijl' 'dagen pijl'; align-items: center; gap: 10px 12px;
-  width: 100%; margin: 22px 0 0; padding: 14px 14px 14px 16px; border-radius: 18px; text-align: left;
-  background: var(--card); border: 0.5px solid var(--cardBorder); color: var(--label);
-}
-.volgendeweek:active { background: var(--fill); }
-.vwkop { grid-area: kop; display: flex; flex-direction: column; gap: 1px; min-width: 0; }
-.vwlabel { color: var(--secondary); font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.2px; }
-.vwtitel { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
-.vwdatum { color: var(--secondary); font-size: 15px; font-weight: 500; letter-spacing: 0; margin-left: 4px; }
-.vwdagen { grid-area: dagen; display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; max-width: 230px; }
-.vwdagen .dagcel { max-width: none; height: 30px; border-radius: 8px; }
-.vwdagen .dagcel:not(.gevuld) { background: var(--fill); }
-.vwpijl { grid-area: pijl; color: var(--accent); }
 /* Doortrekken naar de volgende week: tijdens het trekken volgt de lijst de vinger, daarna veert hij terug */
 main.kolom { transition: transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1); }
 main.kolom.trekt { transition: none; }
-body.doortrek .volgendeweek { border-color: var(--accent); }
-body.doortrek .vwlabel { color: var(--accent); }
+#doortrek {
+  position: fixed; z-index: 30; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + var(--barH, 56px) + 34px);
+  display: flex; flex-direction: column; align-items: center; gap: 6px; opacity: 0; pointer-events: none;
+  transform: translate(-50%, 18px); color: var(--secondary); font-size: 14px; font-weight: 600; white-space: nowrap;
+}
+#doortrek .dtpijl { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 17px; background: var(--fill); transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease; }
+#doortrek .dtpijl .icoon { width: 18px; height: 18px; }
+#doortrek.klaar { color: var(--accent); }
+#doortrek.klaar .dtpijl { background: var(--accent); color: var(--onAccent); transform: scale(1.12); }
+@media (min-width: 1200px) { #doortrek { display: none; } }
 .vwpijl .icoon { width: 20px; height: 20px; }
 .legenda { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 16px; padding-top: 30px; }
 .legenda span { display: flex; align-items: center; gap: 6px; color: var(--secondary); font-size: 12px; }

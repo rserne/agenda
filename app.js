@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-04-12';
+const APP_VERSIE = '2026-11-04-13';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -993,23 +993,7 @@ function weekHtml(events) {
     html += `<h2 data-dag="${d.getTime()}" class="dagkop${eerste ? ' eerste' : ''}${isVandaag ? ' vandaag' : ''}${d < t ? ' voorbij' : ''}" aria-label="${isVandaag ? 'Vandaag, ' : ''}${DAYS_LONG[d.getDay()]} ${d.getDate()} ${MONTHS_LONG[d.getMonth()]}">${kop}</h2><div class="kaart">${rijen}</div>`;
     eerste = false;
   }
-  return html + volgendeWeekHtml(start) + legendaWeek();
-}
-// Telefoon: onder de laatste dag een kaart naar de volgende week, met een voorproefje van hoe druk die is
-function volgendeWeekHtml(start) {
-  if (isDesktop()) return '';
-  const ma = addDays(start, 7);
-  const uren = busyHoursByDay(afsprakenTussen(ma, addDays(ma, 5)));
-  const cellen = [0, 1, 2, 3, 4].map((i) => {
-    const d = addDays(ma, i);
-    const h = uren[d.getTime()] || 0;
-    return `<span class="dagcel ${niveau(h)}${h ? ' gevuld' : ''}" style="--a:${tint(h).toFixed(3)}"><span>${d.getDate()}</span></span>`;
-  }).join('');
-  return `<button class="volgendeweek" data-nav="1" aria-label="Naar week ${isoWeek(ma)}, ${rangeLong(ma, addDays(ma, 6))}">
-    <span class="vwkop"><span class="vwlabel" data-week="${isoWeek(ma)}">Volgende week</span><span class="vwtitel">Week ${isoWeek(ma)} <span class="vwdatum">${rangeLong(ma, addDays(ma, 6))}</span></span></span>
-    <span class="vwdagen">${cellen}</span>
-    <span class="vwpijl">${I.verder}</span>
-  </button>`;
+  return html + legendaWeek();
 }
 // Legenda onderaan bij de afspraken zelf: streepjes in de week, de tegelkleuren in de Vooruitblik
 const legendaWeek = () => `<div class="legenda">
@@ -1892,20 +1876,23 @@ function openVisitekaartje(k) {
 /* ------------------------------------------------------------------ */
 
 // Telefoon, weekweergave: onderaan de lijst verder omhoog trekken en loslaten gaat naar de volgende week
-// (het omgekeerde van 'trek om te verversen'). De lijst schuift mee met weerstand; de kaart 'Volgende week'
-// zegt wanneer je los kunt laten.
+// (het omgekeerde van 'trek om te verversen'). De lijst schuift mee met weerstand; onderin verschijnt een pijl
+// met tekst, en zodra je ver genoeg bent, kleurt de pijl blauw en staat er dat je kunt loslaten.
 const TREK_DREMPEL = 70;
 function koppelDoortrekken() {
   let y0 = null, trek = 0;
+  const ind = $('#doortrek'), tekst = $('#doortrek .dttekst');
   const kan = () => ST.tab === 'week' && !isDesktop() && !panelen.length && !ST.login;
   const onderaan = () => window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 4;
+  const volgende = () => isoWeek(addDays(periode().start, 7));
   const zet = (px) => {
     trek = px;
-    const main = $('#inhoud');
-    main.style.transform = px ? `translateY(${-px}px)` : '';
-    const label = $('#inhoud .vwlabel');
-    if (label) label.textContent = px >= TREK_DREMPEL ? `Loslaten voor week ${label.dataset.week}` : 'Volgende week';
-    document.body.classList.toggle('doortrek', px >= TREK_DREMPEL);
+    $('#inhoud').style.transform = px ? `translateY(${-px}px)` : '';
+    const klaar = px >= TREK_DREMPEL;
+    ind.style.opacity = String(Math.min(1, px / 35));
+    ind.style.transform = `translate(-50%, ${Math.round(18 * (1 - Math.min(1, px / TREK_DREMPEL)))}px)`;
+    ind.classList.toggle('klaar', klaar);
+    if (px) tekst.textContent = klaar ? `Loslaten voor week ${volgende()}` : `Trek verder voor week ${volgende()}`;
   };
   window.addEventListener('touchstart', (e) => {
     y0 = e.touches.length === 1 && kan() && onderaan() ? e.touches[0].clientY : null;
@@ -1914,7 +1901,10 @@ function koppelDoortrekken() {
   window.addEventListener('touchmove', (e) => {
     if (y0 === null) return;
     const d = y0 - e.touches[0].clientY; // positief: vinger gaat omhoog
-    if (d <= 0 || !onderaan()) { if (trek) zet(0); y0 = d <= 0 && trek === 0 ? null : y0; return; }
+    if (d <= 0 || !onderaan()) {
+      if (trek) zet(0); else y0 = null; // gewoon terug omlaag scrollen
+      return;
+    }
     e.preventDefault(); // niet het gewone verende scrollen van iOS
     $('#inhoud').classList.add('trekt');
     zet(Math.min(140, d * 0.45));
@@ -1924,7 +1914,14 @@ function koppelDoortrekken() {
     y0 = null;
     const main = $('#inhoud');
     main.classList.remove('trekt');
-    if (trek >= TREK_DREMPEL) { zet(0); verschuif(1); } else zet(0);
+    if (trek < TREK_DREMPEL) { zet(0); return; }
+    // De lijst schuift omhoog weg, de volgende week komt van onderen binnen
+    const weg = main.animate([{ transform: `translateY(${-trek}px)`, opacity: 1 }, { transform: 'translateY(-160px)', opacity: 0 }], { duration: 160, easing: 'ease-in' });
+    weg.onfinish = () => {
+      zet(0);
+      verschuif(1);
+      main.animate([{ transform: 'translateY(60px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 260, easing: 'cubic-bezier(0.2, 0.9, 0.3, 1)' });
+    };
   };
   window.addEventListener('touchend', los, { passive: true });
   window.addEventListener('touchcancel', los, { passive: true });

@@ -297,6 +297,8 @@ main.kolom.trekt { transition: none; }
 .vbheledag { display: flex; align-items: center; gap: 8px; min-height: 38px; padding: 7px 12px; border-radius: 12px; background: var(--card); border: 1px solid var(--cardBorder); text-align: left; }
 .vbheledag .t { flex: 1; min-width: 0; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .vbheledag .h { color: var(--secondary); font-size: 12px; }
+/* Donker: een kaart in dezelfde kleur als de achtergrond is alleen een rand. Net als in het lichte thema een eigen vlak. */
+@media (prefers-color-scheme: dark) { .vbheledag { background: var(--tileEmpty); border-color: transparent; } }
 .tegels { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .tegel {
   height: 124px; border-radius: 12px; padding: 8px 8px 7px; display: flex; flex-direction: column; gap: 2px;

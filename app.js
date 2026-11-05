@@ -3,7 +3,7 @@
 // Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-04-27';
+const APP_VERSIE = '2026-11-05-1';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -360,15 +360,29 @@ async function gebruikBestand(b) {
   DATA.me = null; DATA.ownDomains = best.eigenDomeinen; DATA.opgehaald = Date.now();
 }
 // Snelle start: weken uit de bewaarde kopie, het bestand later
+// Hoort de kopie bij een ouder bestand (de app werd gesloten vlak na het bijwerken), dan tonen we hem toch meteen
+// en rollen we de weken na het inlezen opnieuw uit. Liever even de vorige stand dan een leeg scherm.
 function startUitBewaard(b, kopie) {
-  vervangBestand(nieuwBestand(b, { wachtEerst: 1500 })); // eerst tekenen, dan pas het zware werk
-  BESTAND.klaar.catch(() => {});
+  const verouderd = kopie.datum !== b.datum;
+  const doel = nieuwBestand(b, { wachtEerst: verouderd ? 300 : 1500 }); // eerst tekenen, dan pas het zware werk
+  vervangBestand(doel);
   kopie.events.forEach((e) => DATA.ruw.set(e.id, e));
   kopie.weken.forEach((w) => DATA.weken.add(w));
   DATA.me = null; DATA.ownDomains = kopie.eigenDomeinen || []; DATA.opgehaald = Date.now();
+  doel.klaar.then(async () => {
+    if (!verouderd || BESTAND !== doel) return;
+    const weken = [...DATA.weken].sort((x, y) => x - y);
+    const uit = await doel.lezer.weken(weken.map((w) => [w, addDays(new Date(w), 7).getTime()]));
+    if (BESTAND !== doel) return;
+    DATA.ruw.clear();
+    weken.forEach((w) => (uit[w] || []).forEach((e) => DATA.ruw.set(e.id, e)));
+    DATA.ownDomains = doel.eigenDomeinen;
+    bewaarWeken({ meteen: true });
+    if (!panelen.length) behoudDag(render);
+  }).catch(() => {});
 }
 let _bewaarTimer = null;
-function bewaarWeken() {
+function bewaarWeken({ meteen = false } = {}) {
   clearTimeout(_bewaarTimer);
   _bewaarTimer = setTimeout(() => {
     if (!BESTAND) return;
@@ -377,7 +391,7 @@ function bewaarWeken() {
     const weken = [...DATA.weken].filter((w) => Math.abs(w - t) < grens);
     const events = [...DATA.ruw.values()].filter((e) => Math.abs(new Date(e.start).getTime() - t) < grens);
     IDB.set('icsweken', { datum: BESTAND.datum, weken, events, eigenDomeinen: DATA.ownDomains }).catch(() => {});
-  }, 800);
+  }, meteen ? 0 : 800);
 }
 async function laadUitBestand(van, tot) {
   const nodig = [];
@@ -522,7 +536,7 @@ async function vernieuwLink({ ookAlsVers = false } = {}) {
     DATA.ruw.clear();
     weken.forEach((w) => (uit[w] || []).forEach((e) => DATA.ruw.set(e.id, e)));
     DATA.ownDomains = nieuw.eigenDomeinen; DATA.opgehaald = nu;
-    bewaarWeken();
+    bewaarWeken({ meteen: true }); // meteen: sluit je de app direct daarna, dan past de kopie toch bij het bestand
     if (!panelen.length) behoudDag(render);
   } catch (e) {
     oudBestand.linkFout = e.message;
@@ -2060,10 +2074,10 @@ if (PARAMS.has('uitloggen')) uitloggen();
   if (['week', 'forecast'].includes(t)) ST.tab = t;
   koppel();
   // Een eerder geopend .ics-bestand gaat voor (behalve met ?echt of ?demo)
-  IDB.get('ics').catch(() => null).then(async (b) => {
+  renderKop(); // de titel en knoppen staan er meteen, ook voordat de afspraken uit de opslag komen
+  Promise.all([IDB.get('ics').catch(() => null), IDB.get('icsweken').catch(() => null)]).then(async ([b, kopie]) => {
     if (b && b.tekst && !PARAMS.has('echt') && !PARAMS.has('demo')) {
-      const kopie = await IDB.get('icsweken').catch(() => null);
-      if (kopie && kopie.datum === b.datum && kopie.weken && kopie.weken.length) startUitBewaard(b, kopie);
+      if (kopie && kopie.weken && kopie.weken.length) startUitBewaard(b, kopie);
       else {
         $('#inhoud').innerHTML = '<div class="laden">Agenda-bestand inlezen…</div>';
         try { await gebruikBestand(b); } catch (e) { BESTAND = null; }

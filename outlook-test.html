@@ -27,6 +27,8 @@
   .proef .uitkomst.mis { color:var(--rood); }
   button { font:inherit; font-size:15px; font-weight:600; color:#fff; background:var(--blauw); border:0; border-radius:999px; padding:8px 16px; flex:none; }
   button.stil { background:transparent; color:var(--blauw); padding:8px 4px; font-weight:400; }
+  .veld { display:block; padding:12px 16px; font-size:13px; color:var(--sub); }
+  .veld input { display:block; width:100%; margin-top:6px; font:inherit; font-size:17px; color:var(--tekst); background:transparent; border:0; outline:0; padding:0; }
   #log { background:var(--kaart); border-radius:12px; padding:12px 16px; font:13px/1.5 ui-monospace, Menlo, monospace; white-space:pre-wrap; min-height:48px; }
   .knoppen { display:flex; gap:12px; margin-top:8px; }
 </style>
@@ -35,6 +37,9 @@
 <main>
   <h1>Outlook-test</h1>
   <p class="uitleg">Tik op een knop. Opent de Outlook-app, kom dan terug naar deze pagina: hieronder staat wat er gebeurde. Werkt een knop niet, dan zie je dat na twee seconden. Stuur me daarna het logboek (knop onderaan).</p>
+
+  <h2>Deelnemers</h2>
+  <div class="groep"><label class="veld">E-mailadres(sen), met een komma ertussen<input id="adres" type="email" multiple autocomplete="email" autocapitalize="off" spellcheck="false" placeholder="naam@voorbeeld.nl, collega@voorbeeld.nl"></label></div>
 
   <div id="proeven"></div>
 
@@ -55,6 +60,10 @@ const start = `${dag}T10:00:00`, eind = `${dag}T11:00:00`;
 const titel = encodeURIComponent('Proef vanuit Agenda');
 const plaats = encodeURIComponent('Kamer 1');
 
+const enc = encodeURIComponent;
+const nieuw = (extra) => `ms-outlook://events/new?title=${titel}&start=${start}&end=${eind}&location=${plaats}&${extra}`;
+const adressen = () => document.getElementById('adres').value.split(/[,;\s]+/).map((a) => a.trim()).filter(Boolean);
+
 const GROEPEN = [
   ['De agenda openen', [
     ['App openen', 'ms-outlook://'],
@@ -65,6 +74,17 @@ const GROEPEN = [
   ['Nieuwe afspraak (morgen 10:00–11:00)', [
     ['events/new', `ms-outlook://events/new?title=${titel}&start=${start}&end=${eind}&location=${plaats}`],
     ['calendar/compose', `ms-outlook://calendar/compose?subject=${titel}&startdt=${start}&enddt=${eind}&location=${plaats}&allday=false`],
+  ]],
+  ['Nieuwe afspraak met deelnemers', [
+    ['attendees, één adres', () => nieuw(`attendees=${enc(adressen()[0] || '')}`)],
+    ['attendees, komma ertussen', () => nieuw(`attendees=${adressen().map(enc).join(',')}`)],
+    ['attendees, puntkomma ertussen', () => nieuw(`attendees=${adressen().map(enc).join(';')}`)],
+    ['attendees, herhaald', () => nieuw(adressen().map((a) => `attendees=${enc(a)}`).join('&'))],
+    ['to in plaats van attendees', () => nieuw(`to=${adressen().map(enc).join(',')}`)],
+  ]],
+  ['Nieuwe afspraak met notitie', [
+    ['body', () => nieuw(`body=${enc('Agenda:\n1. Opening\n2. Rondvraag')}`)],
+    ['notes', () => nieuw(`notes=${enc('Agenda:\n1. Opening\n2. Rondvraag')}`)],
   ]],
   ['Webadres (opent dit de app?)', [
     ['outlook.office.com/calendar', 'https://outlook.office.com/calendar/'],
@@ -134,8 +154,14 @@ for (const [kop, proeven] of GROEPEN) {
     const r = document.createElement('div'); r.className = 'proef';
     r.innerHTML = `<div class="tekst"><div class="naam"></div><code></code><div class="uitkomst"></div></div><button>Probeer</button>`;
     r.querySelector('.naam').textContent = naam;
-    r.querySelector('code').textContent = url;
-    r.querySelector('button').addEventListener('click', () => probeer(naam, url, terugval, r));
+    const maak = () => (typeof url === 'function' ? url() : url);
+    const toon = () => { r.querySelector('code').textContent = maak(); };
+    toon();
+    if (typeof url === 'function') document.getElementById('adres').addEventListener('input', toon);
+    r.querySelector('button').addEventListener('click', () => {
+      if (typeof url === 'function' && /attendees|to=/.test(String(url)) && !adressen().length) { uitkomst(r, 'mis', 'Vul eerst bovenaan een e-mailadres in.'); return; }
+      probeer(naam, maak(), terugval, r);
+    });
     g.append(r);
   }
 }

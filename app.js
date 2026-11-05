@@ -3,7 +3,7 @@
 // Geen bouwstap: de bestanden draaien zoals ze zijn op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-05-2';
+const APP_VERSIE = '2026-11-05-3';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
@@ -21,6 +21,8 @@ const RING_HOURS = 8; // zoveel uur is een volle ring
 const PEOPLE_LIMIT = 6; // zoveel deelnemers eerst, daarna 'Alle … tonen'
 const MAX_ORGS = 2; // organisaties per afspraak in Week
 const OUTLOOK_URL = 'https://outlook.office.com/calendar/';
+// Op iPhone en iPad openen de Outlook-knoppen de Outlook-app (ms-outlook://), elders Outlook op het web.
+const IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
 const PARAMS = new URLSearchParams(location.search);
 // Formaat: telefoon (smal), tablet (vanaf 768) en desktop (vanaf 1200, met zijbalk en dagkolommen)

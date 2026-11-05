@@ -406,7 +406,7 @@ function openDetail(e) {
         ${notes ? `<section class="sectie"><h3>Notities</h3><div class="kaart"><div class="notities"><p class="${lang && !meerNotities ? 'kort' : ''}">${esc(notes)}</p>${lang ? `<button data-actie="notities">${meerNotities ? 'Minder tonen' : 'Meer tonen'}</button>` : ''}</div></div></section>` : ''}
         <div class="dvoet">
           ${mailTo.length ? `<a class="groteknop" href="${mailLink(mailTo, e.title)}">${I.mail}${mailTo.length === 1 ? 'Mail de deelnemer' : `Mail alle deelnemers (${mailTo.length})`}</a>` : ''}
-          <a class="groteknop" href="${OUTLOOK_URL}" target="_blank" rel="noopener">${I.extern}Openen in Outlook</a>
+          <a class="groteknop" ${outlookOpenAttr(e)}>${I.extern}Openen in Outlook</a>
           <p class="voetnoot">Accepteren, misschien of weigeren doe je in Outlook.</p>
         </div>
       </div>`;
@@ -470,7 +470,23 @@ const icsTekst = (s) => String(s || '').replace(/\\/g, '\\\\').replace(/\n/g, '\
 const icsTijd = (t) => new Date(t).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
 const adressen = (s) => String(s || '').split(/[\s,;]+/).map((x) => x.trim()).filter((x) => /@/.test(x));
 
+// Op iOS de Outlook-app: openen op de dag van de afspraak. Elders Outlook op het web.
+function outlookOpenAttr(e) {
+  return IOS ? `href="ms-outlook://events?date=${ymd(e.start)}"` : `href="${OUTLOOK_URL}" target="_blank" rel="noopener"`;
+}
+
+const lokaleTijd = (t) => { const d = new Date(t); return `${ymd(d)}T${hhmm(d)}:00`; };
+
 function outlookNieuwLink(v) {
+  if (IOS) {
+    // Precies de vorm die op de iPhone werkte: tijden en de komma tussen adressen niet gecodeerd.
+    const enc = encodeURIComponent;
+    const q = [
+      ['title', v.titel && enc(v.titel)], ['start', lokaleTijd(v.start)], ['end', lokaleTijd(v.start + v.duur * 6e4)],
+      ['location', v.locatie && enc(v.locatie)], ['attendees', adressen(v.deelnemers).map(enc).join(',')], ['description', v.notitie && enc(v.notitie)],
+    ].filter(([, w]) => w).map(([k, w]) => `${k}=${w}`).join('&');
+    return `ms-outlook://events/new?${q}`;
+  }
   const q = [
     ['rru', 'addevent'],
     ['subject', v.titel], ['startdt', new Date(v.start).toISOString()], ['enddt', new Date(v.start + v.duur * 6e4).toISOString()],
@@ -542,7 +558,7 @@ async function openNieuw({ dag = null, blok = null } = {}) {
       </div>
       <div class="nvast">
         <div class="nsamenvatting" id="nsamen"></div>
-        <a class="groteknop vol" id="noutlook" target="_blank" rel="noopener">${I.extern}Afmaken in Outlook</a>
+        <a class="groteknop vol" id="noutlook"${IOS ? '' : ' target="_blank" rel="noopener"'}>${I.extern}Afmaken in Outlook</a>
         <button class="tekstknop" id="nics">of download als .ics-bestand</button>
       </div>
       <div class="dvoet">

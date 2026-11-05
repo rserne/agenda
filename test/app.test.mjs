@@ -86,14 +86,27 @@ test('telefoon: in de weekkiezer een week kiezen', async ({ browser, url }) => {
   assert.equal(await p.locator('#titel').innerText(), 'Week 47');
 });
 
-test('telefoon: nieuwe afspraak opent Outlook met de gekozen tijd', async ({ browser, url }) => {
+test('telefoon: nieuwe afspraak opent de Outlook-app met tijd, deelnemers en notitie', async ({ browser, url }) => {
   const p = await nieuwePagina(browser, TELEFOON);
   await p.goto(url); await wacht(1000);
   await p.locator('[data-nieuw]:visible').first().tap(); await wacht(900);
   await p.locator('.paneel .chip').first().tap(); await wacht(300);
+  await p.fill('.paneel [name="deelnemers"]', 'een@voorbeeld.nl; twee@voorbeeld.nl');
+  await p.fill('.paneel [name="notitie"]', 'Eerste regel\nTweede regel'); await wacht(200);
   const knop = p.locator('#noutlook');
   assert.equal((await knop.innerText()).trim(), 'Afmaken in Outlook');
-  assert.match(await knop.getAttribute('href'), /^https:\/\/outlook\.office\.com\/calendar\/deeplink\/compose\?.*startdt=/);
+  const href = await knop.getAttribute('href');
+  assert.match(href, /^ms-outlook:\/\/events\/new\?.*start=\d{4}-\d\d-\d\dT\d\d:\d\d:00&end=/);
+  assert.match(href, /attendees=een%40voorbeeld\.nl,twee%40voorbeeld\.nl/);
+  assert.match(href, /description=Eerste%20regel%0ATweede%20regel/);
+  assert.equal(await knop.getAttribute('target'), null);
+});
+
+test('telefoon: Openen in Outlook gaat naar de dag van de afspraak in de app', async ({ browser, url }) => {
+  const p = await nieuwePagina(browser, TELEFOON);
+  await p.goto(url); await wacht(1000);
+  await p.locator('#inhoud [data-id]').first().tap(); await wacht(800);
+  assert.match(await p.locator('.paneel a', { hasText: 'Openen in Outlook' }).getAttribute('href'), /^ms-outlook:\/\/events\?date=2026-11-0\d$/);
 });
 
 /* -------------------------------------------------------------- eigen agenda */
@@ -165,6 +178,7 @@ test('desktop: detail als venster, Escape sluit het', async ({ browser, url }) =
   await p.goto(url); await wacht(1000);
   await p.locator('#inhoud [data-id]').first().click(); await wacht(700);
   assert.equal(await p.locator('.paneel.detail.dialoog.open').count(), 1);
+  assert.equal(await p.locator('.paneel a', { hasText: 'Openen in Outlook' }).getAttribute('href'), 'https://outlook.office.com/calendar/', 'op de Mac Outlook op het web');
   await p.keyboard.press('Escape'); await wacht(500);
   assert.equal(await p.locator('.paneel').count(), 0);
 });

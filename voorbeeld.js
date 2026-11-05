@@ -1,7 +1,7 @@
 // Agenda, voorbeeldgegevens
 // Maakt voor elke week een geloofwaardige agenda met verzonnen namen: vaste overleggen, losse interne
 // afspraken en externe overleggen met deelnemers. Dezelfde week geeft altijd dezelfde afspraken
-// (de toevalsgenerator start per week met hetzelfde getal). Zelfde vorm als het antwoord van de Nhost-functie.
+// (de toevalsgenerator start per week met hetzelfde getal). Zelfde vorm als wat de .ics-omzetter oplevert.
 'use strict';
 
 const VOORBEELD_IK = 'jan.jansen@caci.nl';

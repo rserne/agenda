@@ -1,6 +1,6 @@
 // Agenda, de app
-// Leest je agenda via de Nhost-functie /v1/agenda (die de iCal-feed van Outlook ophaalt) en toont
-// Week, Vooruitblik en de weekkiezer. Geen bouwstap: dit bestand draait zoals het is op GitHub Pages.
+// Toont je agenda (uit een .ics-bestand, via je agenda-link of als voorbeeld) in Week, Vooruitblik en de weekkiezer.
+// Geen bouwstap: de bestanden draaien zoals ze zijn op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
 const APP_VERSIE = '2026-11-05-1';
@@ -8,13 +8,6 @@ const APP_VERSIE = '2026-11-05-1';
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */
 /* ------------------------------------------------------------------ */
-
-// Bron van de afspraken: 'voorbeeld' (verzonnen gegevens, zie voorbeeld.js) of 'nhost' (je echte agenda).
-// Met ?echt of ?demo achter het adres kies je de andere bron.
-const BRON = 'voorbeeld';
-// Nhost-project (Settings, General). Voorlopig het project van de AustralieApp (Frankfurt).
-const NHOST_SUB = 'gjqqtpteurwdbealgmqh';
-const NHOST_REG = 'eu-central-1';
 
 const OWN_ORG_NAME = 'CACI'; // naam van je eigen organisatie bij de deelnemers
 const OWN_DOMAINS_EXTRA = []; // extra eigen maildomeinen, bijvoorbeeld ['caci.nl']
@@ -28,18 +21,14 @@ const RING_HOURS = 8; // zoveel uur is een volle ring
 const PEOPLE_LIMIT = 6; // zoveel deelnemers eerst, daarna 'Alle … tonen'
 const MAX_ORGS = 2; // organisaties per afspraak in Week
 const OUTLOOK_URL = 'https://outlook.office.com/calendar/';
-const VERS_MS = 5 * 60 * 1000; // gegevens ouder dan vijf minuten opnieuw ophalen
 
-const NH_AUTH = `https://${NHOST_SUB}.auth.${NHOST_REG}.nhost.run/v1`;
-const API = `https://${NHOST_SUB}.functions.${NHOST_REG}.nhost.run/v1/agenda`;
 const PARAMS = new URLSearchParams(location.search);
 // Formaat: telefoon (smal), tablet (vanaf 768) en desktop (vanaf 1200, met zijbalk en dagkolommen)
 const DESKTOP = window.matchMedia('(min-width: 1200px)');
 const isDesktop = () => DESKTOP.matches;
-// LOKAAL: geen inloggen; de afspraken komen uit voorbeeld.js of uit een .ics-bestand op dit toestel
-const DEMO = !NHOST_SUB || (BRON === 'voorbeeld' ? !PARAMS.has('echt') : PARAMS.has('demo'));
+// De afspraken komen uit een .ics-bestand of je agenda-link (BESTAND), en anders uit voorbeeld.js.
+// Met ?demo achter het adres toont de app altijd de voorbeeldgegevens.
 let BESTAND = null; // { naam, datum, link, lezer, klaar, gelezen } als je zelf een .ics of een agenda-link gebruikt
-const lokaal = () => DEMO || !!BESTAND;
 
 /* ------------------------------------------------------------------ */
 /*  Hulpjes                                                            */
@@ -147,95 +136,16 @@ const I = {
 };
 
 /* ------------------------------------------------------------------ */
-/*  Inloggen bij Nhost                                                 */
+/*  Gegevens: bijhouden welke weken er zijn                            */
 /* ------------------------------------------------------------------ */
 
-const SES = { access: null, exp: 0, refresh: null, user: null };
-function zetSessie(s) {
-  if (!s) {
-    Object.assign(SES, { access: null, exp: 0, refresh: null, user: null });
-    LS.del('ag_sessie');
-    return;
-  }
-  SES.access = s.accessToken;
-  SES.exp = Date.now() + (s.accessTokenExpiresIn || 900) * 1000;
-  SES.refresh = s.refreshToken;
-  SES.user = s.user ? { id: s.user.id, email: s.user.email, displayName: s.user.displayName } : SES.user;
-  LS.set('ag_sessie', { refreshToken: SES.refresh, user: SES.user });
-}
-(function laadSessie() {
-  const s = LS.get('ag_sessie');
-  if (s && s.refreshToken) { SES.refresh = s.refreshToken; SES.user = s.user || null; }
-})();
-
-async function inloggen(email, wachtwoord) {
-  const r = await fetch(`${NH_AUTH}/signin/email-password`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password: wachtwoord }),
-  });
-  const data = await r.json().catch(() => ({}));
-  if (!r.ok || !data.session) throw new Error(r.status === 401 ? 'E-mailadres of wachtwoord klopt niet.' : (data.message || 'Inloggen lukt nu niet.'));
-  zetSessie(data.session);
-}
-
-// Nhost geeft bij elke vernieuwing een nieuwe refresh token uit; twee tegelijk zou de tweede laten mislukken
-let _vernieuwing = null;
-function vernieuw() {
-  if (!_vernieuwing) {
-    _vernieuwing = (async () => {
-      if (!SES.refresh) return false;
-      const r = await fetch(`${NH_AUTH}/token`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: SES.refresh }),
-      });
-      if (r.status === 401 || r.status === 400) { zetSessie(null); return false; }
-      if (!r.ok) throw new Error('Geen verbinding met Nhost');
-      const s = await r.json();
-      zetSessie(s.session || s);
-      return true;
-    })().finally(() => { _vernieuwing = null; });
-  }
-  return _vernieuwing;
-}
-async function toegangssleutel() {
-  if (SES.access && Date.now() < SES.exp - 60000) return SES.access;
-  const ok = await vernieuw();
-  return ok ? SES.access : null;
-}
-async function uitloggen() {
-  try {
-    await fetch(`${NH_AUTH}/signout`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: SES.refresh }) });
-  } catch (e) { /* offline: lokaal toch uitloggen */ }
-  zetSessie(null);
-  LS.del('ag_data');
-  location.reload();
-}
-
-/* ------------------------------------------------------------------ */
-/*  Gegevens: ophalen, bewaren en bijhouden welke weken er zijn        */
-/* ------------------------------------------------------------------ */
-
-const DATA = { ruw: new Map(), weken: new Set(), me: null, ownDomains: [], opgehaald: 0 };
+const DATA = { ruw: new Map(), weken: new Set(), me: null, ownDomains: [] };
 const BEWAAR_WEKEN = 26;
-
-function bewaar() {
-  const t = startOfWeek(vandaag()).getTime();
-  const grens = BEWAAR_WEKEN * 7 * 864e5;
-  const events = [...DATA.ruw.values()].filter((e) => Math.abs(new Date(e.start).getTime() - t) < grens);
-  LS.set('ag_data', { v: 1, events, weken: [...DATA.weken].filter((w) => Math.abs(w - t) < grens), me: DATA.me, ownDomains: DATA.ownDomains, opgehaald: DATA.opgehaald });
-}
-(function laadBewaard() {
-  if (DEMO) return;
-  const b = LS.get('ag_data');
-  if (!b || b.v !== 1) return;
-  b.events.forEach((e) => DATA.ruw.set(e.id, e));
-  b.weken.forEach((w) => DATA.weken.add(w));
-  DATA.me = b.me; DATA.ownDomains = b.ownDomains || []; DATA.opgehaald = b.opgehaald || 0;
-})();
 
 // Voorbeeldgegevens: per ontbrekende week maken (voorbeeld.js)
 function laadVoorbeeld(van, tot) {
   DATA.me = VOORBEELD_IK;
   DATA.ownDomains = VOORBEELD_DOMEINEN;
-  DATA.opgehaald = Date.now();
   for (let w = startOfWeek(van); w < tot; w = addDays(w, 7)) {
     if (DATA.weken.has(w.getTime())) continue;
     voorbeeldAfspraken(w, addDays(w, 7)).forEach((e) => DATA.ruw.set(e.id, e));
@@ -357,7 +267,7 @@ async function gebruikBestand(b) {
   await best.klaar;
   vervangBestand(best);
   DATA.ruw.clear(); DATA.weken.clear();
-  DATA.me = null; DATA.ownDomains = best.eigenDomeinen; DATA.opgehaald = Date.now();
+  DATA.me = null; DATA.ownDomains = best.eigenDomeinen;
 }
 // Snelle start: weken uit de bewaarde kopie, het bestand later
 // Hoort de kopie bij een ouder bestand (de app werd gesloten vlak na het bijwerken), dan tonen we hem toch meteen
@@ -368,7 +278,7 @@ function startUitBewaard(b, kopie) {
   vervangBestand(doel);
   kopie.events.forEach((e) => DATA.ruw.set(e.id, e));
   kopie.weken.forEach((w) => DATA.weken.add(w));
-  DATA.me = null; DATA.ownDomains = kopie.eigenDomeinen || []; DATA.opgehaald = Date.now();
+  DATA.me = null; DATA.ownDomains = kopie.eigenDomeinen || [];
   doel.klaar.then(async () => {
     if (!verouderd || BESTAND !== doel) return;
     const weken = [...DATA.weken].sort((x, y) => x - y);
@@ -535,7 +445,7 @@ async function vernieuwLink({ ookAlsVers = false } = {}) {
     vervangBestand(nieuw);
     DATA.ruw.clear();
     weken.forEach((w) => (uit[w] || []).forEach((e) => DATA.ruw.set(e.id, e)));
-    DATA.ownDomains = nieuw.eigenDomeinen; DATA.opgehaald = nu;
+    DATA.ownDomains = nieuw.eigenDomeinen;
     bewaarWeken({ meteen: true }); // meteen: sluit je de app direct daarna, dan past de kopie toch bij het bestand
     if (!panelen.length) behoudDag(render);
   } catch (e) {
@@ -631,52 +541,9 @@ async function vergeetBestand() {
   DATA.ruw.clear(); DATA.weken.clear();
   laad();
 }
-class NietIngelogd extends Error {}
-
-async function haalOp(van, tot) {
-  const sleutel = await toegangssleutel();
-  if (!sleutel) throw new NietIngelogd();
-  const url = `${API}?van=${ymd(van)}&tot=${ymd(tot)}`;
-  let r = await fetch(url, { headers: { Authorization: `Bearer ${sleutel}` } });
-  if (r.status === 401) {
-    if (!(await vernieuw())) throw new NietIngelogd();
-    r = await fetch(url, { headers: { Authorization: `Bearer ${SES.access}` } });
-  }
-  if (r.status === 401 || r.status === 403) throw new NietIngelogd();
-  if (!r.ok) {
-    const fout = await r.json().catch(() => ({}));
-    throw new Error(fout.error || `De agenda gaf fout ${r.status}`);
-  }
-  const d = await r.json();
-  // Alles wat in deze weken lag vervangen door de nieuwe stand (ook verwijderde afspraken verdwijnen zo)
-  const a = van.getTime(), b = tot.getTime();
-  for (const [id, e] of DATA.ruw) {
-    const s = new Date(e.allDay ? parseYmd(e.start) : e.start).getTime();
-    if (s >= a && s < b) DATA.ruw.delete(id);
-  }
-  d.events.forEach((e) => DATA.ruw.set(e.id, e));
-  for (let w = startOfWeek(van); w < tot; w = addDays(w, 7)) DATA.weken.add(w.getTime());
-  DATA.me = d.me || DATA.me;
-  DATA.ownDomains = d.ownDomains || DATA.ownDomains;
-  DATA.opgehaald = Date.now();
-  bewaar();
-}
-
-// Zorg dat de weken van van t/m tot er zijn. Ontbreekt er iets, dan halen we meteen een flink blok op.
-const _bezig = new Map();
-async function zorgVoor(van, tot, { vers = false } = {}) {
-  if (BESTAND) return laadUitBestand(van, tot);
-  if (DEMO) return laadVoorbeeld(van, tot);
-  const wekenNodig = [];
-  for (let w = startOfWeek(van); w < tot; w = addDays(w, 7)) wekenNodig.push(w.getTime());
-  const missen = wekenNodig.filter((w) => !DATA.weken.has(w));
-  if (!vers && !missen.length) return;
-  const blokVan = new Date(vers ? wekenNodig[0] : missen[0]);
-  const laatste = new Date((vers ? wekenNodig : missen)[(vers ? wekenNodig : missen).length - 1]);
-  const blokTot = new Date(Math.max(addDays(laatste, 7).getTime(), addDays(blokVan, 7 * 12).getTime()));
-  const sleutel = `${blokVan.getTime()}-${blokTot.getTime()}`;
-  if (!_bezig.has(sleutel)) _bezig.set(sleutel, haalOp(blokVan, blokTot).finally(() => _bezig.delete(sleutel)));
-  return _bezig.get(sleutel);
+// Zorg dat de weken van van t/m tot er zijn: uit je eigen agenda, of anders de voorbeeldgegevens
+function zorgVoor(van, tot) {
+  return BESTAND ? laadUitBestand(van, tot) : laadVoorbeeld(van, tot);
 }
 
 /* ------------------------------------------------------------------ */
@@ -892,7 +759,6 @@ const ST = {
   dag: vandaag(),
   laden: false,
   fout: null,
-  login: false,
   naarVandaag: true, // telefoon: bij het openen van de week direct naar vandaag scrollen
 };
 const zichtbaar = new Map(); // id → verrijkte afspraak, voor het detailscherm
@@ -1125,15 +991,14 @@ function render() {
   renderKop();
   renderZijbalk();
   const main = $('#inhoud');
-  if (ST.login) { main.innerHTML = loginHtml(); koppelLogin(); return; }
   const { start, eind } = periode();
   const events = afsprakenTussen(start, eind);
   zichtbaar.clear();
   events.forEach((e) => zichtbaar.set(e.id, e));
   // Eigen bestand nog op de achtergrond aan het inlezen en deze week nog niet bewaard: ook 'laden' tonen
-  const geenData = (!lokaal() || (BESTAND && !BESTAND.gelezen)) && !DATA.weken.has(startOfWeek(start).getTime());
+  const geenData = BESTAND && !BESTAND.gelezen && !DATA.weken.has(startOfWeek(start).getTime());
   if (geenData && ST.laden) { main.innerHTML = '<div class="laden">Agenda laden…</div>'; return; }
-  if (geenData && ST.fout) { main.innerHTML = meldingHtml('Agenda niet beschikbaar', ST.fout, 'Opnieuw proberen'); $('#inhoud .knop').onclick = () => laad({ vers: true }); return; }
+  if (geenData && ST.fout) { main.innerHTML = meldingHtml('Agenda niet beschikbaar', ST.fout, 'Opnieuw proberen'); $('#inhoud .knop').onclick = () => laad(); return; }
   // De agenda kies je in de weekkiezer (tik op de titel) of op de desktop in de zijbalk
   main.innerHTML = ST.tab === 'week' ? weekHtml(events) : vooruitblikHtml(events);
   if (ST.naarVandaag) scrollNaarVandaag();
@@ -1192,47 +1057,16 @@ function behoudDag(teken) {
 function meldingHtml(titel, tekst, knop) {
   return `<div class="melding"><div class="doos"><h2>${esc(titel)}</h2><p>${esc(tekst)}</p>${knop ? `<button class="knop" style="padding:0 20px">${esc(knop)}</button>` : ''}</div></div>`;
 }
-function loginHtml() {
-  return `<div class="melding"><div class="doos">
-    <h2>Inloggen</h2>
-    <p>Log in met je Nhost-account.</p>
-    <form id="loginform" autocomplete="on">
-      <input type="email" name="email" placeholder="E-mailadres" autocomplete="username" required value="${esc((SES.user && SES.user.email) || '')}">
-      <input type="password" name="wachtwoord" placeholder="Wachtwoord" autocomplete="current-password" required>
-      <div class="fout" id="loginfout" hidden></div>
-      <button class="knop" type="submit">Inloggen</button>
-    </form>
-  </div></div>`;
-}
-function koppelLogin() {
-  $('#loginform').addEventListener('submit', async (ev) => {
-    ev.preventDefault();
-    const f = ev.target;
-    const knop = f.querySelector('button');
-    knop.disabled = true; knop.textContent = 'Bezig…';
-    try {
-      await inloggen(f.email.value.trim(), f.wachtwoord.value);
-      ST.login = false;
-      laad({ vers: true });
-    } catch (e) {
-      const fout = $('#loginfout');
-      fout.textContent = e.message; fout.hidden = false;
-      knop.disabled = false; knop.textContent = 'Inloggen';
-    }
-  });
-}
-
 // Gegevens voor de zichtbare periode ophalen (met de weken eromheen voor 'vast') en opnieuw tekenen
-async function laad({ vers = false } = {}) {
+async function laad() {
   const { start, eind } = periode();
   ST.laden = true;
   ST.fout = null;
   render();
   try {
-    await zorgVoor(addDays(start, -7 * LOOK_AROUND_WEEKS), addDays(eind, 7 * LOOK_AROUND_WEEKS), { vers });
+    await zorgVoor(addDays(start, -7 * LOOK_AROUND_WEEKS), addDays(eind, 7 * LOOK_AROUND_WEEKS));
   } catch (e) {
-    if (e instanceof NietIngelogd) ST.login = true;
-    else ST.fout = navigator.onLine === false ? 'Je bent offline. Zodra er weer verbinding is, werkt de app je agenda bij.' : e.message;
+    ST.fout = e.message;
   }
   ST.laden = false;
   render();
@@ -1463,11 +1297,10 @@ function agendaSectieHtml() {
   } else if (BESTAND) {
     const d = new Date(BESTAND.datum);
     bron = [esc(BESTAND.naam), `Ingeladen op ${d.getDate()} ${MONTHS_SHORT[d.getMonth()]} · alleen op dit toestel`];
-  } else if (DEMO) bron = ['Voorbeeldgegevens', 'Verzonnen afspraken en namen'];
-  else bron = ['Outlook', DATA.opgehaald ? `Bijgewerkt om ${hhmm(new Date(DATA.opgehaald))}` : 'Via Nhost'];
+  } else bron = ['Voorbeeldgegevens', 'Verzonnen afspraken en namen'];
   // Eerst de bron die je nu gebruikt, met de handeling die daarbij hoort; daarna één knop om een andere bron te kiezen
   let knoppen = '';
-  if (DEMO || BESTAND) {
+  {
     if (BESTAND && BESTAND.link) knoppen += `<button data-actie="ics-nu"${LINK_BEZIG ? ' disabled' : ''}>${I.herhaal}<span>Nu bijwerken</span></button>`;
     else if (BESTAND) knoppen += `<button data-actie="ics-openen">${I.inladen}<span>Nieuwer bestand inladen</span></button>`;
     knoppen += `<button data-actie="ics-kies">${I.kalender}<span>${BESTAND ? 'Andere agenda kiezen' : 'Je eigen agenda kiezen'}</span></button>`;
@@ -1916,7 +1749,7 @@ const TREK_DREMPEL = 70;
 function koppelDoortrekken() {
   let y0 = null, trek = 0;
   const ind = $('#doortrek'), tekst = $('#doortrek .dttekst');
-  const kan = () => ST.tab === 'week' && !isDesktop() && !panelen.length && !ST.login;
+  const kan = () => ST.tab === 'week' && !isDesktop() && !panelen.length;
   const onderaan = () => window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 4;
   const volgende = () => isoWeek(addDays(periode().start, 7));
   const zet = (px) => {
@@ -2045,48 +1878,43 @@ function koppel() {
   // Van telefoon- naar desktopopmaak (venster groter of kleiner): opnieuw tekenen
   DESKTOP.addEventListener('change', () => { panelen.slice().forEach((p) => p.sluit()); render(); });
 
-  // Terug in de app: nieuwe dag? Dan terug naar vandaag. Gegevens ouder dan vijf minuten: opnieuw ophalen.
+  // Terug in de app: nieuwe dag? Dan terug naar vandaag. Agenda via een link: na een kwartier opnieuw kijken.
   // Vooruitblik: afgelopen afspraken van vandaag verdwijnen vanzelf, ook als de app open blijft staan
   setInterval(() => {
-    if (ST.tab === 'forecast' && document.visibilityState === 'visible' && !panelen.length && !ST.login) render();
+    if (ST.tab === 'forecast' && document.visibilityState === 'visible' && !panelen.length) render();
   }, 60 * 1000);
 
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState !== 'visible') return;
     const t = vandaag();
     if (!sameDay(t, ST.dag)) { ST.dag = t; ST.anker = defaultWeekAnchor(t); ST.fcStart = t; zijMaand = null; ST.naarVandaag = true; }
-    if (!lokaal() && Date.now() - DATA.opgehaald > VERS_MS) laad({ vers: true });
-    else render();
+    render();
     vernieuwLink();
   });
-  window.addEventListener('online', () => { if (!lokaal()) laad({ vers: true }); else vernieuwLink({ ookAlsVers: true }); });
+  window.addEventListener('online', () => vernieuwLink({ ookAlsVers: true }));
 }
 
-// Uitloggen: ?uitloggen achter het adres
-if (PARAMS.has('uitloggen')) uitloggen();
-
 (function start() {
-  // Resten van de proef met Microsoft 365 (versie 2026-11-04-4 en -5) opruimen
-  try { Object.keys(localStorage).filter((k) => /^ag_ms|^msal\./.test(k)).forEach((k) => localStorage.removeItem(k)); } catch (e) { /* geblokkeerd */ }
+  // Resten van eerdere versies opruimen: de proef met Microsoft 365 en de Nhost-koppeling
+  try { Object.keys(localStorage).filter((k) => /^ag_ms|^msal\.|^ag_sessie$|^ag_data$|^ag_zijbalk$/.test(k)).forEach((k) => localStorage.removeItem(k)); } catch (e) { /* geblokkeerd */ }
   const f = LS.get('ag_filter');
   if (['notable', 'all', 'free'].includes(f)) ST.filter = f;
   const t = LS.get('ag_tab');
   if (['week', 'forecast'].includes(t)) ST.tab = t;
   koppel();
-  // Een eerder geopend .ics-bestand gaat voor (behalve met ?echt of ?demo)
+  // Een eerder geopend .ics-bestand of je agenda-link gaat voor (behalve met ?demo)
   renderKop(); // de titel en knoppen staan er meteen, ook voordat de afspraken uit de opslag komen
   Promise.all([IDB.get('ics').catch(() => null), IDB.get('icsweken').catch(() => null)]).then(async ([b, kopie]) => {
-    if (b && b.tekst && !PARAMS.has('echt') && !PARAMS.has('demo')) {
+    if (b && b.tekst && !PARAMS.has('demo')) {
       if (kopie && kopie.weken && kopie.weken.length) startUitBewaard(b, kopie);
       else {
         $('#inhoud').innerHTML = '<div class="laden">Agenda-bestand inlezen…</div>';
         try { await gebruikBestand(b); } catch (e) { BESTAND = null; }
       }
     }
-    if (!lokaal() && !SES.refresh) { ST.login = true; render(); return; }
-    // Eerst tonen wat er bewaard is, daarna de nieuwe stand ophalen
+    // Eerst tonen wat er bewaard is, daarna de rest van de weken klaarzetten
     render();
-    laad({ vers: !lokaal() });
+    laad();
     // Agenda via een link: na het opstarten op de achtergrond kijken of er iets is veranderd
     if (BESTAND && BESTAND.link) setTimeout(() => vernieuwLink({ ookAlsVers: true }), 2500);
   });

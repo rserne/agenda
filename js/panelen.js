@@ -666,7 +666,11 @@ async function openNieuw({ dag = null, blok = null } = {}) {
     const lbl = t.closest('.datumlabel');
     if (lbl) { const i = $('#ndatuminvoer', el); if (i.showPicker) { ev.preventDefault(); try { i.showPicker(); } catch (e) { /* niet overal toegestaan */ } } return; }
     if (t.closest('#nics') && v.start != null) { downloadIcs(v); return; }
-    if (t.closest('#noutlook') && v.start == null) ev.preventDefault();
+    if (t.closest('#noutlook')) {
+      if (v.start == null) { ev.preventDefault(); return; }
+      // Outlook neemt het over: het paneel gaat dicht, net nadat de link is gevolgd.
+      setTimeout(p.sluit, 400);
+    }
   });
   if (isDesktop()) setTimeout(() => { const i = $('input[name="titel"]', el); if (i) i.focus(); }, 60);
 }

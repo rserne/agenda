@@ -112,6 +112,9 @@ test('telefoon: nieuwe afspraak opent de Outlook-app met tijd, deelnemers en not
   assert.match(href, /attendees=een%40voorbeeld\.nl,twee%40voorbeeld\.nl/);
   assert.match(href, /description=Eerste%20regel%0ATweede%20regel/);
   assert.equal(await knop.getAttribute('target'), null);
+  await p.evaluate(() => document.getElementById('noutlook').addEventListener('click', (e) => e.preventDefault())); // niet echt naar Outlook
+  await knop.tap(); await wacht(900);
+  assert.equal(await p.locator('.paneel').count(), 0, 'het paneel gaat dicht als Outlook het overneemt');
 });
 
 test('telefoon: Openen in Outlook gaat naar de dag van de afspraak in de app', async ({ browser, url }) => {

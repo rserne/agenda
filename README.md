@@ -1,40 +1,52 @@
 # Agenda
 
-Je week in één oogopslag, als web-app (PWA) voor iPhone, iPad en laptop. De app leest je Outlook-agenda via een gepubliceerde iCal-feed en laat zien wat opvalt: externe overleggen en interne afspraken die niet vast zijn. Daarnaast toont hij alles, of juist waar je nog tijd hebt.
+Je week in één oogopslag, als web-app (PWA) voor iPhone, iPad en laptop. De app leest je Outlook-agenda en laat zien wat opvalt: externe overleggen en interne afspraken die niet vast zijn. Daarnaast toont hij alles, of juist waar je nog tijd hebt.
 
-- **Week:** per dag een lijst, met Opvallend, Alles en Vrij. De dagkop blijft bovenaan staan tijdens het scrollen.
+- **Week:** per dag een lijst, met Opvallend, Alles en Vrij. De dagkop blijft bovenaan staan tijdens het scrollen. Op de telefoon trek je onderaan door naar de volgende week.
 - **Vooruitblik:** zeven dagen vanaf vandaag in tegels. Van vandaag staan alleen de afspraken die nog komen of nu bezig zijn; wat al voorbij is, verdwijnt vanzelf.
 - **Weekkiezer:** tik op de titel. Elke werkdag kleurt mee met hoe vol hij is (een heatmap): grijs bij een rustige dag, geel vanaf drie uur en rood vanaf zes uur aan afspraken (`MID_HOURS`, `FULL_HOURS`).
 - **Detailscherm:** locatie, Teams-link, organisator en deelnemers per organisatie, notities, en mailen naar één of alle deelnemers.
 
-Zonder bouwstap: `index.html`, `app.css`, `app.js` en `voorbeeld.js` draaien zoals ze zijn op GitHub Pages. Licht en donker volgen de instelling van het toestel.
+Zonder bouwstap: alle bestanden draaien zoals ze zijn op GitHub Pages. Licht en donker volgen de instelling van het toestel.
 
 **Formaten**
 - **Telefoon:** kop met titel en capsule, schakelaar bovenin, tabbalk onderin, panelen van onderen.
 - **Tablet (vanaf 768 punten):** dezelfde opbouw in een kolom van 760 punten, Vooruitblik met vier tegels naast elkaar.
 - **Desktop (vanaf 1200 punten):** in de stijl van Agenda op de Mac. Een zijbalk met de maandkalender (heatmap) en Week of Vooruitblik, een werkbalk met Opvallend, Alles of Vrij en ‹ Vandaag ›, en de werkdagen als kolommen naast elkaar met een gekleurd streepje per afspraak. Het detailscherm opent als dialoog midden in beeld.
 
-**Voorbeeldgegevens.** Zolang de echte agenda nog niet is gekoppeld, staat `BRON = 'voorbeeld'` bovenin `app.js`. `voorbeeld.js` maakt dan voor elke week verzonnen afspraken: vaste overleggen, losse interne afspraken en externe overleggen met deelnemers. Zet `BRON` op `'nhost'` als de functie werkt; met `?echt` of `?demo` achter het adres kies je tijdelijk de andere bron.
+**Nieuwe afspraak.** Met de plusknop in de kop (op de desktop **Nieuw**): je kiest de dag en de duur (standaard een uur, in stappen van een kwartier) en de app stelt begintijden voor die in je vrije blokken passen, tussen 8:00 en 18:00. Kies je zelf een andere tijd die botst, dan zie je meteen met welke afspraak. Tik je op een vrij blok, dan blijft alles binnen dat blok. Omdat de app je agenda alleen leest, opent **Afmaken in Outlook** Outlook op het web met alles ingevuld; daar sla je de afspraak op en verstuur je de uitnodiging. Een .ics-bestand downloaden kan ook, voor andere agenda's.
 
-**Nieuwe afspraak.** Met de plusknop in de kop (op de desktop **Nieuw**): je kiest de dag en de duur (standaard een uur, in stappen van een kwartier) en de app stelt begintijden voor die in je vrije blokken passen, tussen 8:00 en 18:00. Kies je zelf een andere tijd die botst, dan zie je meteen met welke afspraak. Tik je op een vrij blok, dan blijft alles binnen dat blok: de dag ligt vast, de duur gaat niet verder dan het blok lang is en de begintijden vallen erbinnen. Omdat de app je agenda alleen leest, opent **Verder in Outlook** Outlook op het web met alles ingevuld; daar sla je de afspraak op en verstuur je de uitnodiging. **Downloaden als .ics** werkt ook in andere agenda's.
+## Waar de afspraken vandaan komen
 
-## Hoe het werkt
+Onder **Agenda** (op de telefoon en tablet in de weekkiezer, op de desktop in de zijbalk) kies je de bron:
+
+1. **Agenda-link:** de link van je Cloudflare Worker, met de sleutel erin. De app haalt je agenda daarmee zelf op (zie hieronder).
+2. **Eigen .ics-bestand:** een bestand dat je eenmalig inlaadt.
+3. **Niets gekozen:** dan toont de app verzonnen voorbeeldgegevens uit `voorbeeld.js`. Met `?demo` achter het adres krijg je die altijd, ook als je een eigen agenda hebt gekoppeld.
 
 ```
-iPhone (PWA op GitHub Pages)
-   │  inloggen bij Nhost Auth (zelfde account als de AustralieApp)
-   │  GET /v1/agenda?van=…&tot=…  met de toegangssleutel
+iPhone, iPad of laptop (PWA op GitHub Pages)
+   │  GET https://agenda.<account>.workers.dev/?sleutel=…
    ▼
-Nhost-functie functions/agenda.js
-   │  controleert de sleutel bij Nhost Auth
-   │  haalt de feed op (geheim ICS_URL) en rolt herhalingen uit
+Cloudflare Worker  cloudflare/worker.js
+   │  controleert de sleutel, haalt de feed op (geheim ICS_URL)
    ▼
 Outlook, gepubliceerde agenda (.ics)
 ```
 
-De feed-URL staat alleen als geheim bij Nhost. Wie de feed-URL heeft, kan je hele agenda lezen, dus die hoort niet in deze openbare repository en niet in de app.
+De app leest het bestand in een Web Worker (`js/ics-werker.js`), zodat hij blijft reageren. Daar rolt `js/ical.js` de herhalingen uit en leidt `js/verrijk.js` de organisatie af. De uitgerolde weken (een halfjaar terug en vooruit) bewaart de app in IndexedDB. Bij het opstarten staan die meteen in beeld, ook als ze bij een ouder bestand horen; het inlezen gebeurt daarna op de achtergrond. Zonder Web Worker (oude browsers) leest de app het bestand zelf in.
 
-De app bewaart de opgehaalde afspraken op het toestel (localStorage), zodat hij meteen iets toont en ook zonder verbinding werkt. Bij openen haalt hij de nieuwe stand op als die ouder is dan vijf minuten.
+Je link en je bestand blijven alleen op het toestel, in IndexedDB. Ze komen nooit in de code of in deze openbare repository. Zet daarom ook nooit een echt agenda-bestand in de repository.
+
+### Agenda-link
+
+De app haalt je agenda altijd op de achtergrond op: bij het opstarten, elk kwartier zolang de app open is, als je terugkomt in de app en als de verbinding terugkomt. Is er niets veranderd (alleen de DTSTAMP), dan leest hij niets opnieuw in. Is er wel iets veranderd, dan leest hij het nieuwe bestand naast het oude in en wisselt hij pas als alles klaar is. Onderin verschijnt kort een melding, ook als het misgaat (verkeerde sleutel, geen verbinding).
+
+De link van je gepubliceerde Outlook-agenda zelf werkt niet: Outlook staat niet toe dat een andere website hem ophaalt (CORS). Daarom loopt het via de Cloudflare Worker, die die toestemming wel geeft. Geef je toch een `webcal://`- of Outlook-link op, dan verwijst de app je naar de Worker.
+
+### Eigen .ics-bestand
+
+Kies **Eigen agenda inladen**. De app leest het bestand in de browser en stuurt het nergens naartoe. Met **Wissen** gaat de app terug naar de voorbeeldgegevens. Het inlezen van een groot bestand kost op een telefoon enkele seconden; daarna staat de agenda bij elke start meteen in beeld.
 
 ## Indeling
 
@@ -44,13 +56,11 @@ De app bewaart de opgehaalde afspraken op het toestel (localStorage), zodat hij 
 | Intern, ad hoc | Alleen eigen domein en geen vast overleg | ijsblauw |
 | Intern, vast | Een herhaalreeks, of dezelfde titel in minstens twee verschillende weken | grijs |
 
-**Zonder organisator en deelnemers.** Een gepubliceerde Outlook-agenda bevat geen organisator en geen deelnemers. `functions/_verrijk.js` leidt daarom de organiserende organisatie af:
-- uit de Teams-link: een klassieke uitnodiging bevat de tenant van de organisator. De tenant die het vaakst voorkomt is je eigen organisatie; bij elke andere tenant leert de code welk maildomein erbij hoort (bijvoorbeeld tue.nl, dus TUE);
+**Zonder organisator en deelnemers.** Een gepubliceerde Outlook-agenda bevat geen organisator en geen deelnemers. `js/verrijk.js` leidt daarom de organiserende organisatie af:
+- uit de Teams-link: een klassieke uitnodiging bevat de tenant van de organisator. De tenant die het vaakst voorkomt, is je eigen organisatie; bij elke andere tenant leert de code welk maildomein erbij hoort (bijvoorbeeld tue.nl, dus TUE);
 - uit de titel: 'Vernieuwenderwijs / CACI' of 'CACI / SURF'.
 
-Het detailscherm toont dan 'Afgeleid uit de Teams-uitnodiging' of 'Afgeleid uit de titel'. Deelnemers en mailen zijn er dan niet; een overleg dat CACI zelf organiseert met externe gasten blijft intern, tenzij de titel de andere organisatie noemt.
-
-Je eigen domein komt uit `EIGEN_DOMEINEN` en `MIJN_EMAIL` bij Nhost. Staat daar niets, dan neemt de app het domein dat het vaakst onder de deelnemers voorkomt.
+Het detailscherm toont dan 'Afgeleid uit de Teams-uitnodiging' of 'Afgeleid uit de titel'. Deelnemers en mailen zijn er dan niet. Een overleg dat CACI zelf organiseert met externe gasten blijft intern, tenzij de titel de andere organisatie noemt. Extra eigen maildomeinen zet je in `OWN_DOMAINS_EXTRA`.
 
 **Overlap.** Lopen twee afspraken door elkaar, dan krijgt de afspraak die je als eerste ingaat een oranje regel, zoals 'Overlap met Weekstart om 10:30': daar moet je misschien eerder weg. De afspraak die later begint, krijgt niets. Beginnen ze tegelijk, dan staat 'Overlap met …' (zonder tijd) alleen bij de bovenste in de lijst; in het detailscherm staat het bij allebei. Vaste overleggen tellen mee, ook als Opvallend ze verbergt. In de Vooruitblik krijgt de tegel een oranje rand.
 
@@ -66,80 +76,64 @@ Outlook op het web, Instellingen, Agenda, Gedeelde agenda's, Een agenda publicer
 
 Repository, Settings, Pages: Deploy from a branch, `main`, map `/ (root)`. De app staat dan op `https://rserne.github.io/agenda/`.
 
-### 3. Nhost (project AustralieApp)
+### 3. Cloudflare Worker
 
-Een gratis Nhost-organisatie mag maar één actief project hebben. Daarom draait de functie voorlopig in het project van de AustralieApp. De app gebruikt dat project via `NHOST_SUB` bovenin `app.js`.
-
-1. **Repository koppelen:** in het dashboard van het project, Settings, Git: koppel `rserne/agenda`, branch `main`, base directory `/`. Nhost zet bij elke push de functie in `functions/` online. Bestanden met een `_` ervoor (zoals `_ical.js`) krijgen geen eigen adres.
-2. **Omgevingsvariabelen voor de functie:** Settings, Environment Variables. Die zijn alleen in het dashboard te zien, niet in de app of de repository.
-   - `ICS_URL` = de ICS-link uit Outlook.
-   - `ALLOWED_EMAILS` = jouw inlogadres bij Nhost. Zonder deze regel kan iedereen met een AustralieApp-account je agenda zien.
-   - `MIJN_EMAIL` = je werkadres zoals het in uitnodigingen staat. Daarmee herkent de app jou tussen de deelnemers ('(jij)', niet mailen naar jezelf).
-   - `EIGEN_DOMEINEN` = je eigen maildomein(en), komma-gescheiden.
-   - Optioneel `ALLOWED_ORIGINS`: adressen die de functie mogen aanroepen. Standaard `https://rserne.github.io` en `http://localhost:8080`.
-3. **Eerste deploy controleren:** deze repository heeft geen map `nhost/`, dus Nhost hoort alleen de functie online te zetten en de database, Hasura en de instellingen van de AustralieApp met rust te laten. Kijk na de eerste push in Deployments of alles groen is en of de AustralieApp het nog doet.
-4. Na de eerste deploy staat de functie op `https://gjqqtpteurwdbealgmqh.functions.eu-central-1.nhost.run/v1/agenda`. Zonder inloggen geeft die `401`, en dat is goed.
-
-### 4. Op je iPhone en iPad
-
-Open de app in Safari, tik op Delen, Zet op beginscherm. Log in met je AustralieApp-account.
-
-## Agenda-link opgeven (webcal)
-
-Onder Agenda kun je de link van je Cloudflare Worker opgeven (zie hieronder), met de sleutel erin. De link van je
-gepubliceerde Outlook-agenda zelf werkt niet: Outlook staat niet toe dat een andere website hem ophaalt (CORS).
-De app haalt de agenda dan zelf op, altijd op de achtergrond: bij het opstarten, elk kwartier zolang de app open
-is, als je na een kwartier terugkomt in de app en als de verbinding terugkomt. Is er niets veranderd (alleen de
-DTSTAMP), dan leest hij niets opnieuw in. Is er wel iets veranderd, dan leest hij het nieuwe bestand naast het oude
-in en wisselt hij pas als alles klaar is. Het inlezen gebeurt in een Web Worker (`ics-werker.js`), zodat de app
-blijft reageren; zonder worker (oude browsers) gebeurt het in de app zelf. De link is
-geheim (wie hem heeft, ziet je agenda) en blijft alleen op het toestel, in IndexedDB. Hij komt nooit in de code of
-de repo. Lukt rechtstreeks ophalen niet omdat Outlook geen CORS toestaat, dan meldt de app dat; dan is een tussenstap
-op een server nodig. Bij Outlook is dat zo.
-
-### Tussenstap: Cloudflare Worker
-
-`cloudflare/worker.js` haalt de agenda op en geeft hem door aan de app, met de CORS-toestemming die Outlook niet
-geeft. Hij bewaart niets. Gratis, zonder betaalkaart.
+`cloudflare/worker.js` haalt de agenda op en geeft hem door aan de app. Hij bewaart niets. Gratis, zonder betaalkaart.
 
 1. cloudflare.com, gratis account, **Workers & Pages**, **Create**, **Worker** (Start with Hello World).
 2. **Edit code**: vervang de code door `cloudflare/worker.js` en kies **Deploy**.
-3. **Settings**, **Variables and Secrets**, twee keer **Add**, type *Secret*:
-   `ICS_URL` (de ICS-link uit Outlook) en `SLEUTEL` (een lange willekeurige tekst). Opnieuw **Deploy** als daarom
-   gevraagd wordt.
-4. In de app, Agenda-link opgeven: `https://<worker>.<account>.workers.dev/?sleutel=<SLEUTEL>`.
+3. **Settings**, **Variables and Secrets**, twee keer **Add**, type *Secret*: `ICS_URL` (de ICS-link uit Outlook) en `SLEUTEL` (een lange willekeurige tekst). Kies opnieuw **Deploy** als Cloudflare daarom vraagt.
+4. In de app, onder Agenda, Agenda-link: `https://<worker>.<account>.workers.dev/?sleutel=<SLEUTEL>`.
 
-Koppel je de Worker liever aan GitHub (Import a repository), dan gebruikt Cloudflare `wrangler.jsonc` en plaatst
-het alleen de Worker. De naam in dat bestand (`agenda`) moet gelijk zijn aan de naam van de Worker in Cloudflare.
+Koppel je de Worker liever aan GitHub (Import a repository), dan gebruikt Cloudflare `wrangler.jsonc` en plaatst het alleen de Worker. De naam in dat bestand (`agenda`) moet gelijk zijn aan de naam van de Worker in Cloudflare.
 
-Die Worker-link is net zo geheim als de Outlook-link. Een nieuwe sleutel instellen maakt de oude link ongeldig.
+De Worker-link is net zo geheim als de Outlook-link: wie hem heeft, ziet je agenda. Stel je een nieuwe sleutel in, dan werkt de oude link niet meer.
 
-## Eigen .ics-bestand openen
+### 4. Op je iPhone en iPad
 
-Onder **Agenda** staat **Eigen agenda inladen**: op de telefoon en tablet in de weekkiezer (tik op de titel), op de desktop in de zijbalk. De app leest het bestand in de browser, bewaart het in IndexedDB op dat toestel en toont je echte agenda, zonder Nhost en zonder inloggen. Het bestand wordt nergens naartoe gestuurd. Met **Wissen** gaat de app terug naar de voorbeeldgegevens. Het inlezen van een groot bestand kost op een telefoon enkele seconden. Daarom bewaart de app de uitgerolde weken (een halfjaar terug en vooruit) ook in IndexedDB: bij het opstarten staan die meteen in beeld, en het bestand zelf wordt pas daarna op de achtergrond ingelezen voor weken daarbuiten.
+Open de app in Safari, tik op Delen, Zet op beginscherm. Geef daarna onder Agenda je agenda-link op.
 
-Zet een echt agenda-bestand nooit in deze repository: die is openbaar.
+## Code
 
-## Instellingen in app.js
+| Bestand | Inhoud |
+|---|---|
+| `index.html`, `app.css` | De pagina en de opmaak. Bovenin `app.css` staat een inhoudsopgave. |
+| `app.js` | Instellingen, hulpjes en iconen. Hier staat ook `APP_VERSIE`. |
+| `js/gegevens.js` | Waar de afspraken vandaan komen: voorbeeld, .ics-bestand, agenda-link, IndexedDB. |
+| `js/indeling.js` | Extern of intern, vast of ad hoc, overlap, vrije blokken en hoe vol een dag is. |
+| `js/weergave.js` | Week, Vooruitblik, de kop en het tekenen van het scherm. |
+| `js/panelen.js` | Weekkiezer, zijbalk, detailscherm, nieuwe afspraak en de agendakeuze. |
+| `js/bediening.js` | Tikken, vegen en doortrekken, het opstarten, de versiecontrole en de service worker. |
+| `js/ical.js`, `js/verrijk.js`, `js/ics-werker.js` | Het inlezen van een .ics-bestand (ook in de Web Worker). |
+| `voorbeeld.js` | Verzonnen voorbeeldafspraken. |
+| `sw.js` | De service worker: de app werkt ook zonder verbinding. |
+| `cloudflare/worker.js`, `wrangler.jsonc` | De Cloudflare Worker. |
 
-Bovenin `app.js` staan onder meer de werktijd (`WORK_START`, `WORK_END`), de grens voor vrije blokken (`FREE_MIN`), de rode ring (`FULL_HOURS`), de naam van je eigen organisatie (`OWN_ORG_NAME`) en hoeveel weken de app terug en vooruit kijkt om vaste overleggen te herkennen (`LOOK_AROUND_WEEKS`).
+De bestanden in `js/` zijn gewone scripts (geen modules) en laden in een vaste volgorde, die in `index.html` staat. Ze delen dezelfde variabelen, dus een functie in `panelen.js` kan `render()` uit `weergave.js` aanroepen.
+
+Bovenin `app.js` staan onder meer de werktijd (`WORK_START`, `WORK_END`), de grens voor vrije blokken (`FREE_MIN`), de heatmap (`MID_HOURS`, `FULL_HOURS`), de naam van je eigen organisatie (`OWN_ORG_NAME`) en hoeveel weken de app terug en vooruit kijkt om vaste overleggen te herkennen (`LOOK_AROUND_WEEKS`).
 
 Handige adressen:
-- `?demo` of `?echt`: tijdelijk de andere bron (voorbeeldgegevens of je echte agenda), zie `BRON`.
+- `?demo`: altijd de voorbeeldgegevens.
 - `?datum=2026-11-02`: doen alsof het die dag is.
-- `?uitloggen`: uitloggen en de bewaarde afspraken wissen.
 
 ## Testen
 
 ```
 npm install
-node test/run.mjs        # voorbeeldfeed omzetten, week 45 van 2026
-node test/functie.mjs    # de functie met nagebootste login en feed
-python3 -m http.server 8080   # en open http://localhost:8080/
+npx playwright install chromium   # eenmalig
+npm test                          # de tests, in een echte browser
+npm run schermen -- basis         # schermafbeeldingen in de map basis/
+npm run schermen -- na basis      # nieuwe afbeeldingen in na/ en vergelijken met basis/
+python3 -m http.server 8080       # en open http://localhost:8080/
 ```
+
+`npm test` start de app met een vaste klok (woensdag 4 november 2026, 9:00) en de voorbeeldgegevens. De tests controleren onder meer het opstarten, wisselen van filter, doortrekken naar de volgende week, het detailscherm, de weekkiezer, een nieuwe afspraak, het inladen van een .ics-bestand (met en zonder Web Worker), de agenda-link en de desktop. Zet je een deel van een naam erachter, dan draaien alleen die tests, bijvoorbeeld `npm test -- desktop`.
+
+`npm run schermen` maakt 66 schermafbeeldingen: telefoon, telefoon met .ics, iPad liggend en staand, en Mac, elk in licht en donker. Maak voor een grote wijziging eerst een basis en vergelijk daarna; zo zie je meteen of er iets verschuift.
 
 `test/voorbeeld.ics` is een feed in Outlook-stijl met verzonnen namen: herhaalreeksen, een verplaatste keer, een uitzondering, een hele dag, een afgezegde en een vrije afspraak.
 
 ## Nieuwe versie online zetten
 
-Hoog `APP_VERSIE` in `app.js` en `VERSION` in `sw.js` op, commit en push. GitHub Pages en de Nhost-functie werken zichzelf bij. Wie de app open heeft, krijgt onderin de melding 'Nieuwe versie beschikbaar' met **Vernieuwen**: de app leest kort na het openen, bij terugkomen en elk half uur `APP_VERSIE` uit het begin van `app.js` op de server en vergelijkt die met de versie die draait. GitHub Pages kan een nieuwe versie tot een paar minuten na de push nog oud uitleveren. De service worker geeft de app-bestanden meteen uit de cache (snelle start, ook zonder bereik) en haalt ze op de achtergrond opnieuw op; **Vernieuwen** leegt eerst die cache.
+Hoog `APP_VERSIE` in `app.js` en `VERSION` in `sw.js` op, commit en push. GitHub Pages werkt zichzelf bij. Wie de app open heeft, krijgt onderin de melding 'Nieuwe versie beschikbaar' met **Vernieuwen**: de app leest kort na het openen, bij terugkomen en elk half uur `APP_VERSIE` uit het begin van `app.js` op de server en vergelijkt die met de versie die draait. GitHub Pages kan een nieuwe versie tot een paar minuten na de push nog oud uitleveren. De service worker geeft de app-bestanden meteen uit de cache (snelle start, ook zonder bereik) en haalt ze op de achtergrond opnieuw op; **Vernieuwen** leegt eerst die cache. Zet een nieuw bestand in `js/` ook in `index.html` en in de lijst `BESTANDEN` in `sw.js`.

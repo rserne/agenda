@@ -17,7 +17,7 @@ function orgLabel(domain) {
 }
 const titleKey = (t) => String(t || '').toLowerCase().replace(/^(re|fw|fwd|antw|doorst):\s*/i, '').replace(/\s+/g, ' ').trim();
 
-// Eigen domeinen: uit de instellingen van de functie, je eigen adres en OWN_DOMAINS_EXTRA. Is er niets bekend,
+// Eigen domeinen: wat de omzetter uit de Teams-links heeft geleerd en OWN_DOMAINS_EXTRA. Is er niets bekend,
 // dan nemen we het domein dat het vaakst onder de deelnemers voorkomt (dat ben jij met je collega's).
 let _eigenCache = { n: -1, set: null };
 function eigenDomeinen() {

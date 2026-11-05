@@ -83,8 +83,9 @@ const GROEPEN = [
     ['to in plaats van attendees', () => nieuw(`to=${adressen().map(enc).join(',')}`)],
   ]],
   ['Nieuwe afspraak met notitie', [
-    ['body', () => nieuw(`body=${enc('Agenda:\n1. Opening\n2. Rondvraag')}`)],
-    ['notes', () => nieuw(`notes=${enc('Agenda:\n1. Opening\n2. Rondvraag')}`)],
+    ['description', () => nieuw(`description=${enc('Agenda:\n1. Opening\n2. Rondvraag')}`)],
+    ['description met komma-deelnemers', () => nieuw(`attendees=${adressen().map(enc).join(',')}&description=${enc('Agenda:\n1. Opening\n2. Rondvraag')}`)],
+    ['content', () => nieuw(`content=${enc('Agenda:\n1. Opening\n2. Rondvraag')}`)],
   ]],
   ['Webadres (opent dit de app?)', [
     ['outlook.office.com/calendar', 'https://outlook.office.com/calendar/'],

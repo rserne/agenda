@@ -32,7 +32,7 @@ function openPaneel(el, { greepSelector, boven = false } = {}) {
 }
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && panelen.length) panelen[panelen.length - 1].sluit(); });
 
-// Omlaag vegen sluit een paneel. Met de vinger kan dat overal op het paneel (zoals een iOS-sheet),
+// Omlaag vegen sluit een paneel. Met de vinger kan dat overal op het paneel en op de achtergrond erboven (zoals een iOS-sheet),
 // zolang de inhoud bovenaan staat; met muis of pen alleen aan de greep.
 function maakVeegbaar(paneel, greep, sluit) {
   veegMetVinger(paneel, sluit);
@@ -62,21 +62,29 @@ function maakVeegbaar(paneel, greep, sluit) {
   greep.addEventListener('pointercancel', los);
 }
 
+// Vegen kan op het paneel zelf en op de donkere achtergrond erboven.
 function veegMetVinger(paneel, sluit) {
   if (paneel.dataset.veeg) return; // één keer per paneel, ook als de inhoud opnieuw getekend wordt
   paneel.dataset.veeg = '1';
+  luisterNaarVeeg(paneel, paneel, sluit);
+  const achter = (panelen.find((x) => x.el === paneel) || {}).achter;
+  if (achter) luisterNaarVeeg(achter, paneel, sluit);
+}
+
+function luisterNaarVeeg(bron, paneel, sluit) {
   let x0 = 0, y0 = null, dy = 0, t0 = 0, sleept = false;
   // Staat de vinger in iets dat al omlaag gescrold is? Dan scrollt de inhoud eerst terug.
   const gescrold = (doel) => {
     for (let n = doel; n && n !== paneel.parentNode; n = n.parentNode) if (n.scrollTop > 0) return true;
     return false;
   };
-  paneel.addEventListener('touchstart', (e) => {
+  bron.addEventListener('touchstart', (e) => {
     if (e.touches.length !== 1 || paneel.classList.contains('dialoog') || e.target.closest('input, textarea, select')) { y0 = null; return; }
     x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; dy = 0; sleept = false;
-    if (gescrold(e.target)) y0 = null;
+    if (bron === paneel && gescrold(e.target)) y0 = null;
   }, { passive: true });
-  paneel.addEventListener('touchmove', (e) => {
+  bron.addEventListener('touchmove', (e) => {
+    if (bron !== paneel) e.preventDefault(); // op de achtergrond nooit de pagina eronder laten bewegen
     if (y0 === null) return;
     const t = e.touches[0], d = t.clientY - y0;
     if (!sleept) {
@@ -99,8 +107,8 @@ function veegMetVinger(paneel, sluit) {
     }
     y0 = null; sleept = false;
   };
-  paneel.addEventListener('touchend', los);
-  paneel.addEventListener('touchcancel', los);
+  bron.addEventListener('touchend', los);
+  bron.addEventListener('touchcancel', los);
 }
 
 /* ------------------------------------------------------------------ */

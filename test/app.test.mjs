@@ -78,6 +78,18 @@ test('telefoon: detail opent, en omlaag vegen midden op het paneel sluit het', a
   assert.equal(await p.locator('.paneel.detail').count(), 0);
 });
 
+test('telefoon: omlaag vegen op de achtergrond boven het paneel sluit het ook', async ({ browser, url }) => {
+  const p = await nieuwePagina(browser, TELEFOON);
+  await p.goto(url); await wacht(1000);
+  await p.click('#titelknop'); await wacht(800);
+  const r = await p.locator('.paneel.kiezer').boundingBox();
+  assert.ok(r.y > 120, `ruimte boven het paneel: ${r.y}`);
+  await veeg(p, 200, r.y - 100, r.y - 70); // korte trek: blijft open
+  assert.equal(await p.locator('.paneel.kiezer.open').count(), 1);
+  await veeg(p, 200, r.y - 100, r.y + 200);
+  assert.equal(await p.locator('.paneel').count(), 0);
+});
+
 test('telefoon: in de weekkiezer een week kiezen', async ({ browser, url }) => {
   const p = await nieuwePagina(browser, TELEFOON);
   await p.goto(url); await wacht(1000);

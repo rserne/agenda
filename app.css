@@ -1,12 +1,23 @@
 /* Agenda, opmaak
    Kleuren: koraal (extern) en ijsblauw (intern, accent). Licht en donker volgen de instelling van het toestel.
-   Alles wat met kleur te maken heeft, staat in de variabelen hieronder. */
+   Alles wat met kleur te maken heeft, staat in de variabelen hieronder; het donkere thema zet alleen die variabelen
+   anders (en de heatmap, die in het donker volle kleuren gebruikt).
+
+   Volgorde (latere lagen gaan voor):
+   1. Variabelen, licht en donker
+   2. Telefoon, de basis: kop, Week, Vooruitblik, weekkiezer, panelen, detail, nieuwe afspraak, meldingen
+   3. Tablet, vanaf 768 px
+   4. Desktop, vanaf 1200 px: zijbalk, dagkolommen en het detail als venster (en breder vanaf 1600 px)
+   5. iPad liggend: de desktop-indeling, maar voor de vinger en met de tabbalk van de iPhone
+   Kleine aanpassingen per schermformaat staan bij het onderdeel zelf (bijvoorbeeld @media (max-width: 767px)). */
 
 :root {
   --bg: #F2F2F7;
   --fcBg: #F2F2F7;
   --card: #FFFFFF;
   --tileEmpty: #FFFFFF;
+  --heledagBg: #FFFFFF; /* balk 'hele dag' in Vooruitblik */
+  --heledagRand: rgba(60, 60, 67, 0.18);
   --label: #000000;
   --secondary: rgba(60, 60, 67, 0.75); /* 5,2:1 op wit */
   --weekendText: rgba(60, 60, 67, 0.82); /* ook op de blauwe balk van de gekozen week minstens 4,5:1 */
@@ -73,6 +84,8 @@
     --fcBg: #1C1C1E;
     --card: #1C1C1E;
     --tileEmpty: #2C2C2E;
+    --heledagBg: #2C2C2E; /* donker: een eigen vlak, want een kaart in de kleur van de achtergrond is alleen een rand */
+    --heledagRand: transparent;
     --label: #FFFFFF;
     --secondary: rgba(235, 235, 245, 0.6);
     --weekendText: rgba(235, 235, 245, 0.72);
@@ -199,11 +212,11 @@ body.vooruitblik .kop { background: var(--fcBg); }
   bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
   pointer-events: none;
 }
-.tabbalk .kolom { display: flex; }
+.tabbalk .kolom { display: flex; gap: 10px; }
 .tabbalk .pil { flex: 1; display: flex; height: var(--barH); border-radius: calc(var(--barH) / 2); padding: 4px; pointer-events: auto; }
 
 /* Ruimte onderin, zodat de onderste regel (zoals Eigen .ics openen) boven de tabbalk uit te scrollen is */
-main.kolom { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--barH, 56px) + 48px); }
+main.kolom { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--barH, 56px) + 48px); transition: transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1); } /* transform: doortrekken naar de volgende week */
 
 /* ---------------------------------------------------------------- Week */
 .dagkop {
@@ -257,7 +270,7 @@ button.rij:active { background: var(--fill); }
 .rij.heledag .rijtitel { color: var(--regularText); font-weight: 400; -webkit-line-clamp: 1; flex: 1; }
 .hint { color: var(--secondary); font-size: 13px; flex-shrink: 0; }
 .rij.rest { align-items: center; color: var(--secondary); }
-.rij.vrij { background: var(--freeBg); }
+.rij.vrij { background: var(--freeBg); min-height: clamp(48px, calc(28px + var(--uren, 0) * 32px), 200px); }
 .rij.vrij + .rij, .rij + .rij.vrij { margin-top: 2px; }
 /* Stippellijn als achtergrond, niet als rand: een rand van 1,5 pixel tekent Safari op de iPhone niet goed */
 .rij.vrij .stip, .krij.vrij .stip { width: 3px; border: 0; border-radius: 1.5px; background: repeating-linear-gradient(to bottom, var(--accent) 0 4px, transparent 4px 7px); }
@@ -267,7 +280,6 @@ button.rij:active { background: var(--fill); }
 .rij.vrij .rijtitel span { color: var(--secondary); font-weight: 400; }
 
 /* Doortrekken naar de volgende week: tijdens het trekken volgt de lijst de vinger, daarna veert hij terug */
-main.kolom { transition: transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1); }
 main.kolom.trekt { transition: none; }
 #doortrek {
   position: fixed; z-index: 30; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + var(--barH, 56px) + 34px);
@@ -279,7 +291,6 @@ main.kolom.trekt { transition: none; }
 #doortrek.klaar { color: var(--accent); }
 #doortrek.klaar .dtpijl { background: var(--accent); color: var(--onAccent); transform: scale(1.12); }
 @media (min-width: 1200px) { #doortrek { display: none; } }
-.vwpijl .icoon { width: 20px; height: 20px; }
 .legenda { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 16px; padding-top: 30px; }
 .legenda span { display: flex; align-items: center; gap: 6px; color: var(--secondary); font-size: 12px; }
 .legenda .vlak { width: 12px; height: 12px; border-radius: 3px; box-shadow: inset 0 0 0 0.5px var(--separator); }
@@ -296,11 +307,9 @@ main.kolom.trekt { transition: none; }
 .vbinhoud { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
 .vbleeg { padding: 1px 0 0 2px; font-size: 13px; color: var(--secondary); }
 .vbinhoud > .vbrest:first-child { padding-top: 1px; } /* dag met alleen vaste overleggen: op één lijn met de dag */ /* lege dag: net zo ingetogen als '+ 3 vaste overleggen' */
-.vbheledag { display: flex; align-items: center; gap: 8px; min-height: 38px; padding: 7px 12px; border-radius: 12px; background: var(--card); border: 1px solid var(--cardBorder); text-align: left; }
+.vbheledag { display: flex; align-items: center; gap: 8px; min-height: 38px; padding: 7px 12px; border-radius: 12px; background: var(--heledagBg); border: 1px solid var(--heledagRand); text-align: left; }
 .vbheledag .t { flex: 1; min-width: 0; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .vbheledag .h { color: var(--secondary); font-size: 12px; }
-/* Donker: een kaart in dezelfde kleur als de achtergrond is alleen een rand. Net als in het lichte thema een eigen vlak. */
-@media (prefers-color-scheme: dark) { .vbheledag { background: var(--tileEmpty); border-color: transparent; } }
 .tegels { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .tegel {
   min-height: 124px; border-radius: 12px; padding: 8px 8px 7px; display: flex; flex-direction: column; gap: 2px;
@@ -511,9 +520,6 @@ button.drij:active { opacity: 0.6; }
 .melding .doos { background: var(--card); border-radius: 24px; padding: 24px; display: flex; flex-direction: column; align-items: center; gap: 10px; max-width: 360px; width: 100%; text-align: center; }
 .melding h2 { margin: 0; font-size: 20px; }
 .melding p { margin: 0; color: var(--secondary); }
-.melding form { display: flex; flex-direction: column; gap: 10px; width: 100%; margin-top: 6px; }
-.melding input { font: inherit; font-size: 16px; color: var(--label); background: var(--fill); border: 0; border-radius: 12px; height: 46px; padding: 0 14px; width: 100%; }
-.melding .fout { color: var(--statusNo); font-size: 14px; }
 .melding .knop { height: 48px; border-radius: 24px; background: var(--accent); color: var(--onAccent); font-weight: 600; font-size: 16px; }
 .laden { display: flex; justify-content: center; padding: 60px 0; color: var(--secondary); }
 
@@ -550,7 +556,6 @@ button.drij:active { opacity: 0.6; }
 /* Telefoon en tablet: de plusknop staat naast de tabbalk; op de desktop de knop Nieuw in de werkbalk */
 .nieuwknop { display: none; }
 .zijbalkknop { display: none; }
-.tabbalk .kolom { gap: 10px; }
 .tabbalk .plusknop { flex: 0 0 var(--barH); padding: 0; width: var(--barH); height: var(--barH); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--accent); pointer-events: auto; }
 .tabbalk .plusknop .icoon { width: 22px; height: 22px; }
 .tabbalk .plusknop:active { background: var(--fill); }
@@ -559,7 +564,6 @@ button.drij:active { opacity: 0.6; }
 .plus .icoon { width: 18px; height: 18px; }
 .rij.vrij .plus { align-self: center; }
 /* Hoe langer vrij, hoe hoger het blok (met een grens), en de eindtijd onderaan: zo zie je in één oogopslag waar ruimte is */
-.rij.vrij { min-height: clamp(48px, calc(28px + var(--uren, 0) * 32px), 200px); }
 .rij.vrij .tijdkolom { align-self: stretch; display: flex; flex-direction: column; justify-content: space-between; }
 .rij.vrij:active, .tegel.vrij:active { filter: brightness(0.96); }
 .tegel.vrij .tegelkop .plus .icoon { width: 14px; height: 14px; }
@@ -690,9 +694,8 @@ label.frij:focus-within .flabel { color: var(--accent); }
   /* Dunne lijn met wat extra ruimte tussen de maandkalender en de weergave, zoals in de zijbalk van de Mac */
   .zblijst { display: flex; flex-direction: column; gap: 1px; margin: 0 6px; padding-top: 18px; border-top: 0.5px solid var(--separator); }
   .zblijst h3 { padding: 0 4px; }
-  .zblijst button { margin: 0 -6px; }
-  .zblijst h3, .zbsectie h3 { margin: 0 0 4px; padding: 0 10px; color: var(--secondary); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
-  .zblijst button { display: flex; align-items: center; gap: 9px; height: 30px; padding: 0 10px; border-radius: 7px; font-size: 13px; text-align: left; }
+  .zblijst h3 { margin: 0 0 4px; padding: 0 10px; color: var(--secondary); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
+  .zblijst button { display: flex; align-items: center; gap: 9px; height: 30px; margin: 0 -6px; padding: 0 10px; border-radius: 7px; font-size: 13px; text-align: left; }
   .zblijst button .icoon { width: 16px; height: 16px; color: var(--accent); }
   .zblijst button:hover { background: var(--fill); }
   .zblijst button.aan { background: rgb(120 120 128 / 0.18); font-weight: 600; }
@@ -769,7 +772,7 @@ label.frij:focus-within .flabel { color: var(--accent); }
   .krij.rest { align-items: center; color: var(--secondary); font-size: 12px; padding: 6px 11px 7px; }
   .krij.rest .stip { display: none; }
   .krij.leeg { justify-content: center; padding: 14px 0; }
-  .krij.vrij { background: var(--freeBg); }
+  .krij.vrij { background: var(--freeBg); min-height: clamp(40px, calc(18px + var(--uren, 0) * 24px), 170px); }
   .krij.vrij .ktijd { color: var(--accent); }
   .krij.vrij .rijtitel b { color: var(--accent); font-weight: 600; }
   .krij.vrij .rijtitel span { color: var(--secondary); font-weight: 400; }
@@ -812,9 +815,7 @@ label.frij:focus-within .flabel { color: var(--accent); }
   .nieuwknop .icoon { width: 13px; height: 13px; }
   .nieuwknop span { display: inline; }
   .nieuwknop:hover { filter: brightness(1.08); }
-  .krij.vrij .plus { align-self: center; }
-  .krij.vrij { min-height: clamp(40px, calc(18px + var(--uren, 0) * 24px), 170px); }
-  .krij.vrij .plus { opacity: 0; transition: opacity 0.12s; }
+  .krij.vrij .plus { align-self: center; opacity: 0; transition: opacity 0.12s; }
   .krij.vrij .plus .icoon { width: 14px; height: 14px; }
   .krij.vrij:hover .plus, .tegel.vrij:hover .plus { opacity: 0.9; }
   .tegel.vrij .plus { opacity: 0; transition: opacity 0.12s; }
@@ -834,7 +835,6 @@ label.frij:focus-within .flabel { color: var(--accent); }
 /* ================================================================ iPad liggend: desktop-indeling, maar voor de vinger
    Grotere maandkalender en knoppen in de zijbalk en werkbalk; de muis-maten zijn op een aanraakscherm te priegelig */
 @media (min-width: 1200px) and (pointer: coarse) {
-  .shell { grid-template-columns: 316px minmax(0, 1fr); }
   .zbbinnen { padding: 14px 12px 20px; gap: 24px; }
   .minikal .kiezerkop { padding: 0 2px 18px 6px; }
   .minikal .kiezerkop h2 { font-size: 19px; }
@@ -848,7 +848,7 @@ label.frij:focus-within .flabel { color: var(--accent); }
   .minikal .dagcel span { font-size: 13.5px; }
   .minikal .kiezerlegenda { padding: 10px 6px 0; font-size: 13px; gap: 6px 14px; }
   .minikal .kiezerlegenda i { width: 13px; height: 13px; border-radius: 4px; }
-  .zblijst h3, .zbsectie h3 { font-size: 12px; }
+  .zblijst h3 { font-size: 12px; }
   .zblijst button { height: 44px; font-size: 16px; gap: 11px; border-radius: 10px; }
   .zblijst button .icoon { width: 19px; height: 19px; }
   .zbbron { gap: 11px; padding: 6px 4px 8px; }
@@ -857,17 +857,8 @@ label.frij:focus-within .flabel { color: var(--accent); }
   .zbbron .t2 { font-size: 13px; line-height: 17px; }
   .weekrij:hover { background: none; }
   /* Werkbalk */
-  .kop .kolom { height: 60px; gap: 16px; }
   .titel { font-size: 20px; line-height: 26px; }
   .datumregel { font-size: 17px; line-height: 26px; }
-  .kop #schakelaar { height: 36px; border-radius: 10px; padding: 3px; }
-  .kop #schakelaar button { padding: 0 16px; font-size: 15px; border-radius: 8px; }
-  #capsule { height: 36px; border-radius: 10px; }
-  #capsule button { height: 36px; padding: 0 12px; }
-  #capsule .vandaagtekst { font-size: 15px; }
-  #capsule .icoon { width: 17px; height: 17px; }
-  .nieuwknop { height: 36px; border-radius: 10px; padding: 0 14px 0 11px; font-size: 15px; }
-  .nieuwknop .icoon { width: 16px; height: 16px; }
   /* Inhoud: iets groter lettertype, op armlengte goed leesbaar */
   .krij { padding: 8px 8px; }
   .krij .ktijd { font-size: 13px; }
@@ -892,12 +883,10 @@ label.frij:focus-within .flabel { color: var(--accent); }
   .vbleeg, .vbinhoud > .vbrest:first-child { padding-top: 0; margin-top: 0; }
   body.desktop main.kolom > .legenda span { font-size: 14px; }
   .tegel.vrij .plus, .krij.vrij .plus { opacity: 0.8; }
-}
 
-/* ================================================================ iPad liggend: zoals op de iPhone
-   Inklapbare zijbalk (alleen maandkalender en agenda), Week en Vooruitblik als glazen tabbalk onderin met de plusknop,
-   en de knoppen in de werkbalk als glazen pillen in plaats van de compacte knoppen van de Mac */
-@media (min-width: 1200px) and (pointer: coarse) {
+  /* iPad liggend: zoals op de iPhone
+     Inklapbare zijbalk (alleen maandkalender en agenda), Week en Vooruitblik als glazen tabbalk onderin met de plusknop,
+     en de knoppen in de werkbalk als glazen pillen in plaats van de compacte knoppen van de Mac */
   :root { --zbW: 316px; --barH: 52px; }
   .shell { grid-template-columns: var(--zbW) minmax(0, 1fr); transition: grid-template-columns 0.25s ease; }
   body.zbdicht .shell { grid-template-columns: 0 minmax(0, 1fr); }
@@ -912,7 +901,7 @@ label.frij:focus-within .flabel { color: var(--accent); }
   .zijbalkknop:active { background: var(--fill); }
 
   /* Werkbalk: glazen pillen */
-  .kop .kolom { height: 64px; }
+  .kop .kolom { height: 64px; gap: 16px; }
   .kop #schakelaar { height: 42px; padding: 4px; border-radius: 21px; background: var(--glass); border: 0.5px solid var(--glassBorder); box-shadow: var(--glassShadow); -webkit-backdrop-filter: var(--glassBlur); backdrop-filter: var(--glassBlur); }
   .kop #schakelaar button { padding: 0 18px; border-radius: 17px; font-size: 15px; font-weight: 600; color: var(--tabText); }
   .kop #schakelaar button.aan { background: var(--selBg); color: var(--selText); font-weight: 700; box-shadow: none; }

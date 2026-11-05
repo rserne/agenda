@@ -1,9 +1,8 @@
 // Zet een iCal-feed (zoals Outlook die publiceert) om naar losse afspraken binnen een periode.
 // Herhalende afspraken worden uitgerold, verplaatste of gewijzigde keren (RECURRENCE-ID) vervangen
-// de gewone keer, en uitzonderingen (EXDATE) vallen weg. Bestanden met een _ ervoor zijn bij Nhost
-// geen eigen adres, alleen hulpcode voor agenda.js.
-// Geen imports: dezelfde code draait in de Nhost-functie (met ical.js uit npm) en in de browser
-// (met vendor/ical.min.js), bijvoorbeeld als je zelf een .ics-bestand opent. Daarom geef je ICAL mee.
+// de gewone keer, en uitzonderingen (EXDATE) vallen weg.
+// Geen imports: dezelfde code draait in de browser (met vendor/ical.min.js, in js/ics-werker.js of in de app zelf)
+// en in de tests (met ical.js uit npm). Daarom geef je ICAL mee.
 export function maakOmzetter(ICAL) {
 
   const MAX_KEREN = 50000; // veiligheidsgrens per herhaalreeks (een dagelijkse reeks van jaren terug telt vanaf het begin)

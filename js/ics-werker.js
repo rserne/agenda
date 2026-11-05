@@ -7,9 +7,9 @@
 
 // ical.js is een gewoon script dat ICAL als globale variabele maakt; in een module-worker lezen we het zo in
 const klaar = (async () => {
-  const bron = await (await fetch(new URL('./vendor/ical.min.js', import.meta.url))).text();
+  const bron = await (await fetch(new URL('../vendor/ical.min.js', import.meta.url))).text();
   (0, eval)(bron); // eslint-disable-line no-eval
-  const [{ maakOmzetter }, verrijk] = await Promise.all([import('./functions/_ical.js'), import('./functions/_verrijk.js')]);
+  const [{ maakOmzetter }, verrijk] = await Promise.all([import('./ical.js'), import('./verrijk.js')]);
   return { omzetter: maakOmzetter(self.ICAL), ...verrijk };
 })();
 
@@ -31,7 +31,7 @@ self.onmessage = async ({ data }) => {
       const weken = {};
       for (const [van, tot] of data.weken) {
         weken[van] = code.omzetter.uitrollen(stand.reeksen, new Date(van), new Date(tot)).map((e) => {
-          // Gepubliceerde agenda zonder organisator en deelnemers: de organisatie afleiden (zie _verrijk.js)
+          // Gepubliceerde agenda zonder organisator en deelnemers: de organisatie afleiden (zie verrijk.js)
           const hint = e.organizer || e.attendees.length ? null : code.hintVoor(e, stand.kennis, stand.eigenOrg);
           return hint ? { ...e, hint } : e;
         });

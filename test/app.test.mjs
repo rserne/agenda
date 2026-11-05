@@ -4,7 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import assert from 'assert/strict';
 import ICAL from 'ical.js';
-import { maakOmzetter } from '../functions/_ical.js';
+import { maakOmzetter } from '../js/ical.js';
 import { startServer, laadPlaywright, nieuwePagina, wacht, TELEFOON, MAC, MAP } from './hulp.mjs';
 
 const ICS = path.join(MAP, 'test', 'voorbeeld.ics');
@@ -103,6 +103,7 @@ test('bestand: een .ics inladen, en na herstarten staat de agenda er meteen weer
   await p.goto(url); await wacht(800);
   await p.setInputFiles('#icsinvoer', ICS); await wacht(2500);
   assert.ok((await p.locator('#inhoud [data-id]').count()) > 3);
+  assert.equal(await p.evaluate(() => !!window.ICAL), false, 'het inlezen gebeurt in de Web Worker, niet in de app');
   await wacht(1000); // bewaren van de uitgerolde weken
   const t0 = Date.now();
   await p.reload(); await p.waitForSelector('#inhoud [data-id]', { timeout: 5000 });
@@ -137,6 +138,16 @@ test('agenda-link: ophalen op de achtergrond, en een duidelijke melding bij een 
   assert.deepEqual(p.fouten, []);
 });
 
+test('bestand: zonder Web Worker leest de app het bestand zelf in', async ({ browser, url }) => {
+  const p = await nieuwePagina(browser, TELEFOON);
+  await p.context().addInitScript(() => { window.Worker = function () { throw new Error('geen worker'); }; });
+  await p.goto(url); await wacht(800);
+  await p.setInputFiles('#icsinvoer', ICS); await wacht(3000);
+  assert.ok((await p.locator('#inhoud [data-id]').count()) > 3);
+  assert.equal(await p.evaluate(() => !!window.ICAL), true);
+  assert.deepEqual(p.fouten, []);
+});
+
 /* -------------------------------------------------------------- desktop */
 
 test('desktop: dagkolommen, een leeg weekend smal met korte dagnaam, en de legenda', async ({ browser, url }) => {
@@ -163,11 +174,12 @@ test('desktop: detail als venster, Escape sluit het', async ({ browser, url }) =
 const { chromium } = await laadPlaywright();
 const server = await startServer();
 const browser = await chromium.launch();
-let mis = 0;
+let mis = 0, gedraaid = 0;
 const alleen = process.argv[2];
 for (const t of tests) {
   if (alleen && !t.naam.includes(alleen)) continue;
   const start = Date.now();
+  gedraaid++;
   try {
     await t.fn({ browser, url: server.url });
     console.log(`✓ ${t.naam} (${Date.now() - start} ms)`);
@@ -178,5 +190,5 @@ for (const t of tests) {
   for (const c of browser.contexts()) await c.close();
 }
 await browser.close(); await server.stop();
-console.log(mis ? `\n${mis} van ${tests.length} tests mislukt` : `\nAlle ${tests.length} tests geslaagd`);
+console.log(mis ? `\n${mis} van ${gedraaid} tests mislukt` : `\n${gedraaid === tests.length ? 'Alle ' : ''}${gedraaid} tests geslaagd`);
 process.exitCode = mis ? 1 : 0;

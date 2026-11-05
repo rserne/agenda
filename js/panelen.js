@@ -71,8 +71,19 @@ function veegMetVinger(paneel, sluit) {
   if (achter) luisterNaarVeeg(achter, paneel, sluit);
 }
 
+// Omhoog trekken aan een paneel dat al zijn volle hoogte heeft: het rekt een stukje mee en veert terug (zoals iOS).
+const REK_MAX = 28;
+const rek = (d) => REK_MAX * (1 - 1 / (1 + d / (REK_MAX * 2.2)));
+
 function luisterNaarVeeg(bron, paneel, sluit) {
-  let x0 = 0, y0 = null, dy = 0, t0 = 0, sleept = false;
+  let x0 = 0, y0 = null, dy = 0, t0 = 0, sleept = false, omhoog = false;
+  // Kan de inhoud onder de vinger nog verder naar beneden scrollen? Dan scrolt die, in plaats van te rekken.
+  const kanVerder = (doel) => {
+    for (let n = doel; n && n !== paneel.parentNode; n = n.parentNode) {
+      if (n.scrollHeight > n.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(n).overflowY) && n.scrollTop + n.clientHeight < n.scrollHeight - 1) return true;
+    }
+    return false;
+  };
   // Staat de vinger in iets dat al omlaag gescrold is? Dan scrollt de inhoud eerst terug.
   const gescrold = (doel) => {
     for (let n = doel; n && n !== paneel.parentNode; n = n.parentNode) if (n.scrollTop > 0) return true;
@@ -80,7 +91,7 @@ function luisterNaarVeeg(bron, paneel, sluit) {
   };
   bron.addEventListener('touchstart', (e) => {
     if (e.touches.length !== 1 || paneel.classList.contains('dialoog') || e.target.closest('input, textarea, select')) { y0 = null; return; }
-    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; dy = 0; sleept = false;
+    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; dy = 0; sleept = false; omhoog = false;
     if (bron === paneel && gescrold(e.target)) y0 = null;
   }, { passive: true });
   bron.addEventListener('touchmove', (e) => {
@@ -89,12 +100,20 @@ function luisterNaarVeeg(bron, paneel, sluit) {
     const t = e.touches[0], d = t.clientY - y0;
     if (!sleept) {
       if (Math.abs(t.clientX - x0) > Math.abs(d)) { y0 = null; return; } // horizontaal vegen (tijdchips) laten we met rust
-      if (d < 0) { y0 = null; return; } // omhoog: gewoon scrollen
-      if (d < 8) return;
+      if (d < 0) {
+        // Omhoog: scrollen als dat kan, anders rekt het paneel een stukje mee
+        if (bron !== paneel || kanVerder(e.target)) { y0 = null; return; }
+        if (d > -8) return;
+        omhoog = true;
+      } else if (d < 8) return;
       sleept = true; y0 = t.clientY; t0 = Date.now();
       paneel.classList.add('sleept');
     }
     e.preventDefault();
+    if (omhoog) {
+      paneel.style.transform = `translate(-50%, ${-rek(Math.max(0, y0 - t.clientY))}px)`;
+      return;
+    }
     dy = Math.max(0, t.clientY - y0);
     paneel.style.transform = `translate(-50%, ${dy}px)`;
   }, { passive: false });
@@ -103,9 +122,9 @@ function luisterNaarVeeg(bron, paneel, sluit) {
       paneel.classList.remove('sleept');
       paneel.style.transform = '';
       const snel = dy / Math.max(1, Date.now() - t0) > 0.6;
-      if (dy > 110 || (snel && dy > 30)) sluit();
+      if (!omhoog && (dy > 110 || (snel && dy > 30))) sluit();
     }
-    y0 = null; sleept = false;
+    y0 = null; sleept = false; omhoog = false;
   };
   bron.addEventListener('touchend', los);
   bron.addEventListener('touchcancel', los);

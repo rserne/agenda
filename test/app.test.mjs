@@ -90,6 +90,22 @@ test('telefoon: omlaag vegen op de achtergrond boven het paneel sluit het ook', 
   assert.equal(await p.locator('.paneel').count(), 0);
 });
 
+test('telefoon: omhoog trekken aan een paneel rekt een stukje mee en veert terug', async ({ browser, url }) => {
+  const p = await nieuwePagina(browser, TELEFOON);
+  await p.goto(url); await wacht(1000);
+  await p.click('#titelknop'); await wacht(800);
+  const r = await p.locator('.paneel.kiezer').boundingBox();
+  const cdp = await p.context().newCDPSession(p);
+  const y1 = r.y + 40;
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 200, y: y1 }] });
+  for (let i = 1; i <= 12; i++) { await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: 200, y: y1 - i * 20 }] }); await wacht(16); }
+  const omhoog = await p.evaluate(() => document.querySelector('.paneel.kiezer').getBoundingClientRect().y);
+  assert.ok(r.y - omhoog > 8 && r.y - omhoog <= 28, `rekt ${Math.round(r.y - omhoog)} px mee`);
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await wacht(600);
+  assert.equal(Math.round((await p.locator('.paneel.kiezer').boundingBox()).y), Math.round(r.y), 'veert terug');
+  assert.equal(await p.locator('.paneel.kiezer.open').count(), 1, 'blijft open');
+});
+
 test('telefoon: in de weekkiezer een week kiezen', async ({ browser, url }) => {
   const p = await nieuwePagina(browser, TELEFOON);
   await p.goto(url); await wacht(1000);

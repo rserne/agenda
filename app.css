@@ -360,6 +360,8 @@ main.kolom.trekt { transition: none; }
 }
 .paneel.open { transform: translate(-50%, 0); }
 .paneel.sleept { transition: none; }
+/* Strook in de kleur van het paneel eronder, zodat er bij omhoog rekken geen gat onderaan ontstaat */
+.paneel:not(.dialoog)::after { content: ''; position: absolute; left: 0; right: 0; top: 100%; height: 40px; background: inherit; }
 .greep { display: block; width: 52px; height: 5px; border-radius: 3px; background: var(--grabber); margin: 6px auto 0; flex-shrink: 0; }
 
 /* Weekkiezer */

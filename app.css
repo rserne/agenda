@@ -419,8 +419,8 @@ main.kolom.trekt { transition: none; }
 
 /* Detailscherm */
 .detail { background: var(--sheetBg); max-width: 680px; }
-/* Bij weinig inhoud: toch een fatsoenlijke hoogte, met de knoppen onderaan */
-.paneel.detail { min-height: min(50vh, 420px); }
+/* Ook bij weinig inhoud opent het paneel hoog genoeg dat de tekst prettig in beeld staat; de knoppen staan onderaan */
+.paneel.detail { min-height: min(72vh, 680px); min-height: min(72dvh, 680px); }
 .paneel.detail .detailinhoud { flex: 1 1 auto; }
 .paneel.detail .dvoet { margin-top: auto; }
 /* Alleen een sluitknop, rechts naast de eerste regel: de rij zelf neemt geen hoogte in */

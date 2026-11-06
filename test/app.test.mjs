@@ -397,6 +397,64 @@ test('plaatsen: met een Google-sleutel vult Locatie ook adressen aan, en de sleu
   assert.deepEqual(p.fouten, []);
 });
 
+/* -------------------------------------------------------------- tijden uit een mail */
+
+const MAIL = `Ik kan een online uurtje inplannen ergens op de volgende momenten komende week:
+
+Maandag 9 November tussen 13:00 en 16:00
+Woensdag 11 November tussen 15:00 en 17:00
+Donderdag 12 November van 11:00 en 12:00 of ergens tussen 14:00 en 17:00`;
+
+test('mail: de lezer haalt dagen, tijden, duur en online uit gewone zinnen', async ({ browser, url }) => {
+  const p = await nieuwePagina(browser, TELEFOON);
+  await p.goto(url); await wacht(600);
+  const lees = (tekst) => p.evaluate((t) => {
+    const u = leesMailTijden(t);
+    const hm = (m) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+    return { duur: u.duur, online: u.online, opties: u.opties.map((o) => `${ymd(o.dag)} ${hm(o.van)}-${hm(o.tot)}${o.waarschuwing ? ' !' : ''}`) };
+  }, tekst);
+  assert.deepEqual(await lees(MAIL), { duur: 60, online: true, opties: ['2026-11-09 13:00-16:00', '2026-11-11 15:00-17:00', '2026-11-12 11:00-12:00', '2026-11-12 14:00-17:00'] });
+  assert.deepEqual((await lees('Schikt di 10/11 9.00-12.00 of do 12-11 13u-16u? Een half uur is genoeg.')), { duur: 30, online: false, opties: ['2026-11-10 09:00-12:00', '2026-11-12 13:00-16:00'] }, 'elke tijd bij zijn eigen dag');
+  assert.deepEqual((await lees('Kan jij morgen na 14:00, of overmorgen \'s ochtends?')).opties, ['2026-11-05 14:00-18:00', '2026-11-06 09:00-12:00']);
+  assert.deepEqual((await lees('Volgende week dinsdag tussen 1 en 4, of woensdagmiddag.')).opties, ['2026-11-10 13:00-16:00', '2026-11-11 13:00-17:00'], 'tussen 1 en 4 is \'s middags');
+  assert.deepEqual(await lees('Zullen we vrijdag 13 november om half 3 bellen via Teams? Duurt 45 minuten.'), { duur: 45, online: true, opties: ['2026-11-13 14:30-15:15'] }, 'half 3 is 14:30');
+  assert.deepEqual((await lees('Opties:\n- maandag 16 nov\n- dinsdag 17 nov: 10:00 - 11:30\n- woensdag 9-12')).opties, ['2026-11-16 08:00-18:00', '2026-11-17 10:00-11:30', '2026-11-18 09:00-12:00'], 'woensdag 9-12 is een tijdvak, op de woensdag daarna');
+  assert.deepEqual((await lees('Ik ben beschikbaar op 9 en 10 november van 9 tot 12 uur.')).opties, ['2026-11-09 09:00-12:00', '2026-11-10 09:00-12:00']);
+  assert.deepEqual((await lees('Dinsdag 9 november tussen 10:00 en 11:00')).opties, ['2026-11-09 10:00-11:00 !'], 'de datum wint; de weekdag klopt niet');
+  assert.deepEqual((await lees('Graag anderhalf uur. Donderdag 19 november tussen 13.30 en 17.00 of vrijdag 20 november voor 12:00.')), { duur: 90, online: false, opties: ['2026-11-19 13:30-17:00', '2026-11-20 08:00-12:00'] });
+  assert.deepEqual((await lees('Hoi, we zitten nu in week 45 en 46. Hoe staat het met de 2 en 3 punten?')).opties, [], 'geen tijden in gewone tekst');
+});
+
+test('mail: tijden naast de agenda, kiezen, antwoord kopiëren en inplannen', async ({ browser, url }) => {
+  const p = await nieuwePagina(browser, TELEFOON);
+  await p.goto(url); await wacht(900);
+  await p.evaluate(() => { window.gekopieerd = null; navigator.clipboard.writeText = async (t) => { window.gekopieerd = t; }; });
+  await p.locator('[data-nieuw]:visible').first().tap(); await wacht(900);
+  await p.locator('[data-actie="mailtijden"]').tap(); await wacht(900);
+  await p.fill('#mtekst', MAIL); await wacht(1500);
+  assert.deepEqual(await p.locator('#muitslag h3').allInnerTexts(), ['MAANDAG 9 NOVEMBER', 'WOENSDAG 11 NOVEMBER', 'DONDERDAG 12 NOVEMBER']);
+  assert.deepEqual(await p.locator('#muitslag .mstatus').allInnerTexts(), ['Vrij 13:00 – 14:30', 'Te kort: alleen 15:00 – 15:30 en 16:30 – 17:00 vrij', 'Helemaal vrij', 'Vrij 14:00 – 15:00']);
+  assert.equal(await p.locator('#minplannen').isDisabled(), true);
+  await p.locator('#muitslag .chip', { hasText: '13:30' }).tap();
+  await p.locator('#muitslag .chip', { hasText: '14:00' }).tap(); await wacht(200);
+  const antwoord = 'Ik kan op maandag 9 november van 13:30 tot 14:30, of op donderdag 12 november van 14:00 tot 15:00.';
+  assert.equal(await p.locator('#msamen').innerText(), antwoord);
+  assert.equal(await p.locator('#minplannen').isDisabled(), true, 'inplannen kan met één tijd');
+  await p.locator('#mkopieer').tap(); await wacht(300);
+  assert.equal(await p.evaluate(() => window.gekopieerd), antwoord);
+  // Een half uur: andere tijden; wat niet meer past, valt af
+  await p.locator('.mailtijden [data-stap="-15"]').tap(); await p.locator('.mailtijden [data-stap="-15"]').tap(); await wacht(400);
+  assert.match(await p.locator('#muitslag .mstatus').nth(1).innerText(), /^Vrij 15:00 – 15:30 en 16:30 – 17:00$/);
+  assert.deepEqual(await p.locator('#muitslag .chip.aan').allInnerTexts(), ['13:30', '14:00'], 'gekozen tijden die nog passen, blijven staan');
+  await p.locator('#muitslag .chip.aan').first().tap(); await wacht(100);
+  assert.equal(await p.locator('#muitslag .chip.aan').count(), 1);
+  await p.locator('#minplannen').tap(); await wacht(1200);
+  assert.equal(await p.locator('.paneel.mailtijden').count(), 0);
+  assert.match(await p.locator('.paneel.nieuw #nsamen').innerText(), /^Donderdag 12 november, 14:00 – 14:30/);
+  assert.equal(await p.locator('.paneel [name="locatie"]').inputValue(), 'Microsoft Teams', 'online: Teams bij Locatie');
+  assert.deepEqual(p.fouten, []);
+});
+
 /* -------------------------------------------------------------- desktop */
 
 test('desktop: contacten aanvullen met het toetsenbord; Escape sluit eerst de suggesties', async ({ browser, url }) => {

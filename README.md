@@ -16,6 +16,10 @@ Zonder bouwstap: alle bestanden draaien zoals ze zijn op GitHub Pages. Licht en 
 
 **Nieuwe afspraak.** Met de plusknop in de kop (op de desktop **Nieuw**): je kiest de dag en de duur (standaard een uur, in stappen van een kwartier) en de app stelt begintijden voor die in je vrije blokken passen, tussen 8:00 en 18:00. Kies je zelf een andere tijd die botst, dan zie je meteen met welke afspraak. Tik je op een vrij blok, dan blijft alles binnen dat blok. Omdat de app je agenda alleen leest, opent **Afmaken in Outlook** Outlook met alles ingevuld: titel, tijd, locatie, deelnemers en notitie. Daar sla je de afspraak op en verstuur je de uitnodiging. Op iPhone en iPad gaat dat naar de Outlook-app (`ms-outlook://events/new`), elders naar Outlook op het web. **Openen in Outlook** in het detailscherm opent de app op de dag van de afspraak (`ms-outlook://events?date=…`); naar de afspraak zelf springen kan niet, want de gepubliceerde agenda bevat het id van Outlook niet. Een .ics-bestand downloaden kan ook, voor andere agenda's.
 
+**Tijden uit een mail.** Vraagt iemand of je op een van een paar momenten kunt, kies dan bij Nieuwe afspraak **Tijden uit een mail** en plak de tekst (of tik op **Plakken**). De app leest de dagen en tijden eruit en legt ze naast je agenda: per tijdvak zie je of het vrij is, te kort of bezet, met de begintijden waarop de duur past. De duur haalt hij uit de tekst ('een uurtje', 'half uur', '45 minuten'), en die kun je aanpassen. Kies een of meer tijden en tik op **Antwoord kopiëren** voor een zin als 'Ik kan op maandag 9 november van 13:30 tot 14:30.', of kies er één en tik op **Inplannen**: dan staat Nieuwe afspraak klaar, met Microsoft Teams bij Locatie als de mail 'online' of 'Teams' noemt.
+
+De lezer (`js/mailtijden.js`) werkt met vaste regels en draait op het toestel; er gaat niets naar buiten. Hij kent datums ('9 november', '10/11', 'di 10-11'), weekdagen ('dinsdag', 'volgende week dinsdag'), 'vandaag', 'morgen' en 'overmorgen', tijdvakken ('tussen 13:00 en 16:00', 'van 11 tot 12', '13.00-16.00', 'na 14:00', 'voor 12:00', 'om half 3'), dagdelen ('s ochtends, middag, na de lunch, eind van de middag) en meerdere tijdvakken op een dag. Tijden van 1 tot en met 6 zonder minuten zijn 's middags; 'half 3' is 14:30. Klopt een weekdag niet bij de datum, dan meldt hij dat. Vrij proza met voorwaarden ('elke ochtend behalve woensdag') leest hij niet.
+
 ## Waar de afspraken vandaan komen
 
 Alles wat alleen op jouw toestel staat, geef je op onder **Instellingen**: onderaan de weekkiezer (tik op de titel), op de desktop onderaan de zijbalk. Daar staan Agenda, Contacten, Ruimtes en Plaatsen via Google.
@@ -125,6 +129,7 @@ Open de app in Safari, tik op Delen, Zet op beginscherm. Geef daarna onder Inste
 | `js/gegevens.js` | Waar de afspraken vandaan komen: voorbeeld, .ics-bestand, agenda-link, IndexedDB. |
 | `js/contacten.js` | Contacten inlezen (NK2Edit, csv, vCard), bewaren en zoeken. |
 | `js/locaties.js` | Ruimtes en de Google-sleutel uit Instellingen, en plaatsen zoeken bij Google. |
+| `js/mailtijden.js` | Dagen en tijden uit de tekst van een mail lezen. |
 | `js/indeling.js` | Extern of intern, vast of ad hoc, overlap, vrije blokken en hoe vol een dag is. |
 | `js/weergave.js` | Week, Vooruitblik, de kop en het tekenen van het scherm. |
 | `js/panelen.js` | Weekkiezer, zijbalk, detailscherm, nieuwe afspraak (met aanvullen), de agendakeuze en Instellingen. |
@@ -153,7 +158,7 @@ npm run schermen -- na basis      # nieuwe afbeeldingen in na/ en vergelijken me
 python3 -m http.server 8080       # en open http://localhost:8080/
 ```
 
-`npm test` start de app met een vaste klok (woensdag 4 november 2026, 9:00) en de voorbeeldgegevens. De tests controleren onder meer het opstarten, wisselen van filter, doortrekken naar de volgende week, het detailscherm, de weekkiezer, een nieuwe afspraak, het inladen van een .ics-bestand (met en zonder Web Worker), de agenda-link, de contacten, ruimtes en plaatsen (Google nagebootst), Instellingen en de desktop. Zet je een deel van een naam erachter, dan draaien alleen die tests, bijvoorbeeld `npm test -- desktop`.
+`npm test` start de app met een vaste klok (woensdag 4 november 2026, 9:00) en de voorbeeldgegevens. De tests controleren onder meer het opstarten, wisselen van filter, doortrekken naar de volgende week, het detailscherm, de weekkiezer, een nieuwe afspraak, het inladen van een .ics-bestand (met en zonder Web Worker), de agenda-link, de contacten, ruimtes en plaatsen (Google nagebootst), Instellingen, tijden uit een mail en de desktop. Zet je een deel van een naam erachter, dan draaien alleen die tests, bijvoorbeeld `npm test -- desktop`.
 
 `npm run schermen` maakt 66 schermafbeeldingen: telefoon, telefoon met .ics, iPad liggend en staand, en Mac, elk in licht en donker. Maak voor een grote wijziging eerst een basis en vergelijk daarna; zo zie je meteen of er iets verschuift.
 

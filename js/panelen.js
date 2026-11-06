@@ -614,12 +614,13 @@ function alleAdressen(v) {
 
 // dag: de gekozen dag (of null: eerste werkdag met ruimte).
 // blok: het vrije blok waarop is geklikt ({ start, end } in ms). Dan blijven dag en tijd binnen dat blok.
-async function openNieuw({ dag = null, blok = null } = {}) {
+async function openNieuw({ dag = null, blok = null, start = null, duur = null, locatie = '' } = {}) {
   const v = { titel: '', locatie: '', deelnemers: '', notitie: '', ruimte: null, duur: 60, start: null, eigen: false, dag: null, blok };
   if (blok) {
     v.dag = startOfDay(new Date(blok.start));
     v.max = Math.floor((blok.end - blok.start) / 9e5) * 15; // duur hoogstens het hele blok, in kwartieren
-    v.duur = Math.min(60, v.max);
+    v.duur = Math.min(duur || 60, v.max);
+    if (start != null) v.start = start; // gekozen in Tijden uit een mail
   } else if (dag) v.dag = startOfDay(dag);
   else {
     const t = vandaag();
@@ -634,7 +635,8 @@ async function openNieuw({ dag = null, blok = null } = {}) {
   el.innerHTML = `<div class="detailgreep"><div class="greep"></div>
       <div class="detailnav"><button class="rond glas" data-actie="sluit" aria-label="Sluiten">${I.kruis}</button></div></div>
     <div class="detailinhoud">
-      <div class="dkop"><h2 class="dtitel">Nieuwe afspraak</h2></div>
+      <div class="dkop"><h2 class="dtitel">Nieuwe afspraak</h2>
+        <button class="tekstknop dkopknop" data-actie="mailtijden">${I.mail}<span>Tijden uit een mail</span></button></div>
       <div class="formkaart">
         <label class="frij"><span class="flabel">Onderwerp</span><input name="titel" placeholder="Waar gaat het over?" autocomplete="off" enterkeyhint="next"></label>
         <label class="frij"><span class="flabel">Locatie</span><input name="locatie" placeholder="Ruimte, adres of Teams" autocomplete="off" enterkeyhint="next"></label>
@@ -727,6 +729,7 @@ async function openNieuw({ dag = null, blok = null } = {}) {
     tekenTijden();
   };
 
+  if (locatie) { v.locatie = locatie; $('input[name="locatie"]', el).value = locatie; }
   tekenDuur();
   const p = openPaneel(el, { greepSelector: '.detailgreep' });
   tekenTijden();
@@ -802,6 +805,7 @@ async function openNieuw({ dag = null, blok = null } = {}) {
     const lbl = t.closest('.datumlabel');
     if (lbl) { const i = $('#ndatuminvoer', el); if (i.showPicker) { ev.preventDefault(); try { i.showPicker(); } catch (e) { /* niet overal toegestaan */ } } return; }
     if (t.closest('#nics') && v.start != null) { downloadIcs(v); return; }
+    if (t.closest('[data-actie="mailtijden"]')) { p.sluit(); setTimeout(openMailTijden, 250); return; }
     if (t.closest('#noutlook')) {
       if (v.start == null) { ev.preventDefault(); return; }
       // Outlook neemt het over: het paneel gaat dicht, net nadat de link is gevolgd.
@@ -1017,4 +1021,171 @@ function openInstellingen() {
     }
     if (actie && actie.startsWith('google-')) googleActie(actie);
   });
+}
+
+/* ------------------------------------------------------------------ */
+/*  Tijden uit een mail                                                */
+/* ------------------------------------------------------------------ */
+
+let MAILTEKST = ''; // de geplakte tekst, zolang de app open is
+
+// Een tijdvak uit de mail naast de agenda: wat is er vrij, waar past de duur, en wat zit in de weg
+function toetsVak(lijst, o, duur) {
+  const a = new Date(o.dag); a.setHours(0, o.van, 0, 0);
+  const b = new Date(o.dag); b.setHours(0, o.tot, 0, 0);
+  const n = nu().getTime();
+  const tot = b.getTime();
+  if (tot <= n) return { status: 'voorbij', vrij: [], tijden: [], botst: [] };
+  const van = Math.max(a.getTime(), Math.ceil(n / 9e5) * 9e5);
+  const botst = lijst.filter((e) => !e.allDay && !e.free && e.start.getTime() < tot && e.end.getTime() > van);
+  const vrij = [];
+  let c = van;
+  botst.map((e) => [Math.max(e.start.getTime(), van), Math.min(e.end.getTime(), tot)]).sort((x, y) => x[0] - y[0])
+    .forEach(([x, y]) => { if (x > c) vrij.push([c, x]); c = Math.max(c, y); });
+  if (tot > c) vrij.push([c, tot]);
+  const tijden = vrij.filter(([x, y]) => y - x >= duur * 6e4).flatMap(([x, y]) => tijdenInBlok(x, y, duur).map((t) => ({ t, blok: [x, y] })));
+  return { status: tijden.length ? 'vrij' : vrij.length ? 'kort' : 'bezet', vrij, tijden, botst, heel: !botst.length && van === a.getTime() };
+}
+
+// 'maandag 9 november van 14:00 tot 15:00'
+const mtUur = (d) => `${d.getHours()}:${pad(d.getMinutes())}`; // in een zin: 9:00, niet 09:00
+const mtMoment = (t, duur) => { const d = new Date(t); return `${DAYS_LONG[d.getDay()]} ${d.getDate()} ${MONTHS_LONG[d.getMonth()]} van ${mtUur(d)} tot ${mtUur(new Date(t + duur * 6e4))}`; };
+function mtAntwoord(tijden, duur) {
+  const delen = [...tijden].sort((x, y) => x - y).map((t) => `op ${mtMoment(t, duur)}`);
+  if (!delen.length) return '';
+  if (delen.length === 1) return `Ik kan ${delen[0]}.`;
+  if (delen.length === 2) return `Ik kan ${delen[0]}, of ${delen[1]}.`;
+  return `Ik kan ${delen.slice(0, -1).join(', ')} of ${delen.at(-1)}.`;
+}
+
+function openMailTijden() {
+  const el = document.createElement('div');
+  el.className = 'paneel detail nieuw mailtijden' + (isDesktop() ? ' dialoog' : '');
+  el.setAttribute('role', 'dialog');
+  el.setAttribute('aria-label', 'Tijden uit een mail');
+  const kanPlakken = !!(navigator.clipboard && navigator.clipboard.readText);
+  el.innerHTML = `<div class="detailgreep"><div class="greep"></div>
+      <div class="detailnav"><button class="rond glas" data-actie="sluit" aria-label="Sluiten">${I.kruis}</button></div></div>
+    <div class="detailinhoud">
+      <div class="dkop"><h2 class="dtitel">Tijden uit een mail</h2></div>
+      <div class="formkaart">
+        <label class="frij volbreed"><textarea id="mtekst" rows="5" placeholder="Plak hier de dagen en tijden uit de mail" aria-label="Tekst uit de mail" spellcheck="false"></textarea></label>
+        ${kanPlakken ? `<button class="frij instknop" data-actie="plak">${I.plakken}<span>Plakken</span></button>` : ''}
+      </div>
+      <div class="formkaart">
+        <div class="frij"><span class="flabel">Duur</span><span class="fwaarde stapper">
+          <button class="mini" data-stap="-15" aria-label="Korter">${I.min}</button><span id="mduur" class="num" aria-live="polite"></span><button class="mini" data-stap="15" aria-label="Langer">${I.plus}</button>
+        </span></div>
+      </div>
+      <div id="muitslag" aria-live="polite"></div>
+      <div class="nvast">
+        <div class="nsamenvatting" id="msamen"></div>
+        <button class="groteknop vol" id="minplannen">${I.kalender}Inplannen</button>
+        <button class="tekstknop" id="mkopieer">Antwoord kopiëren</button>
+      </div>
+    </div>`;
+  const p = openPaneel(el, { greepSelector: '.detailgreep' });
+  const veld = $('#mtekst', el);
+  veld.value = MAILTEKST;
+  let duur = 60, duurZelf = false, gelezen = { opties: [], duur: null, online: false, zonderDag: [] }, beurt = 0, wacht = null;
+  const gekozen = new Map(); // begintijd → het vrije blok waarin hij valt
+  const tekenDuur = () => {
+    $('#mduur', el).textContent = duurKort(duur);
+    $('[data-stap="-15"]', el).disabled = duur <= 15;
+    $('[data-stap="15"]', el).disabled = duur >= 8 * 60;
+  };
+  const tekenSamen = () => {
+    const n = gekozen.size;
+    $('#minplannen', el).disabled = n !== 1;
+    $('#mkopieer', el).disabled = !n;
+    $('#msamen', el).innerHTML = n ? `<div>${esc(mtAntwoord(gekozen.keys(), duur))}</div>` : `<div class="leeg">${gelezen.opties.length ? 'Kies een of meer tijden' : 'Nog geen tijden'}</div>`;
+  };
+  const statusTekst = (u) => {
+    const vak = ([x, y]) => `${hhmm(new Date(x))} – ${hhmm(new Date(y))}`;
+    if (u.status === 'voorbij') return '<span class="mstatus grijs">Al voorbij</span>';
+    if (u.status === 'bezet') return `<span class="mstatus rood">Bezet: ${esc(u.botst[0].title || 'een afspraak')} (${hhmm(u.botst[0].start)} – ${hhmm(u.botst[0].end)})${u.botst.length > 1 ? ` en ${u.botst.length - 1} andere` : ''}</span>`;
+    if (u.status === 'kort') return `<span class="mstatus oranje">Te kort: alleen ${u.vrij.map(vak).join(' en ')} vrij</span>`;
+    return `<span class="mstatus groen">${u.heel ? 'Helemaal vrij' : `Vrij ${u.vrij.filter(([x, y]) => y - x >= duur * 6e4).map(vak).join(' en ')}`}</span>`;
+  };
+  const teken = async () => {
+    const mijn = ++beurt;
+    const uit = $('#muitslag', el);
+    if (!veld.value.trim()) { uit.innerHTML = ''; gekozen.clear(); tekenSamen(); return; }
+    const per = new Map();
+    for (const o of gelezen.opties) { const k = ymd(o.dag); if (!per.has(k)) per.set(k, []); per.get(k).push(o); }
+    const lijsten = new Map();
+    for (const k of per.keys()) lijsten.set(k, await afsprakenOp(parseYmd(k)));
+    if (mijn !== beurt) return;
+    const bestaand = new Set();
+    let html = '';
+    if (!gelezen.opties.length) html = `<p class="insttoelichting fout">Geen dagen en tijden gevonden. Staat er bij elke dag een datum of weekdag, zoals "maandag 9 november tussen 13:00 en 16:00"?</p>`;
+    for (const [k, os] of per) {
+      const d = parseYmd(k);
+      const waarschuwing = os.find((o) => o.waarschuwing);
+      html += `<section class="instsectie"><h3>${esc(cap(`${DAYS_LONG[d.getDay()]} ${d.getDate()} ${MONTHS_LONG[d.getMonth()]}`))}</h3><div class="formkaart">`;
+      for (const o of os) {
+        const u = toetsVak(lijsten.get(k), o, duur);
+        // Een gekozen tijd blijft staan zolang hij nog past, ook als hij bij deze duur geen voorstel is
+        for (const t of gekozen.keys()) {
+          const blok = u.vrij.find(([x, y]) => t >= x && t + duur * 6e4 <= y);
+          if (blok && !u.tijden.some((x) => x.t === t)) u.tijden.push({ t, blok });
+        }
+        u.tijden.sort((x, y) => x.t - y.t);
+        if (u.tijden.length && u.status !== 'vrij') u.status = 'vrij';
+        u.tijden.forEach((x) => bestaand.add(x.t));
+        const van = `${pad(Math.floor(o.van / 60))}:${pad(o.van % 60)}`, tot = `${pad(Math.floor(o.tot / 60))}:${pad(o.tot % 60)}`;
+        html += `<div class="frij kolom mvak"><span class="mkop"><span class="t1 num">${o.heleDag ? 'Hele dag' : `${van} – ${tot}`}</span>${statusTekst(u)}</span>
+          ${u.tijden.length ? `<div class="chips">${u.tijden.map((x) => `<button class="chip num${gekozen.has(x.t) ? ' aan' : ''}" data-t="${x.t}" data-blok="${x.blok.join('-')}" aria-pressed="${gekozen.has(x.t)}">${hhmm(new Date(x.t))}</button>`).join('')}</div>` : ''}</div>`;
+      }
+      html += `</div>${waarschuwing ? `<p class="insttoelichting fout">${esc(cap(waarschuwing.waarschuwing))}. Klopt de datum?</p>` : ''}</section>`;
+    }
+    if (gelezen.zonderDag.length) html += `<p class="insttoelichting fout">Zonder dag, dus overgeslagen: ${gelezen.zonderDag.map((x) => `"${esc(x)}"`).join(', ')}</p>`;
+    uit.innerHTML = html;
+    for (const t of [...gekozen.keys()]) if (!bestaand.has(t)) gekozen.delete(t); // past niet meer (andere duur of tekst)
+    tekenSamen();
+  };
+  // Het veld groeit mee met de tekst (tot een grens; daarna scrolt het)
+  const groei = () => { veld.style.height = 'auto'; veld.style.height = `${Math.min(Math.max(veld.scrollHeight, 120), 320)}px`; };
+  const lees = () => {
+    groei();
+    MAILTEKST = veld.value;
+    gelezen = leesMailTijden(veld.value);
+    if (!duurZelf) duur = gelezen.duur || 60;
+    tekenDuur();
+    teken();
+  };
+  veld.addEventListener('input', () => { groei(); clearTimeout(wacht); wacht = setTimeout(lees, 200); });
+  el.addEventListener('click', async (ev) => {
+    const t = ev.target;
+    if (t.closest('[data-actie="sluit"]')) { p.sluit(); return; }
+    if (t.closest('[data-actie="plak"]')) {
+      try { const tekst = await navigator.clipboard.readText(); if (tekst) { veld.value = tekst; lees(); } } catch (e) { veld.focus(); }
+      return;
+    }
+    const stap = t.closest('[data-stap]');
+    if (stap) { duur = Math.max(15, Math.min(8 * 60, duur + Number(stap.dataset.stap))); duurZelf = true; tekenDuur(); teken(); return; }
+    const c = t.closest('[data-t]');
+    if (c) {
+      const tijd = Number(c.dataset.t);
+      if (gekozen.has(tijd)) gekozen.delete(tijd); else gekozen.set(tijd, c.dataset.blok.split('-').map(Number));
+      c.classList.toggle('aan', gekozen.has(tijd));
+      c.setAttribute('aria-pressed', String(gekozen.has(tijd)));
+      tekenSamen();
+      return;
+    }
+    if (t.closest('#mkopieer') && gekozen.size) {
+      const tekst = mtAntwoord(gekozen.keys(), duur);
+      try { await navigator.clipboard.writeText(tekst); toonStatus('Antwoord gekopieerd.', { soort: 'klaar', duur: 2000 }); }
+      catch (e) { toonStatus('Kopiëren lukte niet. Selecteer de tekst boven de knop.', { soort: 'fout', duur: 3500 }); }
+      return;
+    }
+    if (t.closest('#minplannen') && gekozen.size === 1) {
+      const [[tijd, [x, y]]] = [...gekozen];
+      p.sluit();
+      setTimeout(() => openNieuw({ blok: { start: x, end: y }, start: tijd, duur, locatie: gelezen.online ? 'Microsoft Teams' : '' }), 250);
+    }
+  });
+  tekenDuur();
+  if (veld.value.trim()) lees(); else tekenSamen();
+  if (!isDesktop() || !veld.value) setTimeout(() => { if (!veld.value) veld.focus(); }, 350);
 }

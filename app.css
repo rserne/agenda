@@ -703,6 +703,25 @@ label.frij:focus-within .flabel { color: var(--accent); }
 .zbagenda .instrij .icoon:first-child { color: var(--secondary); }
 .zbagenda .instrij .icoon:last-child { width: 14px; height: 14px; color: var(--secondary); opacity: 0.7; }
 
+/* ================================================================ Tijden uit een mail */
+/* De knop staat onder de titel */
+.paneel.nieuw .dkop:has(.dkopknop) { flex-direction: column; align-items: flex-start; gap: 0; }
+.nieuw .tekstknop.dkopknop { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; margin-top: 4px; padding: 6px 0; color: var(--accent); font-size: 15px; font-weight: 500; }
+.dkopknop .icoon { width: 18px; height: 18px; }
+.mailtijden #muitslag { display: flex; flex-direction: column; gap: 22px; }
+.mailtijden #muitslag:empty { display: none; }
+.mvak { gap: 10px; padding: 12px 0; }
+.mkop { display: flex; flex-direction: column; gap: 2px; }
+.mkop .t1 { font-size: 16px; font-weight: 600; }
+.mstatus { font-size: 14px; line-height: 19px; }
+.mstatus.groen { color: var(--statusYes); }
+.mstatus.oranje { color: var(--overlap); }
+.mstatus.rood { color: var(--statusNo); }
+.mstatus.grijs { color: var(--secondary); }
+.mailtijden #msamen { user-select: text; -webkit-user-select: text; } /* het antwoord kun je ook zelf selecteren */
+.mailtijden textarea { min-height: 120px; }
+.frij.volbreed textarea { width: 100%; }
+
 /* ================================================================ Instellingen */
 .instellingen .detailinhoud { gap: 22px; }
 .instsectie h3 { margin: 0 0 6px; padding: 0 16px; color: var(--secondary); font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.2px; }

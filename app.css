@@ -636,7 +636,7 @@ label.frij:focus-within .flabel { color: var(--accent); }
 .link { color: var(--accent); font: inherit; font-weight: 600; padding: 0; }
 .chips.na { margin-top: 12px; }
 /* Eigen tijd als chip direct naast Andere tijd; iOS geeft een tijdveld anders een brede standaardbreedte met de tijd gecentreerd */
-.frij .eigeninvoer { -webkit-appearance: none; appearance: none; flex: none; box-sizing: border-box; width: 92px; min-width: 0; height: 34px; border-radius: 17px; border: 1.5px solid var(--accent); background: transparent; color: var(--label); font: inherit; font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; padding: 0 10px; text-align: center; }
+.frij .eigeninvoer { -webkit-appearance: none; appearance: none; flex: none; box-sizing: border-box; width: 92px; min-width: 0; height: 34px; border-radius: 17px; border: 1.5px solid var(--accent); background: transparent; color: var(--label); font: inherit; font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; padding: 0 10px; text-align: center; }
 .frij .eigeninvoer::-webkit-date-and-time-value { text-align: center; margin: 0; }
 .frij .eigeninvoer::-webkit-calendar-picker-indicator { display: none; }
 /* Nieuwe afspraak: samenvatting en hoofdknop blijven onderin in beeld, ook als het formulier langer is dan het scherm */
@@ -717,7 +717,7 @@ label.frij:focus-within .flabel { color: var(--accent); }
 /* Ruimtes: per regel een naam en een e-mailadres, en een knop om de ruimte te verwijderen */
 .ruimterij { gap: 12px; padding: 8px 0; }
 .ruimtevelden { display: flex; flex-direction: column; flex: 1; min-width: 0; gap: 2px; }
-.frij .ruimtevelden .rmail { font-size: 14px; line-height: 19px; color: var(--secondary); }
+.frij .ruimtevelden .rmail { font-size: 16px; line-height: 21px; color: var(--secondary); } /* 16 of meer: anders zoomt iOS in */
 .frij .ruimtevelden .rmail.ongeldig { color: var(--overlap); }
 .ruimteweg { display: grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: 14px; background: var(--fill); color: var(--statusNo); }
 .ruimteweg .icoon { width: 16px; height: 16px; }

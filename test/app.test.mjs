@@ -264,6 +264,24 @@ test('instellingen: de weekkiezer past op een kleine iPhone, en Instellingen scr
   assert.ok(v.y + v.height <= 667 - 16, `voetnoot eindigt op ${Math.round(v.y + v.height)} van 667`);
 });
 
+test('telefoon: alle invoervelden hebben minstens 16 punten, anders zoomt iOS in', async ({ browser, url }) => {
+  const p = await nieuwePagina(browser, TELEFOON);
+  await p.goto(url); await wacht(800);
+  const klein = () => p.evaluate(() => [...document.querySelectorAll('input:not([type=file]), textarea, select')]
+    .filter((e) => parseFloat(getComputedStyle(e).fontSize) < 16).map((e) => e.id || e.name || e.className));
+  await p.click('#titelknop'); await wacht(700);
+  await p.locator('.paneel [data-actie="instellingen"]').tap(); await wacht(900);
+  await p.locator('[data-actie="ruimte-erbij"]').tap(); await wacht(200);
+  assert.deepEqual(await klein(), [], 'instellingen');
+  await p.locator('[data-actie="ics-kies"]').tap(); await wacht(800);
+  await p.locator('[data-bron="link"]').tap(); await wacht(800);
+  assert.deepEqual(await klein(), [], 'agenda-link');
+  await p.keyboard.press('Escape'); await wacht(500);
+  await p.locator('[data-nieuw]:visible').first().tap(); await wacht(900);
+  await p.locator('[data-actie="eigen"]').tap(); await wacht(300);
+  assert.deepEqual(await klein(), [], 'nieuwe afspraak');
+});
+
 /* -------------------------------------------------------------- ruimtes en plaatsen */
 
 const ANTWOORD_GOOGLE = { suggestions: [

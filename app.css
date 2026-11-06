@@ -12,6 +12,7 @@
    Kleine aanpassingen per schermformaat staan bij het onderdeel zelf (bijvoorbeeld @media (max-width: 767px)). */
 
 :root {
+  --dimLaag: rgba(0, 0, 0, 0.24); /* achter een menu */
   --bg: #F2F2F7;
   --fcBg: #F2F2F7;
   --card: #FFFFFF;
@@ -138,6 +139,7 @@
     --freeTileBorder: rgba(134, 195, 225, 0.55);
     --backdrop: rgba(0, 0, 0, 0.5);
     --sheetBg: #000000;
+    --dimLaag: rgba(0, 0, 0, 0.55);
     --popBg: #2C2C2E; /* zwevende lijsten, iets lichter dan een kaart */
   }
 }
@@ -576,25 +578,32 @@ button.drij:active { opacity: 0.6; }
 .plusknop.open .icoon { transform: rotate(45deg); }
 
 /* ================================================================ Keuzemenu (plusknop en Nieuw) */
-.keuzelaag { position: fixed; inset: 0; z-index: 29; background: transparent; transition: background-color 0.2s ease; }
-.keuzelaag.fab.open { background: rgba(0, 0, 0, 0.18); }
-.keuzemenu { position: fixed; z-index: 31; display: flex; flex-direction: column; opacity: 0; pointer-events: none; transition: opacity 0.18s ease, transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.1); }
+/* Achter het menu: de agenda wijkt (donkerder en wat wazig), ook de tabbalk; alleen het menu en het kruisje blijven */
+.keuzelaag { position: fixed; inset: 0; z-index: 31; background: transparent; transition: background-color 0.22s ease, -webkit-backdrop-filter 0.22s ease, backdrop-filter 0.22s ease; }
+.keuzelaag.fab.open { background: var(--dimLaag); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+.tabbalk.menuopen { z-index: 32; }
+.tabbalk.menuopen .pil { opacity: 0.35; pointer-events: none; transition: opacity 0.22s ease; }
+.keuzemenu { position: fixed; z-index: 33; display: flex; flex-direction: column; opacity: 0; pointer-events: none; transition: opacity 0.18s ease, transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.1); }
 .keuzemenu.open { opacity: 1; pointer-events: auto; transform: none; }
 .keuzemenu button { display: flex; align-items: center; gap: 10px; color: var(--label); font-size: 16px; font-weight: 600; white-space: nowrap; }
 .keuzemenu button .icoon { width: 20px; height: 20px; color: var(--accent); flex: none; }
-/* Boven de plusknop: losse knoppen in glas, rechts uitgelijnd, die van onderen opkomen */
-.keuzemenu.fab { align-items: flex-end; gap: 10px; transform: translateY(12px) scale(0.96); transform-origin: bottom right; }
-.keuzemenu.fab button {
-  height: 48px; padding: 0 18px 0 14px; border-radius: 24px;
-  background: var(--popBg, var(--card)); border: 0.5px solid var(--separator); /* dicht, zodat de tekst erachter niet doorschijnt */
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16), 0 1px 3px rgba(0, 0, 0, 0.08);
+/* Boven de plusknop: één menu zoals in iOS, dat vanuit de knop opengaat; tekst links, icoon rechts */
+.keuzemenu.fab {
+  width: min(270px, calc(100vw - 32px)); border-radius: 14px; overflow: hidden;
+  background: var(--popBg, var(--card)); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.28), 0 2px 8px rgba(0, 0, 0, 0.12);
+  transform: scale(0.6); transform-origin: bottom right;
 }
-.keuzemenu.fab button:active { filter: brightness(0.94); }
+.keuzemenu.fab.open { transform: none; } /* na het opengaan: op ware grootte */
+.keuzemenu.fab button { justify-content: space-between; height: 52px; padding: 0 16px; font-size: 17px; font-weight: 400; text-align: left; }
+.keuzemenu.fab button .icoon { order: 2; width: 21px; height: 21px; }
+.keuzemenu.fab button + button { border-top: 0.5px solid var(--separator); }
+.keuzemenu.fab button:active { background: var(--fill); }
 /* Onder Nieuw op de desktop: een klein menu zoals op de Mac */
 .keuzemenu:not(.fab) {
   min-width: 220px; padding: 5px; border-radius: 12px; transform: translateY(-4px);
   background: var(--popBg, var(--card)); border: 0.5px solid var(--separator); box-shadow: 0 10px 32px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.08);
 }
+.keuzemenu:not(.fab).open { transform: none; }
 .keuzemenu:not(.fab) button { height: 34px; padding: 0 10px; border-radius: 7px; font-size: 13.5px; font-weight: 500; }
 .keuzemenu:not(.fab) button .icoon { width: 16px; height: 16px; }
 .keuzemenu:not(.fab) button:hover, .keuzemenu:not(.fab) button:focus-visible { background: var(--accent); color: var(--onAccent); outline: none; }

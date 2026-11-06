@@ -1226,6 +1226,7 @@ function sluitKeuzemenu() {
   KEUZEMENU = null;
   knop.classList.remove('open');
   knop.setAttribute('aria-expanded', 'false');
+  $('#tabbalk').classList.remove('menuopen');
   menu.classList.remove('open'); laag.classList.remove('open');
   setTimeout(() => { menu.remove(); laag.remove(); }, 200);
 }
@@ -1247,6 +1248,7 @@ function wisselKeuzemenu(knop) {
   KEUZEMENU = { laag, menu, knop };
   knop.classList.add('open');
   knop.setAttribute('aria-expanded', 'true');
+  if (fab) $('#tabbalk').classList.add('menuopen');
   requestAnimationFrame(() => { menu.classList.add('open'); laag.classList.add('open'); });
   if (!fab || !IOS) menu.querySelector('button').focus({ preventScroll: true });
   laag.addEventListener('click', sluitKeuzemenu);

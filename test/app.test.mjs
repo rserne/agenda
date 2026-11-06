@@ -250,6 +250,16 @@ test('contacten: wissen, en zonder contacten geen suggesties', async ({ browser,
   assert.equal(await p.locator('.aanvuloptie').count(), 0);
 });
 
+test('contacten: op een kleine iPhone scrolt de weekkiezer tot onder Contacten wissen', async ({ browser, url }) => {
+  const p = await nieuwePagina(browser, { ...TELEFOON, viewport: { width: 375, height: 667 } });
+  await p.goto(url); await wacht(800);
+  await p.setInputFiles('#contactinvoer', CONTACTEN_CSV); await wacht(600);
+  await p.click('#titelknop'); await wacht(800);
+  await p.locator('.paneel.kiezer').evaluate((e) => { e.scrollTop = 1e5; }); await wacht(200);
+  const w = await p.locator('.paneel [data-actie="contacten-wis"]').boundingBox();
+  assert.ok(w.y + w.height <= 667 - 16, `onderkant van Contacten wissen op ${Math.round(w.y + w.height)} van 667`);
+});
+
 /* -------------------------------------------------------------- desktop */
 
 test('desktop: contacten aanvullen met het toetsenbord; Escape sluit eerst de suggesties', async ({ browser, url }) => {

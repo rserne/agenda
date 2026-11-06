@@ -365,7 +365,16 @@ main.kolom.trekt { transition: none; }
 .greep { display: block; width: 52px; height: 5px; border-radius: 3px; background: var(--grabber); margin: 6px auto 0; flex-shrink: 0; }
 
 /* Weekkiezer */
-.kiezer { background: var(--card); max-width: 560px; padding: 0 16px calc(env(safe-area-inset-bottom, 0px) + 18px); }
+.kiezer {
+  background: var(--card); max-width: 560px; padding: 0 16px;
+  /* Hoger dan het scherm (met Agenda en Contacten op een kleine iPhone): dan scrolt de weekkiezer zelf */
+  overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+  /* De strook onder het paneel bij omhoog rekken: als schaduw, want een ::after zou meescrollen */
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2), 0 40px 0 var(--card);
+}
+.paneel.kiezer::after { content: none; }
+/* Ruimte onder de laatste knop, binnen het scrollgebied (padding van de scroller zelf telt in Safari niet altijd mee) */
+.kiezer > :last-child { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 18px); }
 .kiezerkop { display: flex; align-items: center; gap: 4px; padding: 14px 6px 16px; touch-action: none; }
 .kiezerkop h2 { flex: 1; margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.2px; }
 .kiezer .capsule { background: var(--fill); border: 0; box-shadow: none; }

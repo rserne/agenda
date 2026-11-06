@@ -712,6 +712,7 @@ label.frij:focus-within .flabel { color: var(--accent); }
 .instknop { width: 100%; color: var(--accent); font-size: 16px; font-weight: 500; text-align: left; }
 .instknop:active { opacity: 0.6; }
 .instknop:disabled { opacity: 0.5; }
+.instknop.gevaar { color: var(--statusNo); } /* iets weghalen: rood, zoals in iOS */
 .insttoelichting { margin: 6px 0 0; padding: 0 16px; color: var(--secondary); font-size: 13px; line-height: 18px; }
 .insttoelichting.fout { color: var(--overlap); }
 .instellingen input.geheim { -webkit-text-security: disc; } /* de sleutel blijft onleesbaar, ook tijdens het plakken */
@@ -719,10 +720,15 @@ label.frij:focus-within .flabel { color: var(--accent); }
 /* Ruimtes: per regel een naam en een e-mailadres, en een knop om de ruimte te verwijderen */
 .ruimterij { gap: 12px; padding: 8px 0; }
 .ruimtevelden { display: flex; flex-direction: column; flex: 1; min-width: 0; gap: 2px; }
-.frij .ruimtevelden .rmail { font-size: 16px; line-height: 21px; color: var(--secondary); } /* 16 of meer: anders zoomt iOS in */
+.frij .ruimtevelden .rnaam { font-weight: 500; }
+/* Een ingevuld adres in de tekstkleur, de lege plaatshouder grijs: zo zie je welke ruimtes Outlook kan reserveren. 16 of meer: anders zoomt iOS in */
+.frij .ruimtevelden .rmail { font-size: 16px; line-height: 21px; color: var(--label); }
+.frij .ruimtevelden .rmail::placeholder { color: var(--secondary); opacity: 1; }
 .frij .ruimtevelden .rmail.ongeldig { color: var(--overlap); }
-.ruimteweg { display: grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: 14px; background: var(--fill); color: var(--statusNo); }
-.ruimteweg .icoon { width: 16px; height: 16px; }
+/* Het rondje is 28 punten, het tikvlak 44 */
+.ruimteweg { display: grid; place-items: center; flex: none; width: 44px; height: 44px; margin-right: -8px; color: var(--statusNo); }
+.ruimteweg .rond { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 14px; background: var(--fill); }
+.ruimteweg .icoon { width: 16px; height: 16px; color: var(--statusNo); }
 .instellingen .frij textarea { min-height: 110px; }
 
 /* ================================================================ Desktop (vanaf 1200): ontwerp A, in de stijl van Agenda op de Mac */

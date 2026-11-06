@@ -908,7 +908,7 @@ function openInstellingen() {
   el.className = 'paneel detail nieuw instellingen' + (isDesktop() ? ' dialoog' : '');
   el.setAttribute('role', 'dialog');
   el.setAttribute('aria-label', 'Instellingen');
-  const knop = (actie, icoon, tekst, uit = false) => `<button class="frij instknop" data-actie="${actie}"${uit ? ' disabled' : ''}>${icoon}<span>${tekst}</span></button>`;
+  const knop = (actie, icoon, tekst, uit = false, gevaar = false) => `<button class="frij instknop${gevaar ? ' gevaar' : ''}" data-actie="${actie}"${uit ? ' disabled' : ''}>${icoon}<span>${tekst}</span></button>`;
   const status = (icoon, t1, t2) => `<div class="frij inststatus">${icoon}<span class="tekst"><span class="t1">${t1}</span><span class="t2">${t2}</span></span></div>`;
   const agendaHtml = () => {
     const [t1, t2] = agendaBron();
@@ -922,7 +922,7 @@ function openInstellingen() {
     return (c ? status(I.persoon, c.aantal === 1 ? '1 contact' : `${c.aantal} contacten`, `Ingeladen op ${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}`)
       : status(I.persoon, 'Geen contacten', 'Met contacten kun je makkelijk deelnemers bij een afspraak opgeven'))
       + knop('contacten-inladen', I.inladen, c ? 'Ander bestand inladen' : 'Contacten inladen')
-      + (c ? knop('contacten-wis', I.wissen, 'Contacten verwijderen') : '');
+      + (c ? knop('contacten-wis', I.wissen, 'Contacten verwijderen', false, true) : '');
   };
   // Ruimtes: per ruimte een naam en een e-mailadres, met een knop om hem te verwijderen
   const ruimteRij = (r, i) => `<div class="frij ruimterij" data-i="${i}">
@@ -930,14 +930,14 @@ function openInstellingen() {
         <input class="rnaam" type="text" placeholder="Naam" aria-label="Naam van de ruimte" autocomplete="off" autocapitalize="words" spellcheck="false" value="${esc(r.naam)}">
         <input class="rmail${r.email && !IS_ADRES.test(r.email.trim()) ? ' ongeldig' : ''}" type="email" inputmode="email" placeholder="E-mailadres (optioneel)" aria-label="E-mailadres van de ruimte" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(r.email)}">
       </span>
-      <button class="ruimteweg" data-actie="ruimte-weg" aria-label="${esc(r.naam ? `${r.naam} verwijderen` : 'Ruimte verwijderen')}">${I.min}</button>
+      <button class="ruimteweg" data-actie="ruimte-weg" aria-label="${esc(r.naam ? `${r.naam} verwijderen` : 'Ruimte verwijderen')}"><span class="rond">${I.min}</span></button>
     </div>`;
   // Google-sleutel: nooit tonen. Alleen of er een is, en hem testen, wijzigen of verwijderen.
   const googleHtml = (bewerk = false) => {
     if (bewerk) return `<label class="frij"><span class="flabel">Sleutel</span><input id="igoogle" class="geheim" type="text" placeholder="Plak hier je sleutel" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done"></label>`
       + knop('google-bewaar', I.vink, 'Bewaren') + knop('google-annuleer', I.kruis, 'Annuleren');
     if (googleSleutel()) return status(I.speld, 'Sleutel ingesteld', 'Bij Locatie zoek je ook naar adressen en plaatsen')
-      + knop('google-test', I.vink, 'Sleutel testen') + knop('google-wijzig', I.herhaal, 'Sleutel wijzigen') + knop('google-wis', I.wissen, 'Sleutel verwijderen');
+      + knop('google-test', I.vink, 'Sleutel testen') + knop('google-wijzig', I.herhaal, 'Sleutel wijzigen') + knop('google-wis', I.wissen, 'Sleutel verwijderen', false, true);
     return status(I.speld, 'Geen sleutel', 'Met een sleutel zoek je bij Locatie ook naar adressen en plaatsen')
       + knop('google-wijzig', I.plus, 'Sleutel opgeven');
   };

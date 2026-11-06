@@ -766,13 +766,7 @@ label.frij:focus-within .flabel { color: var(--accent); }
 /* Helemaal vrij: groen */
 .chip.vrij { background: transparent; box-shadow: inset 0 0 0 1.5px var(--statusYes); color: var(--statusYes); }
 .chip.vrij.aan { background: var(--statusYes); box-shadow: none; color: var(--onAccent); }
-/* Onder de tijden: waarmee de gekozen tijd overlapt */
-.mkeuze { display: flex; flex-direction: column; gap: 4px; font-size: 14px; line-height: 19px; }
-.mkeuze:empty { display: none; }
-.mkeuze .geel { color: var(--overlap); }
-.mkeuze .rood { color: var(--statusNo); }
 /* Helemaal bezet: rood */
-.mailtijden .doverlap.vol { color: var(--statusNo); }
 .chip.vol { background: transparent; box-shadow: inset 0 0 0 1.5px var(--statusNo); color: var(--statusNo); }
 .chip.vol.aan { background: var(--statusNo); box-shadow: none; color: var(--onAccent); }
 /* Elk overleg dat overlapt op een eigen regel: tijd, dan titel */
@@ -780,6 +774,11 @@ label.frij:focus-within .flabel { color: var(--accent); }
 .moverlap li { display: grid; grid-template-columns: 104px 1fr; gap: 8px; font-size: 14px; line-height: 19px; color: var(--secondary); }
 .moverlap li span:last-child { color: var(--label); }
 .mailtijden #msamen { user-select: text; -webkit-user-select: text; } /* het antwoord kun je ook zelf selecteren */
+/* Het antwoord zoals het in je mail komt: zin en opsomming, links uitgelijnd */
+.mantwoord { text-align: left; font-weight: 400; }
+.mantwoord p { margin: 0; }
+.mantwoord ul { margin: 4px 0 0; padding-left: 22px; }
+.mantwoord li { margin: 2px 0; }
 .mailtijden textarea { min-height: 120px; }
 .frij.volbreed textarea { width: 100%; }
 

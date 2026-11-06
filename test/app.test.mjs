@@ -453,7 +453,12 @@ test('mail: de lezer haalt dagen, tijden, duur en online uit gewone zinnen', asy
 test('mail: tijden naast de agenda, kiezen, antwoord kopiëren en inplannen', async ({ browser, url }) => {
   const p = await nieuwePagina(browser, TELEFOON);
   await p.goto(url); await wacht(900);
-  await p.evaluate(() => { window.gekopieerd = null; navigator.clipboard.writeText = async (t) => { window.gekopieerd = t; }; });
+  // Klembord nabootsen: platte tekst en opmaak bewaren
+  await p.evaluate(() => {
+    window.gekopieerd = null;
+    navigator.clipboard.writeText = async (t) => { window.gekopieerd = { tekst: t }; };
+    navigator.clipboard.write = async ([item]) => { window.gekopieerd = { tekst: await (await item.getType('text/plain')).text(), html: await (await item.getType('text/html')).text() }; };
+  });
   await kies(p, 'mail');
   await p.fill('#mtekst', MAIL); await wacht(1500);
   assert.deepEqual(await p.locator('#muitslag h3').allInnerTexts(), ['MAANDAG 9 NOVEMBER', 'WOENSDAG 11 NOVEMBER', 'DONDERDAG 12 NOVEMBER']);
@@ -473,11 +478,14 @@ test('mail: tijden naast de agenda, kiezen, antwoord kopiëren en inplannen', as
   assert.equal(await p.locator('#minplannen').isDisabled(), true);
   await vak(0).locator('.chip', { hasText: '13:30' }).tap();
   await vak(3).locator('.chip', { hasText: '14:00' }).tap(); await wacht(200);
-  const antwoord = 'Ik kan op maandag 9 november van 13:30 tot 14:30, of op donderdag 12 november van 14:00 tot 15:00.';
-  assert.equal(await p.locator('#msamen').innerText(), antwoord);
+  assert.equal(await p.locator('#msamen .mantwoord li').count(), 2, 'het antwoord zoals het in de mail komt');
   assert.equal(await p.locator('#minplannen').isDisabled(), true, 'inplannen kan met één tijd');
+  assert.match(await p.locator('.mailtijden .groteknop.vol').innerText(), /Antwoord kopiëren/, 'kopiëren is de hoofdknop');
   await p.locator('#mkopieer').tap(); await wacht(300);
-  assert.equal(await p.evaluate(() => window.gekopieerd), antwoord);
+  assert.deepEqual(await p.evaluate(() => window.gekopieerd), {
+    tekst: 'Ik kan op de volgende tijdstippen:\n• Maandag 9 november van 13:30 tot 14:30\n• Donderdag 12 november van 14:00 tot 15:00',
+    html: '<p>Ik kan op de volgende tijdstippen:</p><ul><li>Maandag 9 november van 13:30 tot 14:30</li><li>Donderdag 12 november van 14:00 tot 15:00</li></ul>',
+  });
   // Een half uur: andere tijden; wat niet meer past, valt af
   await p.locator('.mailtijden [data-stap="-15"]').tap(); await p.locator('.mailtijden [data-stap="-15"]').tap(); await wacht(400);
   assert.deepEqual(await vak(1).locator('.chip.vrij').allInnerTexts(), ['15:00', '16:30']);
@@ -514,10 +522,7 @@ test('mail: een tijd die overlapt kiezen; het antwoord noemt geen reden, inplann
   await p.locator('.mailtijden [data-stap="15"]').tap(); await p.locator('.mailtijden [data-stap="15"]').tap(); await wacht(400);
   await p.locator('#muitslag .chip.botst', { hasText: '15:00' }).tap(); await wacht(200);
   assert.equal(await p.locator('#muitslag .chip.botst.aan').count(), 1);
-  assert.equal(await p.locator('#muitslag .mkeuze').innerText(), '15:00 – 16:00 overlapt met Bespreken Flusso (15:30 – 16:30)', 'direct onder de tijden');
-  const samen = await p.locator('#msamen').innerText();
-  assert.match(samen, /^Ik kan op woensdag 11 november van 15:00 tot 16:00\.\n/);
-  assert.match(samen, /Woensdag 15:00: overlap met Bespreken Flusso \(15:30 – 16:30\)$/, 'alleen voor jou');
+  assert.equal(await p.locator('#msamen').innerText(), 'Ik kan op woensdag 11 november van 15:00 tot 16:00.', 'één tijd: een zin, zonder reden');
   assert.equal(await p.locator('#minplannen').isDisabled(), false);
   await p.locator('#minplannen').tap(); await wacht(1200);
   assert.match(await p.locator('.paneel.nieuw #nsamen').innerText(), /^Woensdag 11 november, 15:00 – 16:00\nOverlap met Bespreken Flusso/);

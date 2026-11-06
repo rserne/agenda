@@ -1074,12 +1074,17 @@ function overlapZin(botst) {
 // 'maandag 9 november van 14:00 tot 15:00'
 const mtUur = (d) => `${d.getHours()}:${pad(d.getMinutes())}`; // in een zin: 9:00, niet 09:00
 const mtMoment = (t, duur) => { const d = new Date(t); return `${DAYS_LONG[d.getDay()]} ${d.getDate()} ${MONTHS_LONG[d.getMonth()]} van ${mtUur(d)} tot ${mtUur(new Date(t + duur * 6e4))}`; };
+// Het antwoord: bij één tijd een zin, bij meer eerst de zin en dan de tijden als opsomming.
+// tekst: platte tekst met •, html: voor een mail die opmaak overneemt (Outlook, Apple Mail)
 function mtAntwoord(tijden, duur) {
-  const delen = [...tijden].sort((x, y) => x - y).map((t) => `op ${mtMoment(t, duur)}`);
-  if (!delen.length) return '';
-  if (delen.length === 1) return `Ik kan ${delen[0]}.`;
-  if (delen.length === 2) return `Ik kan ${delen[0]}, of ${delen[1]}.`;
-  return `Ik kan ${delen.slice(0, -1).join(', ')} of ${delen.at(-1)}.`;
+  const momenten = [...tijden].sort((x, y) => x - y).map((t) => mtMoment(t, duur));
+  if (!momenten.length) return { tekst: '', html: '' };
+  if (momenten.length === 1) { const z = `Ik kan op ${momenten[0]}.`; return { tekst: z, html: `<p>${esc(z)}</p>` }; }
+  const kop = 'Ik kan op de volgende tijdstippen:';
+  return {
+    tekst: `${kop}\n${momenten.map((m) => `• ${cap(m)}`).join('\n')}`,
+    html: `<p>${kop}</p><ul>${momenten.map((m) => `<li>${esc(cap(m))}</li>`).join('')}</ul>`,
+  };
 }
 
 function openMailTijden() {
@@ -1102,8 +1107,8 @@ function openMailTijden() {
       <div id="muitslag" aria-live="polite"></div>
       <div class="nvast">
         <div class="nsamenvatting" id="msamen"></div>
-        <button class="groteknop vol" id="minplannen">${I.kalender}Inplannen</button>
-        <button class="tekstknop" id="mkopieer">Antwoord kopiëren</button>
+        <button class="groteknop vol" id="mkopieer">${I.kopieer}Antwoord kopiëren</button>
+        <button class="tekstknop" id="minplannen">Inplannen</button>
       </div>
     </div>`;
   const p = openPaneel(el, { greepSelector: '.detailgreep' });
@@ -1117,27 +1122,12 @@ function openMailTijden() {
     $('[data-stap="-15"]', el).disabled = duur <= 15;
     $('[data-stap="15"]', el).disabled = duur >= 8 * 60;
   };
-  // Direct onder de tijden: waarmee een gekozen tijd overlapt (ook zichtbaar als het toetsenbord open is)
-  const tekenKeuze = () => {
-    for (const vak of el.querySelectorAll('.mvak')) {
-      const regels = [...vak.querySelectorAll('.chip.aan')].map((c) => {
-        const t = Number(c.dataset.t), g = tijdInfo.get(t);
-        if (!g || !g.botst.length) return '';
-        const namen = g.botst.map((e) => `${esc(e.title || 'een afspraak')} (${hhmm(e.start)} – ${hhmm(e.end)})`);
-        return `<div class="${g.vol ? 'rood' : 'geel'}">${hhmm(new Date(t))} – ${hhmm(new Date(t + duur * 6e4))} overlapt met ${namen.length > 1 ? `${namen.slice(0, -1).join(', ')} en ${namen.at(-1)}` : namen[0]}</div>`;
-      });
-      const plek = $('.mkeuze', vak);
-      if (plek) plek.innerHTML = regels.join('');
-    }
-  };
   const tekenSamen = () => {
     const n = gekozen.size;
     $('#minplannen', el).disabled = n !== 1;
     $('#mkopieer', el).disabled = !n;
-    // Overlap staat er voor jou bij; in het antwoord komt alleen de tijd
-    const let_op = [...gekozen].filter(([, g]) => g.botst.length).sort((x, y) => x[0] - y[0])
-      .map(([t, g]) => { const d = new Date(t); return `<div class="doverlap${g.vol ? ' vol' : ''}">${esc(cap(`${DAYS_LONG[d.getDay()]} ${hhmm(d)}`))}: ${esc(overlapZin(g.botst).replace(/^Overlap/, 'overlap'))}</div>`; }).join('');
-    $('#msamen', el).innerHTML = n ? `<div>${esc(mtAntwoord(gekozen.keys(), duur))}</div>${let_op}` : `<div class="leeg">${gelezen.opties.length ? 'Tik op een tijd om hem te kiezen' : 'Nog geen tijden'}</div>`;
+    // Zo komt het antwoord in je mail (alleen de tijden, nooit een reden)
+    $('#msamen', el).innerHTML = n ? `<div class="mantwoord">${mtAntwoord(gekozen.keys(), duur).html}</div>` : `<div class="leeg">${gelezen.opties.length ? 'Tik op een tijd om hem te kiezen' : 'Nog geen tijden'}</div>`;
   };
   // Eerst hoe het ervoor staat (in kleur), daaronder altijd waarmee het overlapt
   // De kleuren van de tijden zeggen genoeg; eronder alleen elk overleg dat in het tijdvak valt, op een eigen regel
@@ -1175,14 +1165,13 @@ function openMailTijden() {
         u.tijden.forEach((x) => { bestaand.add(x.t); tijdInfo.set(x.t, { blok: x.blok, botst: x.botst, vol: x.vol }); if (gekozen.has(x.t)) gekozen.set(x.t, { blok: x.blok, botst: x.botst, vol: x.vol }); });
         const van = `${pad(Math.floor(o.van / 60))}:${pad(o.van % 60)}`, tot = `${pad(Math.floor(o.tot / 60))}:${pad(o.tot % 60)}`;
         html += `<div class="frij kolom mvak"><span class="mkop"><span class="t1 num">${o.heleDag ? 'Hele dag' : `${van} – ${tot}`}</span>${statusTekst(u)}</span>
-          ${u.tijden.length ? `<div class="chips">${u.tijden.map((x) => `<button class="chip num${gekozen.has(x.t) ? ' aan' : ''}${x.vol ? ' vol' : x.botst.length ? ' botst' : ' vrij'}" data-t="${x.t}" aria-pressed="${gekozen.has(x.t)}"${x.botst.length ? ` aria-label="${hhmm(new Date(x.t))}, ${esc(overlapZin(x.botst).toLowerCase())}"` : ''}>${hhmm(new Date(x.t))}</button>`).join('')}</div><div class="mkeuze" aria-live="polite"></div>` : ''}</div>`;
+          ${u.tijden.length ? `<div class="chips">${u.tijden.map((x) => `<button class="chip num${gekozen.has(x.t) ? ' aan' : ''}${x.vol ? ' vol' : x.botst.length ? ' botst' : ' vrij'}" data-t="${x.t}" aria-pressed="${gekozen.has(x.t)}"${x.botst.length ? ` aria-label="${hhmm(new Date(x.t))}, ${esc(overlapZin(x.botst).toLowerCase())}"` : ''}>${hhmm(new Date(x.t))}</button>`).join('')}</div>` : ''}</div>`;
       }
       html += `</div>${waarschuwing ? `<p class="insttoelichting fout">${esc(cap(waarschuwing.waarschuwing))}. Klopt de datum?</p>` : ''}</section>`;
     }
     if (gelezen.zonderDag.length) html += `<p class="insttoelichting fout">Zonder dag, dus overgeslagen: ${gelezen.zonderDag.map((x) => `"${esc(x)}"`).join(', ')}</p>`;
     uit.innerHTML = html;
     for (const t of [...gekozen.keys()]) if (!bestaand.has(t)) gekozen.delete(t); // past niet meer (andere duur of tekst)
-    tekenKeuze();
     tekenSamen();
   };
   // Het veld groeit mee met de tekst (tot een grens; daarna scrolt het)
@@ -1207,13 +1196,18 @@ function openMailTijden() {
       if (gekozen.has(tijd)) gekozen.delete(tijd); else gekozen.set(tijd, tijdInfo.get(tijd) || { blok: null, botst: [] });
       c.classList.toggle('aan', gekozen.has(tijd));
       c.setAttribute('aria-pressed', String(gekozen.has(tijd)));
-      tekenKeuze();
       tekenSamen();
       return;
     }
     if (t.closest('#mkopieer') && gekozen.size) {
-      const tekst = mtAntwoord(gekozen.keys(), duur);
-      try { await navigator.clipboard.writeText(tekst); toonStatus('Antwoord gekopieerd.', { soort: 'klaar', duur: 2000 }); }
+      const { tekst, html } = mtAntwoord(gekozen.keys(), duur);
+      try {
+        // Met opmaak als dat kan (de opsomming blijft een lijst in je mail), anders als platte tekst
+        if (window.ClipboardItem && navigator.clipboard.write) {
+          await navigator.clipboard.write([new ClipboardItem({ 'text/plain': new Blob([tekst], { type: 'text/plain' }), 'text/html': new Blob([html], { type: 'text/html' }) })]);
+        } else await navigator.clipboard.writeText(tekst);
+        toonStatus('Antwoord gekopieerd.', { soort: 'klaar', duur: 2000 });
+      }
       catch (e) { toonStatus('Kopiëren lukte niet. Selecteer de tekst boven de knop.', { soort: 'fout', duur: 3500 }); }
       return;
     }

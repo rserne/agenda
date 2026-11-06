@@ -466,7 +466,9 @@ test('mail: tijden naast de agenda, kiezen, antwoord kopiëren en inplannen', as
   assert.deepEqual(await overlap(1), ['15:30 – 16:30 Bespreken Flusso']);
   assert.deepEqual(await overlap(2), []);
   assert.deepEqual(await overlap(3), ['15:00 – 15:45 1-op-1 Jochem', '16:00 – 17:00 Architectuuroverleg']);
-  assert.deepEqual(await vak(1).locator('.chip.botst').allInnerTexts(), ['15:00', '16:00'], 'ook een tijd die overlapt kun je kiezen');
+  assert.deepEqual(await vak(1).locator('.chip').allInnerTexts(), ['15:00', '15:30', '16:30'], 'ook tijden die overlappen: bij het begin en einde van een overleg');
+  assert.deepEqual(await vak(1).locator('.chip.botst').allInnerTexts(), ['15:00'], 'gedeeltelijk: geel');
+  assert.deepEqual(await vak(1).locator('.chip.vol').allInnerTexts(), ['15:30'], 'helemaal bezet: rood');
   assert.equal(await p.locator('#msamen').innerText(), 'Tik op een tijd om hem te kiezen');
   assert.equal(await p.locator('#minplannen').isDisabled(), true);
   await vak(0).locator('.chip', { hasText: '13:30' }).tap();
@@ -489,14 +491,26 @@ test('mail: tijden naast de agenda, kiezen, antwoord kopiëren en inplannen', as
   assert.deepEqual(p.fouten, []);
 });
 
+test('mail: bij een drukke middag het begin en einde van elk overleg als voorstel', async ({ browser, url }) => {
+  const p = await nieuwePagina(browser, TELEFOON);
+  await p.goto(url); await wacht(600);
+  const uit = await p.evaluate(() => {
+    const d = new Date(2026, 10, 9);
+    const om = (h, m) => { const x = new Date(d); x.setHours(h, m, 0, 0); return x; };
+    const lijst = [['A', 13, 0, 13, 30], ['B', 13, 30, 14, 0], ['C', 14, 0, 15, 0], ['D', 14, 0, 14, 30], ['E', 15, 30, 16, 0]].map(([title, a, b, c, e]) => ({ title, start: om(a, b), end: om(c, e) }));
+    return toetsVak(lijst, { dag: d, van: 13 * 60, tot: 16 * 60 }, 60).tijden.map((x) => `${hhmm(new Date(x.t))}${x.vol ? ' rood' : x.botst.length ? ' geel' : ''}`);
+  });
+  assert.deepEqual(uit, ['13:00 rood', '13:30 rood', '14:00 rood', '14:30 geel', '15:00 geel', '15:30 geel']);
+});
+
 test('mail: een tijd die overlapt kiezen; het antwoord noemt geen reden, inplannen toont de overlap', async ({ browser, url }) => {
   const p = await nieuwePagina(browser, TELEFOON);
   await p.goto(url); await wacht(900);
   await kies(p, 'mail');
   await p.fill('#mtekst', 'Woensdag 11 november tussen 15:00 en 17:00'); await wacht(1200);
-  assert.deepEqual(await p.locator('#muitslag .chip.botst').allInnerTexts(), ['15:00', '16:00'], 'gedeeltelijk: geel');
+  assert.deepEqual(await p.locator('#muitslag .chip.botst').allInnerTexts(), ['15:00'], 'gedeeltelijk: geel');
   await p.locator('.mailtijden [data-stap="-15"]').tap(); await p.locator('.mailtijden [data-stap="-15"]').tap(); await wacht(400);
-  assert.deepEqual(await p.locator('#muitslag .chip.vol').allInnerTexts(), ['15:30', '16:00'], 'helemaal bezet: rood');
+  assert.deepEqual(await p.locator('#muitslag .chip.vol').allInnerTexts(), ['15:30'], 'helemaal bezet: rood');
   await p.locator('.mailtijden [data-stap="15"]').tap(); await p.locator('.mailtijden [data-stap="15"]').tap(); await wacht(400);
   await p.locator('#muitslag .chip.botst', { hasText: '15:00' }).tap(); await wacht(200);
   assert.equal(await p.locator('#muitslag .chip.botst.aan').count(), 1);

@@ -1049,7 +1049,10 @@ function toetsVak(lijst, o, duur) {
   const ms = duur * 6e4;
   const vrijeTijden = vrij.filter(([x, y]) => y - x >= ms).flatMap(([x, y]) => tijdenInBlok(x, y, duur));
   // Ook tijden die overlappen kun je kiezen: je beslist zelf of die andere afspraak voor kan gaan
-  const alle = [...new Set([...vrijeTijden, ...tijdenInBlok(van, Math.max(tot, van + ms), duur)])].sort((x, y) => x - y);
+  // Daarnaast het begin van het tijdvak en elk begin en einde van een overleg erin: daar kun je een overleg overslaan
+  const grenzen = tot - van <= ms ? [van] // 'om 10:30': alleen dat moment
+    : [van, ...botst.flatMap((e) => [e.start.getTime(), e.end.getTime()])].filter((t) => t >= van && t < tot);
+  const alle = [...new Set([...vrijeTijden, ...grenzen])].sort((x, y) => x - y);
   const tijden = alle.map((t) => metOverlap(t, ms, vrij, botst));
   return { status: vrijeTijden.length ? 'vrij' : vrij.length ? 'kort' : 'bezet', vrij, tijden, botst, heel: !botst.length && van === a.getTime(), van, tot };
 }
@@ -1090,7 +1093,7 @@ function openMailTijden() {
     <div class="detailinhoud">
       <div class="dkop"><h2 class="dtitel">Tijden uit een mail</h2></div>
       <div class="formkaart">
-        <label class="frij volbreed"><textarea id="mtekst" rows="5" placeholder="Plak hier de dagen en tijden uit de mail" aria-label="Tekst uit de mail" autocomplete="off" autocorrect="off" spellcheck="false"></textarea></label>
+        <label class="frij volbreed"><textarea id="mtekst" rows="5" name="vrijetekst" placeholder="Plak hier de dagen en tijden" aria-label="Dagen en tijden" autocomplete="off" autocorrect="off" spellcheck="false" inputmode="text"></textarea></label>
         ${kanPlakken ? `<button class="frij instknop" data-actie="plak">${I.plakken}<span>Plakken</span></button>` : ''}
       </div>
       <div class="formkaart">

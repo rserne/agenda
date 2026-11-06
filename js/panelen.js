@@ -663,9 +663,6 @@ async function openNieuw({ dag = null, blok = null } = {}) {
         <a class="groteknop vol" id="noutlook"${IOS ? '' : ' target="_blank" rel="noopener"'}>${I.extern}Afmaken in Outlook</a>
         <button class="tekstknop" id="nics">of download als .ics-bestand</button>
       </div>
-      <div class="dvoet">
-        <p class="voetnoot">Deze app kan je agenda alleen lezen. Outlook opent met alles al ingevuld. Daar sla je de afspraak op en verstuur je de uitnodiging.</p>
-      </div>
     </div>`;
 
   let lijst = [];

@@ -571,6 +571,34 @@ button.drij:active { opacity: 0.6; }
 .tabbalk .plusknop { flex: 0 0 var(--barH); padding: 0; width: var(--barH); height: var(--barH); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--accent); pointer-events: auto; }
 .tabbalk .plusknop .icoon { width: 22px; height: 22px; }
 .tabbalk .plusknop:active { background: var(--fill); }
+/* Open: de plus draait naar een kruisje */
+.plusknop .icoon { transition: transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.2); }
+.plusknop.open .icoon { transform: rotate(45deg); }
+
+/* ================================================================ Keuzemenu (plusknop en Nieuw) */
+.keuzelaag { position: fixed; inset: 0; z-index: 29; background: transparent; transition: background-color 0.2s ease; }
+.keuzelaag.fab.open { background: rgba(0, 0, 0, 0.18); }
+.keuzemenu { position: fixed; z-index: 31; display: flex; flex-direction: column; opacity: 0; pointer-events: none; transition: opacity 0.18s ease, transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.1); }
+.keuzemenu.open { opacity: 1; pointer-events: auto; transform: none; }
+.keuzemenu button { display: flex; align-items: center; gap: 10px; color: var(--label); font-size: 16px; font-weight: 600; white-space: nowrap; }
+.keuzemenu button .icoon { width: 20px; height: 20px; color: var(--accent); flex: none; }
+/* Boven de plusknop: losse knoppen in glas, rechts uitgelijnd, die van onderen opkomen */
+.keuzemenu.fab { align-items: flex-end; gap: 10px; transform: translateY(12px) scale(0.96); transform-origin: bottom right; }
+.keuzemenu.fab button {
+  height: 48px; padding: 0 18px 0 14px; border-radius: 24px;
+  background: var(--popBg, var(--card)); border: 0.5px solid var(--separator); /* dicht, zodat de tekst erachter niet doorschijnt */
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16), 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+.keuzemenu.fab button:active { filter: brightness(0.94); }
+/* Onder Nieuw op de desktop: een klein menu zoals op de Mac */
+.keuzemenu:not(.fab) {
+  min-width: 220px; padding: 5px; border-radius: 12px; transform: translateY(-4px);
+  background: var(--popBg, var(--card)); border: 0.5px solid var(--separator); box-shadow: 0 10px 32px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+.keuzemenu:not(.fab) button { height: 34px; padding: 0 10px; border-radius: 7px; font-size: 13.5px; font-weight: 500; }
+.keuzemenu:not(.fab) button .icoon { width: 16px; height: 16px; }
+.keuzemenu:not(.fab) button:hover, .keuzemenu:not(.fab) button:focus-visible { background: var(--accent); color: var(--onAccent); outline: none; }
+.keuzemenu:not(.fab) button:hover .icoon, .keuzemenu:not(.fab) button:focus-visible .icoon { color: var(--onAccent); }
 /* Vrije blokken zijn aan te tikken: een plusje rechts */
 .plus { display: inline-flex; margin-left: auto; color: var(--accent); flex-shrink: 0; opacity: 0.8; }
 .plus .icoon { width: 18px; height: 18px; }
@@ -704,10 +732,6 @@ label.frij:focus-within .flabel { color: var(--accent); }
 .zbagenda .instrij .icoon:last-child { width: 14px; height: 14px; color: var(--secondary); opacity: 0.7; }
 
 /* ================================================================ Tijden uit een mail */
-/* De knop staat onder de titel */
-.paneel.nieuw .dkop:has(.dkopknop) { flex-direction: column; align-items: flex-start; gap: 0; }
-.nieuw .tekstknop.dkopknop { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; margin-top: 4px; padding: 6px 0; color: var(--accent); font-size: 15px; font-weight: 500; }
-.dkopknop .icoon { width: 18px; height: 18px; }
 .mailtijden #muitslag { display: flex; flex-direction: column; gap: 22px; }
 .mailtijden #muitslag:empty { display: none; }
 .mvak { gap: 10px; padding: 12px 0; }

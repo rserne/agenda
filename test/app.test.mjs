@@ -24,6 +24,15 @@ const kopTop = (p, dag) => p.evaluate((dag) => {
   const k = [...document.querySelectorAll('#inhoud .dagkop')].find((x) => x.textContent.includes(dag));
   return k ? Math.round(k.nextElementSibling.getBoundingClientRect().top - k.offsetHeight) : null;
 }, dag);
+// De plusknop opent een keuze: nieuwe afspraak of tijden uit een mail
+async function kies(p, keuze, klik = false) {
+  const plus = p.locator('[data-nieuw]:visible').first();
+  if (klik) await plus.click(); else await plus.tap();
+  await wacht(300);
+  const k = p.locator(`.keuzemenu [data-keuze="${keuze}"]`);
+  if (klik) await k.click(); else await k.tap();
+  await wacht(900);
+}
 const kopHoogte = (p) => p.evaluate(() => document.getElementById('kop').offsetHeight);
 
 /* -------------------------------------------------------------- inlezen */
@@ -118,7 +127,7 @@ test('telefoon: in de weekkiezer een week kiezen', async ({ browser, url }) => {
 test('telefoon: nieuwe afspraak opent de Outlook-app met tijd, deelnemers en notitie', async ({ browser, url }) => {
   const p = await nieuwePagina(browser, TELEFOON);
   await p.goto(url); await wacht(1000);
-  await p.locator('[data-nieuw]:visible').first().tap(); await wacht(900);
+  await kies(p, 'nieuw');
   await p.locator('.paneel .chip').first().tap(); await wacht(300);
   await p.fill('.paneel [name="deelnemers"]', 'een@voorbeeld.nl; twee@voorbeeld.nl');
   await p.fill('.paneel [name="notitie"]', 'Eerste regel\nTweede regel'); await wacht(200);
@@ -218,7 +227,7 @@ test('contacten: inladen, en bij een nieuwe afspraak namen aanvullen tot adresse
   await p.setInputFiles('#contactinvoer', CONTACTEN_CSV); await wacht(600);
   assert.equal(await p.locator('#statustekst').innerText(), '6 contacten ingeladen.');
   await p.reload(); await wacht(1000); // blijft bewaard op het toestel
-  await p.locator('[data-nieuw]:visible').first().tap(); await wacht(900);
+  await kies(p, 'nieuw');
   await p.locator('.paneel .chip').first().tap(); await wacht(300);
   const veld = p.locator('.paneel [name="deelnemers"]');
   assert.equal(await veld.getAttribute('placeholder'), 'Naam of e-mailadres');
@@ -247,7 +256,7 @@ test('contacten: wissen, en zonder contacten geen suggesties', async ({ browser,
   await p.locator('.paneel [data-actie="contacten-wis"]').tap(); await wacht(600);
   assert.match(await p.locator('#icontacten').innerText(), /Geen contacten/);
   await p.keyboard.press('Escape'); await wacht(500);
-  await p.locator('[data-nieuw]:visible').first().tap(); await wacht(900);
+  await kies(p, 'nieuw');
   await p.locator('.paneel [name="deelnemers"]').type('jan', { delay: 20 }); await wacht(200);
   assert.equal(await p.locator('.aanvuloptie').count(), 0);
 });
@@ -277,7 +286,7 @@ test('telefoon: alle invoervelden hebben minstens 16 punten, anders zoomt iOS in
   await p.locator('[data-bron="link"]').tap(); await wacht(800);
   assert.deepEqual(await klein(), [], 'agenda-link');
   await p.keyboard.press('Escape'); await wacht(500);
-  await p.locator('[data-nieuw]:visible').first().tap(); await wacht(900);
+  await kies(p, 'nieuw');
   await p.locator('[data-actie="eigen"]').tap(); await wacht(300);
   assert.deepEqual(await klein(), [], 'nieuwe afspraak');
 });
@@ -302,7 +311,7 @@ test('ruimtes: opgeven in Instellingen, bij Locatie kiezen, en de ruimte gaat me
   await p.locator('.ruimterij').nth(3).locator('[data-actie="ruimte-weg"]').tap(); await wacht(150);
   assert.deepEqual(await p.locator('.ruimterij .rnaam').evaluateAll((l) => l.map((i) => i.value)), ['Zonnezaal', 'Coupé', 'Groot Overleg', 'Kelder']);
   await p.reload(); await wacht(1000); // bewaard op het toestel
-  await p.locator('[data-nieuw]:visible').first().tap(); await wacht(900);
+  await kies(p, 'nieuw');
   await p.locator('.paneel .chip').first().tap(); await wacht(200);
   const loc = p.locator('.paneel [name="locatie"]');
   const dagY = () => p.locator('.paneel .formkaart').nth(1).boundingBox().then((x) => Math.round(x.y));
@@ -371,7 +380,7 @@ test('plaatsen: met een Google-sleutel vult Locatie ook adressen aan, en de sleu
   await p.locator('[data-actie="google-annuleer"]').tap(); await wacht(200);
   assert.equal(await p.evaluate(() => googleSleutel()), 'proefsleutel');
   await p.keyboard.press('Escape'); await wacht(500);
-  await p.locator('[data-nieuw]:visible').first().tap(); await wacht(900);
+  await kies(p, 'nieuw');
   const loc = p.locator('.paneel [name="locatie"]');
   await loc.focus(); await loc.type('da', { delay: 20 }); await wacht(500);
   assert.equal(vragen.length, 2, 'met twee letters nog niet naar Google');
@@ -395,6 +404,22 @@ test('plaatsen: met een Google-sleutel vult Locatie ook adressen aan, en de sleu
   await loc.type(' 1', { delay: 0 }); await wacht(30);
   assert.equal(await p.locator('#nlocaties .aanvulmelding').count(), 1, 'de melding knippert niet weg bij de volgende letter');
   assert.deepEqual(p.fouten, []);
+});
+
+test('telefoon: de plusknop klapt open met twee keuzes, en dicht met een tik ernaast', async ({ browser, url }) => {
+  const p = await nieuwePagina(browser, TELEFOON);
+  await p.goto(url); await wacht(900);
+  const plus = p.locator('.plusknop');
+  await plus.tap(); await wacht(400);
+  assert.equal(await plus.getAttribute('aria-expanded'), 'true');
+  assert.deepEqual(await p.locator('.keuzemenu [role="menuitem"]').allInnerTexts(), ['Tijden uit een mail', 'Nieuwe afspraak'], 'nieuwe afspraak het dichtst bij de duim');
+  await plus.tap(); await wacht(400);
+  assert.equal(await p.locator('.keuzemenu').count(), 0, 'nog een tik: dicht');
+  await plus.tap(); await wacht(400);
+  await p.touchscreen.tap(100, 300); await wacht(400);
+  assert.equal(await p.locator('.keuzemenu').count(), 0, 'tik ernaast: dicht');
+  assert.equal(await p.locator('.paneel').count(), 0, 'en er opent niets');
+  assert.equal(await p.locator('.paneel.nieuw [data-actie="mailtijden"]').count(), 0);
 });
 
 /* -------------------------------------------------------------- tijden uit een mail */
@@ -429,8 +454,7 @@ test('mail: tijden naast de agenda, kiezen, antwoord kopiëren en inplannen', as
   const p = await nieuwePagina(browser, TELEFOON);
   await p.goto(url); await wacht(900);
   await p.evaluate(() => { window.gekopieerd = null; navigator.clipboard.writeText = async (t) => { window.gekopieerd = t; }; });
-  await p.locator('[data-nieuw]:visible').first().tap(); await wacht(900);
-  await p.locator('[data-actie="mailtijden"]').tap(); await wacht(900);
+  await kies(p, 'mail');
   await p.fill('#mtekst', MAIL); await wacht(1500);
   assert.deepEqual(await p.locator('#muitslag h3').allInnerTexts(), ['MAANDAG 9 NOVEMBER', 'WOENSDAG 11 NOVEMBER', 'DONDERDAG 12 NOVEMBER']);
   assert.deepEqual(await p.locator('#muitslag .mstatus').allInnerTexts(), [
@@ -466,8 +490,7 @@ test('mail: tijden naast de agenda, kiezen, antwoord kopiëren en inplannen', as
 test('mail: een tijd die overlapt kiezen; het antwoord noemt geen reden, inplannen toont de overlap', async ({ browser, url }) => {
   const p = await nieuwePagina(browser, TELEFOON);
   await p.goto(url); await wacht(900);
-  await p.locator('[data-nieuw]:visible').first().tap(); await wacht(900);
-  await p.locator('[data-actie="mailtijden"]').tap(); await wacht(900);
+  await kies(p, 'mail');
   await p.fill('#mtekst', 'Woensdag 11 november tussen 15:00 en 17:00'); await wacht(1200);
   await p.locator('#muitslag .chip.botst', { hasText: '15:00' }).tap(); await wacht(200);
   assert.equal(await p.locator('#muitslag .chip.botst.aan').count(), 1);
@@ -490,7 +513,7 @@ test('desktop: contacten aanvullen met het toetsenbord; Escape sluit eerst de su
   await p.locator('#zijbalk [data-actie="instellingen"]').click(); await wacht(700);
   assert.match(await p.locator('#icontacten').innerText(), /6 contacten/);
   await p.keyboard.press('Escape'); await wacht(500);
-  await p.locator('[data-nieuw]:visible').first().click(); await wacht(800);
+  await kies(p, 'nieuw', true);
   const veld = p.locator('.paneel [name="deelnemers"]');
   await veld.click(); await veld.type('ja', { delay: 20 }); await wacht(200);
   assert.equal(await p.locator('.aanvuloptie.actief .t1').innerText(), 'Jan Jansen', 'de eerste staat klaar');
@@ -512,6 +535,19 @@ test('desktop: dagkolommen, een leeg weekend smal met korte dagnaam, en de legen
   assert.deepEqual(smal, ['Za', 'Zo']);
   assert.equal(await p.locator('main .legenda').count(), 1);
   assert.deepEqual(p.fouten, []);
+});
+
+test('desktop: Nieuw opent een menu; met de pijltjes en Enter kies je', async ({ browser, url }) => {
+  const p = await nieuwePagina(browser, MAC);
+  await p.goto(url); await wacht(900);
+  await p.locator('#nieuwknop').click(); await wacht(300);
+  assert.deepEqual(await p.locator('.keuzemenu [role="menuitem"]').allInnerTexts(), ['Nieuwe afspraak', 'Tijden uit een mail']);
+  await p.keyboard.press('ArrowDown'); await p.keyboard.press('Enter'); await wacht(900);
+  assert.equal(await p.locator('.paneel.mailtijden.dialoog').count(), 1);
+  await p.keyboard.press('Escape'); await wacht(500);
+  await p.locator('#nieuwknop').click(); await wacht(300);
+  await p.keyboard.press('Escape'); await wacht(300);
+  assert.equal(await p.locator('.keuzemenu').count(), 0);
 });
 
 test('desktop: detail als venster, Escape sluit het', async ({ browser, url }) => {

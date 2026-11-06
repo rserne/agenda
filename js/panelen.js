@@ -639,8 +639,7 @@ async function openNieuw({ dag = null, blok = null, start = null, duur = null, l
   el.innerHTML = `<div class="detailgreep"><div class="greep"></div>
       <div class="detailnav"><button class="rond glas" data-actie="sluit" aria-label="Sluiten">${I.kruis}</button></div></div>
     <div class="detailinhoud">
-      <div class="dkop"><h2 class="dtitel">Nieuwe afspraak</h2>
-        <button class="tekstknop dkopknop" data-actie="mailtijden">${I.mail}<span>Tijden uit een mail</span></button></div>
+      <div class="dkop"><h2 class="dtitel">Nieuwe afspraak</h2></div>
       <div class="formkaart">
         <label class="frij"><span class="flabel">Onderwerp</span><input name="titel" placeholder="Waar gaat het over?" autocomplete="off" enterkeyhint="next"></label>
         <label class="frij"><span class="flabel">Locatie</span><input name="locatie" placeholder="Ruimte, adres of Teams" autocomplete="off" enterkeyhint="next"></label>
@@ -810,7 +809,6 @@ async function openNieuw({ dag = null, blok = null, start = null, duur = null, l
     const lbl = t.closest('.datumlabel');
     if (lbl) { const i = $('#ndatuminvoer', el); if (i.showPicker) { ev.preventDefault(); try { i.showPicker(); } catch (e) { /* niet overal toegestaan */ } } return; }
     if (t.closest('#nics') && v.start != null) { downloadIcs(v); return; }
-    if (t.closest('[data-actie="mailtijden"]')) { p.sluit(); setTimeout(openMailTijden, 250); return; }
     if (t.closest('#noutlook')) {
       if (v.start == null) { ev.preventDefault(); return; }
       // Outlook neemt het over: het paneel gaat dicht, net nadat de link is gevolgd.
@@ -1214,4 +1212,54 @@ function openMailTijden() {
   tekenDuur();
   if (veld.value.trim()) lees(); else tekenSamen();
   if (!isDesktop() || !veld.value) setTimeout(() => { if (!veld.value) veld.focus(); }, 350);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Keuzemenu onder de plusknop: nieuwe afspraak of tijden uit een mail */
+/* ------------------------------------------------------------------ */
+
+// Op telefoon en tablet klapt het menu boven de plusknop open (zoals een zwevende knop); op de desktop onder Nieuw.
+let KEUZEMENU = null;
+function sluitKeuzemenu() {
+  if (!KEUZEMENU) return;
+  const { laag, menu, knop } = KEUZEMENU;
+  KEUZEMENU = null;
+  knop.classList.remove('open');
+  knop.setAttribute('aria-expanded', 'false');
+  menu.classList.remove('open'); laag.classList.remove('open');
+  setTimeout(() => { menu.remove(); laag.remove(); }, 200);
+}
+function wisselKeuzemenu(knop) {
+  if (KEUZEMENU) { sluitKeuzemenu(); return; }
+  const fab = knop.classList.contains('plusknop');
+  const laag = document.createElement('div');
+  laag.className = `keuzelaag${fab ? ' fab' : ''}`;
+  const menu = document.createElement('div');
+  menu.className = `keuzemenu${fab ? ' fab' : ''}`;
+  menu.setAttribute('role', 'menu');
+  menu.innerHTML = `<button role="menuitem" data-keuze="mail">${I.mail}<span>Tijden uit een mail</span></button>
+    <button role="menuitem" data-keuze="nieuw">${I.kalender}<span>Nieuwe afspraak</span></button>`;
+  if (!fab) menu.insertBefore(menu.lastElementChild, menu.firstElementChild); // onder Nieuw: nieuwe afspraak bovenaan
+  document.body.append(laag, menu);
+  const r = knop.getBoundingClientRect();
+  if (fab) { menu.style.right = `${Math.max(8, innerWidth - r.right)}px`; menu.style.bottom = `${innerHeight - r.top + 12}px`; }
+  else { menu.style.right = `${Math.max(8, innerWidth - r.right)}px`; menu.style.top = `${r.bottom + 8}px`; }
+  KEUZEMENU = { laag, menu, knop };
+  knop.classList.add('open');
+  knop.setAttribute('aria-expanded', 'true');
+  requestAnimationFrame(() => { menu.classList.add('open'); laag.classList.add('open'); });
+  if (!fab || !IOS) menu.querySelector('button').focus({ preventScroll: true });
+  laag.addEventListener('click', sluitKeuzemenu);
+  menu.addEventListener('click', (ev) => {
+    const k = ev.target.closest('[data-keuze]');
+    if (!k) return;
+    sluitKeuzemenu();
+    if (k.dataset.keuze === 'nieuw') openNieuw(); else openMailTijden();
+  });
+  menu.addEventListener('keydown', (ev) => {
+    const knoppen = [...menu.querySelectorAll('button')];
+    const i = knoppen.indexOf(document.activeElement);
+    if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); sluitKeuzemenu(); knop.focus(); }
+    else if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') { ev.preventDefault(); knoppen[(i + (ev.key === 'ArrowDown' ? 1 : -1) + knoppen.length) % knoppen.length].focus(); }
+  });
 }

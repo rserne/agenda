@@ -127,7 +127,8 @@ function koppel() {
     if (rij) { kiesWeek(new Date(Number(rij.dataset.ma))); return; }
     const vrij = ev.target.closest('#inhoud [data-vrij]');
     if (vrij) { const [a, b] = vrij.dataset.vrij.split('-').map(Number); openNieuw({ blok: { start: a, end: b } }); return; }
-    if (ev.target.closest('[data-nieuw]')) { openNieuw(); return; }
+    const plus = ev.target.closest('[data-nieuw]');
+    if (plus) { wisselKeuzemenu(plus); return; }
     const b = ev.target.closest('#inhoud [data-id]');
     if (b && zichtbaar.has(b.dataset.id)) openDetail(zichtbaar.get(b.dataset.id));
   });

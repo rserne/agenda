@@ -965,7 +965,7 @@ function openInstellingen() {
         <p class="insttoelichting">Een csv uit NK2Edit of Outlook, of een vCard (.vcf).</p></section>
       <section class="instsectie"><h3>Ruimtes</h3><div class="formkaart" id="iruimtes">${ruimtesHtml()}</div></section>
       <section class="instsectie"><h3>Plaatsen via Google</h3><div class="formkaart" id="igooglekaart">${googleHtml()}</div><p class="insttoelichting" id="igoogleuitslag" aria-live="polite"></p></section>
-      <p class="voetnoot">Alles op dit scherm staat alleen op dit toestel. In Outlook verandert er niets.</p>
+      <p class="voetnoot">Alles op dit scherm staat alleen op dit toestel. In Outlook verandert er niets.<br>Versie ${esc(APP_VERSIE)}</p>
     </div>`;
   const p = openPaneel(el, { greepSelector: '.detailgreep' });
   const tekenAgenda = () => { const a = $('#iagenda', el); if (a) a.innerHTML = agendaHtml(); };

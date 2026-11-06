@@ -714,6 +714,7 @@ label.frij:focus-within .flabel { color: var(--accent); }
 .instknop:disabled { opacity: 0.5; }
 .insttoelichting { margin: 6px 0 0; padding: 0 16px; color: var(--secondary); font-size: 13px; line-height: 18px; }
 .insttoelichting.fout { color: var(--overlap); }
+.instellingen input.geheim { -webkit-text-security: disc; } /* de sleutel blijft onleesbaar, ook tijdens het plakken */
 .insttoelichting:empty { display: none; } /* uitslag van Sleutel testen: alleen als er iets te melden is */
 /* Ruimtes: per regel een naam en een e-mailadres, en een knop om de ruimte te verwijderen */
 .ruimterij { gap: 12px; padding: 8px 0; }

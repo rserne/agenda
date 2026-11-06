@@ -67,7 +67,7 @@ Onder **Instellingen**, **Ruimtes** zet je je vergaderruimtes, elk met een naam 
 
 Kies je een ruimte met een e-mailadres, dan zet de app de ruimte ook als deelnemer in de uitnodiging, zodat Outlook hem reserveert. Typ je daarna zelf iets anders bij Locatie, dan haalt de app de ruimte weer uit de deelnemers. Of de ruimte vrij is, ziet de app niet; dat laat Outlook zien.
 
-Met een **sleutel van Google** voor de Places API (New) vult Locatie vanaf drie letters ook adressen en plaatsen aan. De app vraagt pas als je even stopt met typen, met één sessie per afspraak; de vorige plaatsen blijven staan tot de nieuwe binnen zijn. Wat je in Locatie typt, gaat dan naar Google. Beperk de sleutel in Google Cloud Console tot de Places API (New) en tot de website `rserne.github.io`, zodat niemand anders er iets aan heeft. Met **Sleutel testen** zie je meteen of hij werkt.
+Met een **sleutel van Google** voor de Places API (New) vult Locatie vanaf drie letters ook adressen en plaatsen aan. De app vraagt pas als je even stopt met typen, met één sessie per afspraak; de vorige plaatsen blijven staan tot de nieuwe binnen zijn. Wat je in Locatie typt, gaat dan naar Google. Beperk de sleutel in Google Cloud Console tot de Places API (New) en tot de website `rserne.github.io`, zodat niemand anders er iets aan heeft. De app toont de sleutel nergens: je ziet alleen dat er een is, en je kunt hem testen, wijzigen of verwijderen. Na het bewaren test de app hem meteen.
 
 Ruimtes en sleutel staan alleen op het toestel (localStorage), nooit in de code of in de repository.
 

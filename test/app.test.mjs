@@ -348,15 +348,25 @@ test('plaatsen: met een Google-sleutel vult Locatie ook adressen aan, en de sleu
   await p.goto(url); await wacht(800);
   await p.click('#titelknop'); await wacht(700);
   await p.locator('.paneel [data-actie="instellingen"]').tap(); await wacht(900);
-  await p.locator('#igoogletest').tap(); await wacht(300);
-  assert.equal(await p.locator('#igoogleuitslag').innerText(), 'Vul eerst een sleutel in.');
+  const kaart = p.locator('#igooglekaart');
+  assert.match(await kaart.innerText(), /Geen sleutel/);
+  await p.locator('[data-actie="google-wijzig"]').tap(); await wacht(200);
+  await p.locator('[data-actie="google-bewaar"]').tap(); await wacht(200);
+  assert.equal(await p.locator('#igoogleuitslag').innerText(), 'Plak eerst een sleutel.');
   await p.fill('#igoogle', 'proefsleutel');
   weiger = true;
-  await p.locator('#igoogletest').tap(); await wacht(600);
+  await p.locator('[data-actie="google-bewaar"]').tap(); await wacht(600); // bewaren test meteen
   assert.match(await p.locator('#igoogleuitslag').innerText(), /Google weigert de sleutel: API key not valid\./);
   weiger = false;
-  await p.locator('#igoogletest').tap(); await wacht(600);
+  await p.locator('[data-actie="google-test"]').tap(); await wacht(600);
   assert.match(await p.locator('#igoogleuitslag').innerText(), /^De sleutel werkt\. Bijvoorbeeld: Damrak 1/);
+  assert.match(await kaart.innerText(), /Sleutel opgegeven/);
+  assert.equal(await p.locator('.paneel.instellingen').evaluate((e) => e.innerHTML.includes('proefsleutel')), false, 'de sleutel staat nergens in beeld');
+  // Wijzigen begint met een leeg veld; annuleren laat de sleutel staan
+  await p.locator('[data-actie="google-wijzig"]').tap(); await wacht(200);
+  assert.equal(await p.locator('#igoogle').inputValue(), '');
+  await p.locator('[data-actie="google-annuleer"]').tap(); await wacht(200);
+  assert.equal(await p.evaluate(() => googleSleutel()), 'proefsleutel');
   await p.keyboard.press('Escape'); await wacht(500);
   await p.locator('[data-nieuw]:visible').first().tap(); await wacht(900);
   const loc = p.locator('.paneel [name="locatie"]');

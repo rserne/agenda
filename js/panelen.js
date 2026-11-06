@@ -932,6 +932,15 @@ function openInstellingen() {
       </span>
       <button class="ruimteweg" data-actie="ruimte-weg" aria-label="${esc(r.naam ? `${r.naam} verwijderen` : 'Ruimte verwijderen')}">${I.min}</button>
     </div>`;
+  // Google-sleutel: nooit tonen. Alleen of er een is, en hem testen, wijzigen of verwijderen.
+  const googleHtml = (bewerk = false) => {
+    if (bewerk) return `<label class="frij"><span class="flabel">Sleutel</span><input id="igoogle" class="geheim" type="text" placeholder="Plak hier je sleutel" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done"></label>`
+      + knop('google-bewaar', I.vink, 'Bewaren') + knop('google-annuleer', I.kruis, 'Annuleren');
+    if (googleSleutel()) return status(I.speld, 'Sleutel opgegeven', 'Locatie vult ook adressen en plaatsen aan')
+      + knop('google-test', I.vink, 'Sleutel testen') + knop('google-wijzig', I.herhaal, 'Sleutel wijzigen') + knop('google-wis', I.wissen, 'Sleutel verwijderen');
+    return status(I.speld, 'Geen sleutel', 'Optioneel: ook adressen en plaatsen bij Locatie')
+      + knop('google-wijzig', I.plus, 'Sleutel opgeven');
+  };
   const ruimtesHtml = () => ruimteLijst().map(ruimteRij).join('') + `<button class="frij instknop" data-actie="ruimte-erbij">${I.plus}<span>Ruimte toevoegen</span></button>`;
   el.innerHTML = `<div class="detailgreep"><div class="greep"></div>
       <div class="detailnav"><button class="rond glas" data-actie="sluit" aria-label="Sluiten">${I.kruis}</button></div></div>
@@ -941,15 +950,39 @@ function openInstellingen() {
       <section class="instsectie"><h3>Contacten</h3><div class="formkaart" id="icontacten">${contactHtml()}</div>
         <p class="insttoelichting">Een csv uit NK2Edit of Outlook, of een vCard (.vcf).</p></section>
       <section class="instsectie"><h3>Ruimtes</h3><div class="formkaart" id="iruimtes">${ruimtesHtml()}</div></section>
-      <section class="instsectie"><h3>Plaatsen via Google</h3><div class="formkaart">
-        <label class="frij"><span class="flabel">Sleutel</span><input id="igoogle" type="text" placeholder="Optioneel" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(googleSleutel())}"></label>
-        <button class="frij instknop" id="igoogletest">${I.vink}<span>Sleutel testen</span></button>
-      </div><p class="insttoelichting" id="igoogleuitslag" aria-live="polite"></p></section>
+      <section class="instsectie"><h3>Plaatsen via Google</h3><div class="formkaart" id="igooglekaart">${googleHtml()}</div><p class="insttoelichting" id="igoogleuitslag" aria-live="polite"></p></section>
       <p class="voetnoot">Alles op dit scherm staat alleen op dit toestel. In Outlook verandert er niets.</p>
     </div>`;
   const p = openPaneel(el, { greepSelector: '.detailgreep' });
   const tekenAgenda = () => { const a = $('#iagenda', el); if (a) a.innerHTML = agendaHtml(); };
   const tekenContacten = () => { const a = $('#icontacten', el); if (a) a.innerHTML = contactHtml(); };
+  const uitslag = (tekst, fout = false) => { const u = $('#igoogleuitslag', el); u.textContent = tekst; u.classList.toggle('fout', fout); };
+  const tekenGoogle = (bewerk = false) => {
+    $('#igooglekaart', el).innerHTML = googleHtml(bewerk);
+    if (bewerk) $('#igoogle', el).focus();
+  };
+  const testSleutel = async () => {
+    uitslag('Testen…');
+    const r = await testGoogleSleutel(googleSleutel());
+    uitslag(r.tekst, !r.ok);
+  };
+  async function googleActie(actie) {
+    if (actie === 'google-wijzig') { uitslag(''); tekenGoogle(true); }
+    else if (actie === 'google-annuleer') { uitslag(''); tekenGoogle(); }
+    else if (actie === 'google-test') testSleutel();
+    else if (actie === 'google-bewaar') {
+      const nieuw = $('#igoogle', el).value.trim();
+      if (!nieuw) { uitslag('Plak eerst een sleutel.', true); $('#igoogle', el).focus(); return; }
+      zetGoogleSleutel(nieuw);
+      tekenGoogle();
+      testSleutel(); // meteen laten zien of hij werkt
+    } else if (actie === 'google-wis' && confirm('De Google-sleutel van dit toestel verwijderen?')) { zetGoogleSleutel(''); uitslag(''); tekenGoogle(); }
+  }
+  el.addEventListener('keydown', (ev) => {
+    if (ev.target.id !== 'igoogle') return;
+    if (ev.key === 'Enter') { ev.preventDefault(); googleActie('google-bewaar'); }
+    else if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); googleActie('google-annuleer'); }
+  });
   // Wat er in de velden staat, meteen bewaren
   const leesRuimtes = () => [...el.querySelectorAll('.ruimterij')].map((rij) => ({ naam: $('.rnaam', rij).value, email: $('.rmail', rij).value }));
   const tekenRuimtes = (focusRij = -1) => {
@@ -959,7 +992,6 @@ function openInstellingen() {
   el.addEventListener('input', (ev) => {
     if (ev.target.closest('.ruimterij')) zetRuimteLijst(leesRuimtes());
     if (ev.target.classList.contains('rmail')) { const w = ev.target.value.trim(); ev.target.classList.toggle('ongeldig', !!w && !IS_ADRES.test(w)); }
-    if (ev.target.id === 'igoogle') zetGoogleSleutel(ev.target.value);
   });
   el.addEventListener('click', async (ev) => {
     const t = ev.target;
@@ -977,14 +1009,6 @@ function openInstellingen() {
       if (confirm('Contacten wissen? Ze verdwijnen alleen van dit toestel; je bestand blijft gewoon bestaan.')) { await vergeetContacten(); tekenContacten(); render(); renderZijbalk(); }
       return;
     }
-    if (t.closest('#igoogletest')) {
-      const uit = $('#igoogleuitslag', el);
-      const sleutel = $('#igoogle', el).value.trim();
-      if (!sleutel) { uit.textContent = 'Vul eerst een sleutel in.'; return; }
-      uit.textContent = 'Testen…';
-      const r = await testGoogleSleutel(sleutel);
-      uit.textContent = r.tekst;
-      uit.classList.toggle('fout', !r.ok);
-    }
+    if (actie && actie.startsWith('google-')) googleActie(actie);
   });
 }

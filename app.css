@@ -595,12 +595,15 @@ button.drij:active { opacity: 0.6; }
 .aanvullijst { display: flex; flex-direction: column; margin: 0 -16px; }
 .aanvullijst[hidden] { display: none; }
 .aanvuloptie { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 1px; width: 100%; min-height: 50px; padding: 7px 16px; text-align: left; color: var(--label); }
-.aanvuloptie::before { content: ''; position: absolute; top: 0; left: 16px; right: 0; border-top: 0.5px solid var(--separator); } /* lijn springt in, zoals de andere rijen */
+.aanvuloptie::before { content: ''; position: absolute; top: 0; left: 16px; right: 16px; border-top: 0.5px solid var(--separator); } /* lijn springt in, zoals de andere rijen */
 .aanvuloptie:active, .aanvuloptie.actief { background: var(--fill); }
 .aanvuloptie .t1 { font-size: 16px; line-height: 21px; }
 .aanvuloptie .t2 { font-size: 13px; line-height: 17px; color: var(--secondary); }
 .aanvuloptie .t1, .aanvuloptie .t2 { max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .aanvullijst + .frij { border-top: 0.5px solid var(--separator); }
+.aanvulkop { padding: 10px 16px 2px; color: var(--secondary); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.2px; }
+.aanvulkop + .aanvuloptie::before { display: none; }
+.nsamenvatting .nruimte { margin-top: 4px; color: var(--secondary); font-size: 13px; line-height: 18px; font-weight: 400; }
 .frij input:-webkit-autofill { -webkit-box-shadow: 0 0 0 40px var(--card) inset; -webkit-text-fill-color: var(--label); }
 label.frij:focus-within .flabel { color: var(--accent); }
 .fwaarde { flex: 1; min-width: 0; display: flex; flex-direction: column; font-size: 16px; }
@@ -681,6 +684,28 @@ label.frij:focus-within .flabel { color: var(--accent); }
 .kiezer .zbagenda button { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 4px; color: var(--accent); font-size: 16px; font-weight: 500; text-align: left; border-radius: 10px; }
 .kiezer .zbagenda button:active { background: var(--fill); }
 .kiezer .zbagenda button .icoon { width: 20px; height: 20px; }
+/* Eén regel naar Instellingen, met welke agenda je ziet (weekkiezer en zijbalk) */
+.zbagenda .instrij, .kiezer .zbagenda .instrij { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 54px; color: var(--label); text-align: left; }
+.instrij .tekst { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.instrij .t1 { font-size: 16px; font-weight: 500; }
+.instrij .t2 { font-size: 13px; line-height: 17px; color: var(--secondary); font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.zbagenda .instrij .icoon:first-child { color: var(--secondary); }
+.zbagenda .instrij .icoon:last-child { width: 14px; height: 14px; color: var(--secondary); opacity: 0.7; }
+
+/* ================================================================ Instellingen */
+.instellingen .detailinhoud { gap: 22px; }
+.instsectie h3 { margin: 0 0 6px; padding: 0 16px; color: var(--secondary); font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.2px; }
+.inststatus .icoon, .instknop .icoon { width: 20px; height: 20px; flex-shrink: 0; }
+.inststatus .icoon { color: var(--secondary); }
+.inststatus .tekst { display: flex; flex-direction: column; min-width: 0; }
+.inststatus .t1 { font-size: 16px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.inststatus .t2 { font-size: 13px; line-height: 17px; color: var(--secondary); }
+.instknop { width: 100%; color: var(--accent); font-size: 16px; font-weight: 500; text-align: left; }
+.instknop:active { opacity: 0.6; }
+.instknop:disabled { opacity: 0.5; }
+.insttoelichting { margin: 6px 0 0; padding: 0 16px; color: var(--secondary); font-size: 13px; line-height: 18px; }
+.insttoelichting.fout { color: var(--overlap); }
+.instellingen .frij textarea { min-height: 110px; }
 
 /* ================================================================ Desktop (vanaf 1200): ontwerp A, in de stijl van Agenda op de Mac */
 .zijbalk { display: none; }
@@ -720,6 +745,11 @@ label.frij:focus-within .flabel { color: var(--accent); }
   .zblijst button .icoon { width: 16px; height: 16px; color: var(--accent); }
   .zblijst button:hover { background: var(--fill); }
   .zblijst button.aan { background: rgb(120 120 128 / 0.18); font-weight: 600; }
+  /* Instellingen in de zijbalk: zelfde maat als Week en Vooruitblik, met de agenda eronder */
+  .zblijst .instrij { height: auto; min-height: 40px; padding-top: 5px; padding-bottom: 5px; }
+  .zblijst .instrij .t1 { font-size: 13px; }
+  .zblijst .instrij .t2 { font-size: 11px; line-height: 14px; }
+  .zblijst .instrij .icoon:first-child { color: var(--accent); }
   /* Kopje Agenda: de bron van de afspraken en een eigen .ics inladen */
   .zbagenda { border-top: 0; padding-top: 0; }
   .zbbron { display: flex; align-items: center; gap: 9px; padding: 4px 4px 6px; min-width: 0; }
@@ -872,6 +902,9 @@ label.frij:focus-within .flabel { color: var(--accent); }
   .zblijst h3 { font-size: 12px; }
   .zblijst button { height: 44px; font-size: 16px; gap: 11px; border-radius: 10px; }
   .zblijst button .icoon { width: 19px; height: 19px; }
+  .zblijst .instrij { min-height: 56px; }
+  .zblijst .instrij .t1 { font-size: 16px; }
+  .zblijst .instrij .t2 { font-size: 13px; line-height: 17px; }
   .zbbron { gap: 11px; padding: 6px 4px 8px; }
   .zbbron .icoon { width: 19px; height: 19px; }
   .zbbron .t1 { font-size: 16px; }

@@ -155,13 +155,6 @@ async function openContacten(bestand) {
   return lijst.length;
 }
 
-// Knoppen onder Contacten (weekkiezer en zijbalk)
-function contactActie(actie) {
-  // Het bestandsvenster moet direct bij de tik openen (iOS)
-  if (actie === 'contacten-inladen') $('#contactinvoer').click();
-  else if (actie === 'contacten-wis' && confirm('Contacten wissen? Ze verdwijnen alleen van dit toestel; je bestand blijft gewoon bestaan.')) vergeetContacten().then(() => { render(); renderZijbalk(); });
-}
-
 async function vergeetContacten() {
   CONTACTEN = []; CONTACTEN_INFO = null;
   await IDB.del('contacten').catch(() => {});
@@ -185,55 +178,4 @@ function zoekContacten(vraag, al = [], max = 6) {
     if (uit.length >= 60) break;
   }
   return uit.sort((a, b) => a.eerst - b.eerst).slice(0, max).map((x) => x.c);
-}
-
-// Aanvullen in het deelnemersveld van een nieuwe afspraak.
-// veld: het invoerveld; lijstEl: waar de suggesties komen. Bij een keuze: het adres in het veld, met '; ' erachter.
-function koppelAanvullen(veld, lijstEl) {
-  let gevonden = [], actief = -1;
-  const deel = () => { const v = veld.value; const i = Math.max(v.lastIndexOf(','), v.lastIndexOf(';')); return { voor: v.slice(0, i + 1), vraag: v.slice(i + 1).trim() }; };
-  const sluit = () => { gevonden = []; actief = -1; lijstEl.innerHTML = ''; lijstEl.hidden = true; veld.setAttribute('aria-expanded', 'false'); veld.removeAttribute('aria-activedescendant'); };
-  const teken = () => {
-    if (!gevonden.length) { sluit(); return; }
-    lijstEl.hidden = false;
-    veld.setAttribute('aria-expanded', 'true');
-    lijstEl.innerHTML = gevonden.map((c, i) => `<button type="button" role="option" id="aanvul${i}" class="aanvuloptie${i === actief ? ' actief' : ''}" aria-selected="${i === actief}" data-aanvul="${i}">
-        <span class="t1">${esc(c.naam || c.email)}</span>${c.naam ? `<span class="t2">${esc(c.email)}</span>` : ''}</button>`).join('');
-    if (actief >= 0) veld.setAttribute('aria-activedescendant', `aanvul${actief}`); else veld.removeAttribute('aria-activedescendant');
-  };
-  const kies = (i) => {
-    const c = gevonden[i];
-    if (!c) return;
-    const { voor } = deel();
-    veld.value = `${voor ? `${voor.trim()} ` : ''}${c.email}; `;
-    veld.dispatchEvent(new Event('input', { bubbles: true }));
-    sluit();
-    veld.focus();
-  };
-  veld.setAttribute('role', 'combobox');
-  veld.setAttribute('aria-autocomplete', 'list');
-  veld.setAttribute('aria-controls', lijstEl.id);
-  lijstEl.setAttribute('role', 'listbox');
-  sluit();
-  veld.addEventListener('input', (ev) => {
-    const { vraag } = deel();
-    gevonden = vraag ? zoekContacten(vraag, adressen(veld.value)) : [];
-    actief = gevonden.length && !IOS ? 0 : -1;
-    teken();
-  });
-  veld.addEventListener('keydown', (ev) => {
-    if (lijstEl.hidden) return;
-    if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') {
-      ev.preventDefault();
-      const n = gevonden.length;
-      actief = ev.key === 'ArrowDown' ? (actief + 1) % n : (actief - 1 + n) % n;
-      teken();
-    } else if ((ev.key === 'Enter' || ev.key === 'Tab') && actief >= 0) { ev.preventDefault(); kies(actief); }
-    else if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); sluit(); }
-  });
-  // Het toetsenbord open houden: niet laten blurren bij een tik op een suggestie
-  lijstEl.addEventListener('pointerdown', (ev) => ev.preventDefault());
-  lijstEl.addEventListener('mousedown', (ev) => ev.preventDefault());
-  lijstEl.addEventListener('click', (ev) => { const o = ev.target.closest('[data-aanvul]'); if (o) { ev.stopPropagation(); kies(Number(o.dataset.aanvul)); } });
-  veld.addEventListener('blur', () => setTimeout(sluit, 150));
 }

@@ -97,8 +97,7 @@ function koppel() {
     if (ev.target.closest('#lagen')) return; // panelen regelen hun eigen knoppen
     const nav = ev.target.closest('[data-nav]');
     if (nav) { verschuif(Number(nav.dataset.nav)); return; }
-    const ca = ev.target.closest('[data-actie^="contacten-"]');
-    if (ca) { contactActie(ca.dataset.actie); return; }
+    if (ev.target.closest('[data-actie="instellingen"]')) { openInstellingen(); return; }
     const actie = ev.target.closest('[data-actie^="ics-"]');
     if (actie) {
       if (actie.dataset.actie === 'ics-openen') $('#icsinvoer').click();

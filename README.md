@@ -18,7 +18,9 @@ Zonder bouwstap: alle bestanden draaien zoals ze zijn op GitHub Pages. Licht en 
 
 ## Waar de afspraken vandaan komen
 
-Onder **Agenda** (op de telefoon en tablet in de weekkiezer, op de desktop in de zijbalk) kies je de bron:
+Alles wat alleen op jouw toestel staat, geef je op onder **Instellingen**: onderaan de weekkiezer (tik op de titel), op de desktop onderaan de zijbalk. Daar staan Agenda, Contacten, Ruimtes en Plaatsen via Google.
+
+Onder **Agenda** kies je de bron:
 
 1. **Agenda-link:** de link van je Cloudflare Worker, met de sleutel erin. De app haalt je agenda daarmee zelf op (zie hieronder).
 2. **Eigen .ics-bestand:** een bestand dat je eenmalig inlaadt.
@@ -46,11 +48,11 @@ De link van je gepubliceerde Outlook-agenda zelf werkt niet: Outlook staat niet 
 
 ### Eigen .ics-bestand
 
-Kies **Eigen agenda inladen**. De app leest het bestand in de browser en stuurt het nergens naartoe. Met **Wissen** gaat de app terug naar de voorbeeldgegevens. Het inlezen van een groot bestand kost op een telefoon enkele seconden; daarna staat de agenda bij elke start meteen in beeld.
+Kies onder Agenda **Je eigen agenda kiezen** en dan **Uit een .ics-bestand**. De app leest het bestand in de browser en stuurt het nergens naartoe. Met **Voorbeeldgegevens** gaat de app terug naar de verzonnen afspraken. Het inlezen van een groot bestand kost op een telefoon enkele seconden; daarna staat de agenda bij elke start meteen in beeld.
 
 ## Contacten
 
-Onder **Contacten** (in de weekkiezer, op de desktop in de zijbalk) laad je een bestand met namen en e-mailadressen in. Typ je daarna bij een nieuwe afspraak een naam in het veld Deelnemers, dan stelt de app de passende contacten voor. Tik je er een aan, dan staat het adres in het veld. Op de desktop kies je met de pijltjes en Enter.
+Onder **Instellingen**, **Contacten** laad je een bestand met namen en e-mailadressen in. Typ je daarna bij een nieuwe afspraak een naam in het veld Deelnemers, dan stelt de app de passende contacten voor. Tik je er een aan, dan staat het adres in het veld. Op de desktop kies je met de pijltjes en Enter.
 
 De app leest drie soorten bestanden:
 - **De adrescache van Outlook**, geëxporteerd met [NK2Edit](https://www.nirsoft.net/utils/outlook_nk2_edit.html) als csv. Dit zijn de adressen die Outlook zelf aanvult, en de adressen die je het vaakst gebruikt, staan bovenaan.
@@ -58,6 +60,16 @@ De app leest drie soorten bestanden:
 - **Een vCard** (.vcf), bijvoorbeeld uit Contacten op de iPhone of de Mac.
 
 De lijst blijft alleen op het toestel, in IndexedDB, net als je agenda. Laad hem op elk toestel apart in. Zet nooit een echt contactenbestand in de repository: `test/contacten.csv` bevat alleen verzonnen namen.
+
+## Ruimtes en plaatsen
+
+Onder **Instellingen**, **Ruimtes** zet je je vergaderruimtes, één per regel. Tik je bij een nieuwe afspraak op Locatie, dan staan ze meteen klaar; typ je iets, dan filtert de lijst mee (accenten hoeven niet).
+
+Met een **maildomein** krijgt elke ruimte een e-mailadres: de naam zonder spaties en accenten, gevolgd door het domein (Glazen Huis wordt `glazenhuis@…`). Klopt dat voor een ruimte niet, schrijf dan `Naam <adres>` op de regel. Kies je een ruimte met een adres, dan zet de app de ruimte ook als deelnemer in de uitnodiging, zodat Outlook hem reserveert. Of de ruimte vrij is, ziet de app niet; dat laat Outlook zien.
+
+Met een **sleutel van Google** voor de Places API (New) vult Locatie vanaf drie letters ook adressen en plaatsen aan. De app vraagt pas als je even stopt met typen, met één sessie per afspraak. Wat je in Locatie typt, gaat dan naar Google. Beperk de sleutel in Google Cloud Console tot de Places API (New) en tot de website `rserne.github.io`, zodat niemand anders er iets aan heeft. Met **Sleutel testen** zie je meteen of hij werkt.
+
+Ruimtes, maildomein en sleutel staan alleen op het toestel (localStorage), nooit in de code of in de repository.
 
 ## Indeling
 
@@ -94,7 +106,7 @@ Repository, Settings, Pages: Deploy from a branch, `main`, map `/ (root)`. De ap
 1. cloudflare.com, gratis account, **Workers & Pages**, **Create**, **Worker** (Start with Hello World).
 2. **Edit code**: vervang de code door `cloudflare/worker.js` en kies **Deploy**.
 3. **Settings**, **Variables and Secrets**, twee keer **Add**, type *Secret*: `ICS_URL` (de ICS-link uit Outlook) en `SLEUTEL` (een lange willekeurige tekst). Kies opnieuw **Deploy** als Cloudflare daarom vraagt.
-4. In de app, onder Agenda, Agenda-link: `https://<worker>.<account>.workers.dev/?sleutel=<SLEUTEL>`.
+4. In de app, onder Instellingen, Agenda, Je eigen agenda kiezen, Via je agenda-link: `https://<worker>.<account>.workers.dev/?sleutel=<SLEUTEL>`.
 
 Koppel je de Worker liever aan GitHub (Import a repository), dan gebruikt Cloudflare `wrangler.jsonc` en plaatst het alleen de Worker. De naam in dat bestand (`agenda`) moet gelijk zijn aan de naam van de Worker in Cloudflare.
 
@@ -102,7 +114,7 @@ De Worker-link is net zo geheim als de Outlook-link: wie hem heeft, ziet je agen
 
 ### 4. Op je iPhone en iPad
 
-Open de app in Safari, tik op Delen, Zet op beginscherm. Geef daarna onder Agenda je agenda-link op.
+Open de app in Safari, tik op Delen, Zet op beginscherm. Geef daarna onder Instellingen je agenda-link op, en eventueel je contacten en ruimtes.
 
 ## Code
 
@@ -111,10 +123,11 @@ Open de app in Safari, tik op Delen, Zet op beginscherm. Geef daarna onder Agend
 | `index.html`, `app.css` | De pagina en de opmaak. Bovenin `app.css` staat een inhoudsopgave. |
 | `app.js` | Instellingen, hulpjes en iconen. Hier staat ook `APP_VERSIE`. |
 | `js/gegevens.js` | Waar de afspraken vandaan komen: voorbeeld, .ics-bestand, agenda-link, IndexedDB. |
-| `js/contacten.js` | Contacten inlezen (NK2Edit, csv, vCard), bewaren en aanvullen bij een nieuwe afspraak. |
+| `js/contacten.js` | Contacten inlezen (NK2Edit, csv, vCard), bewaren en zoeken. |
+| `js/locaties.js` | Ruimtes en de Google-sleutel uit Instellingen, en plaatsen zoeken bij Google. |
 | `js/indeling.js` | Extern of intern, vast of ad hoc, overlap, vrije blokken en hoe vol een dag is. |
 | `js/weergave.js` | Week, Vooruitblik, de kop en het tekenen van het scherm. |
-| `js/panelen.js` | Weekkiezer, zijbalk, detailscherm, nieuwe afspraak en de agendakeuze. |
+| `js/panelen.js` | Weekkiezer, zijbalk, detailscherm, nieuwe afspraak (met aanvullen), de agendakeuze en Instellingen. |
 | `js/bediening.js` | Tikken, vegen en doortrekken, het opstarten, de versiecontrole en de service worker. |
 | `js/ical.js`, `js/verrijk.js`, `js/ics-werker.js` | Het inlezen van een .ics-bestand (ook in de Web Worker). |
 | `voorbeeld.js` | Verzonnen voorbeeldafspraken. |
@@ -140,7 +153,7 @@ npm run schermen -- na basis      # nieuwe afbeeldingen in na/ en vergelijken me
 python3 -m http.server 8080       # en open http://localhost:8080/
 ```
 
-`npm test` start de app met een vaste klok (woensdag 4 november 2026, 9:00) en de voorbeeldgegevens. De tests controleren onder meer het opstarten, wisselen van filter, doortrekken naar de volgende week, het detailscherm, de weekkiezer, een nieuwe afspraak, het inladen van een .ics-bestand (met en zonder Web Worker), de agenda-link, de contacten en de desktop. Zet je een deel van een naam erachter, dan draaien alleen die tests, bijvoorbeeld `npm test -- desktop`.
+`npm test` start de app met een vaste klok (woensdag 4 november 2026, 9:00) en de voorbeeldgegevens. De tests controleren onder meer het opstarten, wisselen van filter, doortrekken naar de volgende week, het detailscherm, de weekkiezer, een nieuwe afspraak, het inladen van een .ics-bestand (met en zonder Web Worker), de agenda-link, de contacten, ruimtes en plaatsen (Google nagebootst), Instellingen en de desktop. Zet je een deel van een naam erachter, dan draaien alleen die tests, bijvoorbeeld `npm test -- desktop`.
 
 `npm run schermen` maakt 66 schermafbeeldingen: telefoon, telefoon met .ics, iPad liggend en staand, en Mac, elk in licht en donker. Maak voor een grote wijziging eerst een basis en vergelijk daarna; zo zie je meteen of er iets verschuift.
 

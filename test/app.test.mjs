@@ -166,6 +166,7 @@ test('agenda-link: ophalen op de achtergrond, en een duidelijke melding bij een 
   });
   await p.goto(url); await wacht(800);
   await p.click('#titelknop'); await wacht(700);
+  await p.locator('.paneel [data-actie="instellingen"]').tap(); await wacht(900);
   await p.locator('.paneel [data-actie="ics-kies"]').tap(); await wacht(800);
   await p.locator('[data-bron="link"]').tap(); await wacht(800);
   await p.fill('#linkinvoer', 'webcal://outlook.office365.com/owa/calendar/x/y/calendar.ics');
@@ -241,23 +242,101 @@ test('contacten: wissen, en zonder contacten geen suggesties', async ({ browser,
   await p.setInputFiles('#contactinvoer', CONTACTEN_CSV); await wacht(600);
   p.on('dialog', (d) => d.accept());
   await p.click('#titelknop'); await wacht(800);
+  await p.locator('.paneel [data-actie="instellingen"]').tap(); await wacht(900);
+  assert.match(await p.locator('#icontacten').innerText(), /6 contacten/);
   await p.locator('.paneel [data-actie="contacten-wis"]').tap(); await wacht(600);
-  await p.click('#titelknop'); await wacht(800);
-  assert.match(await p.locator('.paneel .zbcontacten').innerText(), /Geen contacten/);
+  assert.match(await p.locator('#icontacten').innerText(), /Geen contacten/);
   await p.keyboard.press('Escape'); await wacht(500);
   await p.locator('[data-nieuw]:visible').first().tap(); await wacht(900);
   await p.locator('.paneel [name="deelnemers"]').type('jan', { delay: 20 }); await wacht(200);
   assert.equal(await p.locator('.aanvuloptie').count(), 0);
 });
 
-test('contacten: op een kleine iPhone scrolt de weekkiezer tot onder Contacten wissen', async ({ browser, url }) => {
+test('instellingen: de weekkiezer past op een kleine iPhone, en Instellingen scrolt tot onderaan', async ({ browser, url }) => {
   const p = await nieuwePagina(browser, { ...TELEFOON, viewport: { width: 375, height: 667 } });
   await p.goto(url); await wacht(800);
-  await p.setInputFiles('#contactinvoer', CONTACTEN_CSV); await wacht(600);
   await p.click('#titelknop'); await wacht(800);
-  await p.locator('.paneel.kiezer').evaluate((e) => { e.scrollTop = 1e5; }); await wacht(200);
-  const w = await p.locator('.paneel [data-actie="contacten-wis"]').boundingBox();
-  assert.ok(w.y + w.height <= 667 - 16, `onderkant van Contacten wissen op ${Math.round(w.y + w.height)} van 667`);
+  assert.equal(await p.locator('.paneel.kiezer').evaluate((e) => e.scrollHeight <= e.clientHeight + 1), true, 'de weekkiezer hoeft niet te scrollen');
+  assert.equal(await p.locator('.paneel .instrij .t2').innerText(), 'Voorbeeldgegevens');
+  await p.locator('.paneel [data-actie="instellingen"]').tap(); await wacht(900);
+  await p.locator('.paneel.instellingen .detailinhoud').evaluate((e) => { e.scrollTop = 1e5; }); await wacht(200);
+  const v = await p.locator('.paneel.instellingen .voetnoot').boundingBox();
+  assert.ok(v.y + v.height <= 667 - 16, `voetnoot eindigt op ${Math.round(v.y + v.height)} van 667`);
+});
+
+/* -------------------------------------------------------------- ruimtes en plaatsen */
+
+const ANTWOORD_GOOGLE = { suggestions: [
+  { placePrediction: { text: { text: 'Damrak 1, Amsterdam, Nederland' }, structuredFormat: { mainText: { text: 'Damrak 1' }, secondaryText: { text: 'Amsterdam, Nederland' } } } },
+] };
+
+test('ruimtes: opgeven in Instellingen, bij Locatie kiezen, en de ruimte gaat mee als deelnemer', async ({ browser, url }) => {
+  const p = await nieuwePagina(browser, TELEFOON);
+  await p.goto(url); await wacht(800);
+  await p.click('#titelknop'); await wacht(700);
+  await p.locator('.paneel [data-actie="instellingen"]').tap(); await wacht(900);
+  await p.fill('#iruimtes', 'Zonnezaal\nCoupé\nGroot Overleg\nKelder <beneden@elders.example>');
+  await p.fill('#idomein', '@voorbeeld.nl');
+  assert.match(await p.locator('#iruimtevb').innerText(), /Zonnezaal krijgt het adres zonnezaal@voorbeeld\.nl/);
+  await p.reload(); await wacht(1000); // bewaard op het toestel
+  await p.locator('[data-nieuw]:visible').first().tap(); await wacht(900);
+  await p.locator('.paneel .chip').first().tap(); await wacht(200);
+  const loc = p.locator('.paneel [name="locatie"]');
+  await loc.focus(); await wacht(300);
+  assert.deepEqual(await p.locator('#nlocaties .aanvuloptie .t1').allInnerTexts(), ['Zonnezaal', 'Coupé', 'Groot Overleg', 'Kelder'], 'alle ruimtes bij een tik');
+  await loc.type('ov', { delay: 20 }); await wacht(200);
+  assert.deepEqual(await p.locator('#nlocaties .aanvuloptie .t1').allInnerTexts(), ['Groot Overleg']);
+  await p.locator('#nlocaties .aanvuloptie').first().tap(); await wacht(200);
+  assert.equal(await loc.inputValue(), 'Groot Overleg');
+  assert.match(await p.locator('#nsamen').innerText(), /Groot Overleg staat bij de deelnemers/);
+  let href = await p.locator('#noutlook').getAttribute('href');
+  assert.match(href, /location=Groot%20Overleg&attendees=grootoverleg%40voorbeeld\.nl/);
+  await loc.fill(''); await loc.type('coupe', { delay: 20 }); await wacht(200); // zonder accent
+  await p.locator('#nlocaties .aanvuloptie').first().tap(); await wacht(200);
+  href = await p.locator('#noutlook').getAttribute('href');
+  assert.match(href, /attendees=coupe%40voorbeeld\.nl/);
+  assert.doesNotMatch(href, /grootoverleg/, 'de vorige ruimte is weg');
+  await loc.type(', achterin', { delay: 20 }); await wacht(200); // zelf iets anders: geen ruimte meer
+  assert.doesNotMatch(await p.locator('#noutlook').getAttribute('href'), /attendees=/);
+  assert.deepEqual(p.fouten, []);
+});
+
+test('plaatsen: met een Google-sleutel vult Locatie ook adressen aan, en de sleutel testen werkt', async ({ browser, url }) => {
+  const p = await nieuwePagina(browser, TELEFOON);
+  const vragen = [];
+  let weiger = false;
+  await p.context().route('https://places.googleapis.com/**', (r) => {
+    vragen.push({ sleutel: r.request().headers()['x-goog-api-key'], body: JSON.parse(r.request().postData()) });
+    if (weiger) return r.fulfill({ status: 403, contentType: 'application/json', headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ error: { message: 'API key not valid.' } }) });
+    r.fulfill({ status: 200, contentType: 'application/json', headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify(ANTWOORD_GOOGLE) });
+  });
+  await p.goto(url); await wacht(800);
+  await p.click('#titelknop'); await wacht(700);
+  await p.locator('.paneel [data-actie="instellingen"]').tap(); await wacht(900);
+  await p.locator('#igoogletest').tap(); await wacht(300);
+  assert.equal(await p.locator('#igoogleuitslag').innerText(), 'Vul eerst een sleutel in.');
+  await p.fill('#igoogle', 'proefsleutel');
+  weiger = true;
+  await p.locator('#igoogletest').tap(); await wacht(600);
+  assert.match(await p.locator('#igoogleuitslag').innerText(), /Google weigert de sleutel: API key not valid\./);
+  weiger = false;
+  await p.locator('#igoogletest').tap(); await wacht(600);
+  assert.match(await p.locator('#igoogleuitslag').innerText(), /^De sleutel werkt\. Bijvoorbeeld: Damrak 1/);
+  await p.keyboard.press('Escape'); await wacht(500);
+  await p.locator('[data-nieuw]:visible').first().tap(); await wacht(900);
+  const loc = p.locator('.paneel [name="locatie"]');
+  await loc.focus(); await loc.type('da', { delay: 20 }); await wacht(500);
+  assert.equal(vragen.length, 2, 'met twee letters nog niet naar Google');
+  await loc.type('mrak', { delay: 20 }); await wacht(700);
+  assert.equal(vragen.length, 3, 'één vraag na het typen, niet één per letter');
+  const v = vragen.at(-1);
+  assert.equal(v.sleutel, 'proefsleutel');
+  assert.equal(v.body.input, 'damrak');
+  assert.ok(v.body.sessionToken, 'met een sessie');
+  assert.deepEqual(await p.locator('#nlocaties .aanvuloptie .t2').allInnerTexts(), ['Amsterdam, Nederland']);
+  await p.locator('#nlocaties .aanvuloptie').first().tap(); await wacht(200);
+  assert.equal(await loc.inputValue(), 'Damrak 1, Amsterdam, Nederland');
+  assert.deepEqual(p.fouten, []);
 });
 
 /* -------------------------------------------------------------- desktop */
@@ -266,7 +345,9 @@ test('desktop: contacten aanvullen met het toetsenbord; Escape sluit eerst de su
   const p = await nieuwePagina(browser, MAC);
   await p.goto(url); await wacht(800);
   await p.setInputFiles('#contactinvoer', CONTACTEN_CSV); await wacht(600);
-  assert.match(await p.locator('#zijbalk .zbcontacten').innerText(), /6 contacten/);
+  await p.locator('#zijbalk [data-actie="instellingen"]').click(); await wacht(700);
+  assert.match(await p.locator('#icontacten').innerText(), /6 contacten/);
+  await p.keyboard.press('Escape'); await wacht(500);
   await p.locator('[data-nieuw]:visible').first().click(); await wacht(800);
   const veld = p.locator('.paneel [name="deelnemers"]');
   await veld.click(); await veld.type('ja', { delay: 20 }); await wacht(200);

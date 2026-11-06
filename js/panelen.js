@@ -196,8 +196,8 @@ function openWeekkiezer() {
     // Verplaats raster en legenda uit de greep, zodat alleen de kop veegbaar is
     const greep = el.querySelector('.kiezergreep');
     [...greep.children].slice(2).forEach((n) => el.appendChild(n));
-    // Onder de kalender: welke agenda je ziet, en een eigen agenda inladen (zoals in de zijbalk op de desktop)
-    el.insertAdjacentHTML('beforeend', agendaSectieHtml());
+    // Onder de kalender: naar Instellingen (agenda, contacten, ruimtes), zoals in de zijbalk op de desktop
+    el.insertAdjacentHTML('beforeend', instellingenRijHtml());
     maakVeegbaar(el, greep, p.sluit);
     const rasterStart = startOfWeek(maand);
     const ditMaand = maand;
@@ -215,14 +215,7 @@ function openWeekkiezer() {
     }
     const rij = ev.target.closest('.weekrij');
     if (rij) { p.sluit(); kiesWeek(new Date(Number(rij.dataset.ma))); return; }
-    const ca = ev.target.closest('[data-actie^="contacten-"]');
-    if (ca) { p.sluit(); contactActie(ca.dataset.actie); return; }
-    const ics = ev.target.closest('[data-actie^="ics-"]');
-    if (ics) {
-      if (ics.dataset.actie === 'ics-openen') { $('#icsinvoer').click(); p.sluit(); }
-      else if (ics.dataset.actie === 'ics-kies') { p.sluit(); setTimeout(openBronPaneel, 250); }
-      else if (ics.dataset.actie === 'ics-nu') nuBijwerken();
-    }
+    if (ev.target.closest('[data-actie="instellingen"]')) { p.sluit(); setTimeout(openInstellingen, 250); }
   });
 }
 // Tinten bijwerken zodra de gegevens binnen zijn, zonder het raster te laten verspringen
@@ -247,39 +240,29 @@ function tekenRingen(el, maand) {
 /* ------------------------------------------------------------------ */
 
 let zijMaand = null;
-// Zijbalk: waar de afspraken vandaan komen, en een eigen .ics inladen of wissen
-function agendaSectieHtml() {
-  let bron;
+// Waar de afspraken vandaan komen: [titel, toelichting]
+function agendaBron() {
   if (BESTAND && BESTAND.link) {
     const d = new Date(BESTAND.gecontroleerd || BESTAND.datum);
     const wanneer = sameDay(d, vandaag()) ? `Bijgewerkt om ${hhmm(d)}` : `Bijgewerkt ${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}, ${hhmm(d)}`;
-    bron = ['Outlook-agenda', LINK_BEZIG ? 'Bijwerken…' : BESTAND.linkFout ? 'Bijwerken lukte niet' : `${wanneer} · via je agenda-link`];
-  } else if (BESTAND) {
-    const d = new Date(BESTAND.datum);
-    bron = [esc(BESTAND.naam), `Ingeladen op ${d.getDate()} ${MONTHS_SHORT[d.getMonth()]} · alleen op dit toestel`];
-  } else bron = ['Voorbeeldgegevens', 'Verzonnen afspraken en namen'];
-  // Eerst de bron die je nu gebruikt, met de handeling die daarbij hoort; daarna één knop om een andere bron te kiezen
-  let knoppen = '';
-  {
-    if (BESTAND && BESTAND.link) knoppen += `<button data-actie="ics-nu"${LINK_BEZIG ? ' disabled' : ''}>${I.herhaal}<span>Nu bijwerken</span></button>`;
-    else if (BESTAND) knoppen += `<button data-actie="ics-openen">${I.inladen}<span>Nieuwer bestand inladen</span></button>`;
-    knoppen += `<button data-actie="ics-kies">${I.kalender}<span>${BESTAND ? 'Andere agenda kiezen' : 'Je eigen agenda kiezen'}</span></button>`;
+    return ['Outlook-agenda', LINK_BEZIG ? 'Bijwerken…' : BESTAND.linkFout ? 'Bijwerken lukte niet' : `${wanneer} · via je agenda-link`];
   }
-  return `<nav class="zblijst zbagenda" aria-label="Agenda"><h3>Agenda</h3>
-    <div class="zbbron">${BESTAND && BESTAND.link ? I.koppel : BESTAND ? I.inladen : I.kalender}<span><span class="t1">${bron[0]}</span><span class="t2">${bron[1]}</span></span></div>
-    ${knoppen}
-  </nav>${contactSectieHtml()}`;
+  if (BESTAND) {
+    const d = new Date(BESTAND.datum);
+    return [esc(BESTAND.naam), `Ingeladen op ${d.getDate()} ${MONTHS_SHORT[d.getMonth()]} · alleen op dit toestel`];
+  }
+  return ['Voorbeeldgegevens', 'Verzonnen afspraken en namen'];
 }
-// Contacten voor het aanvullen van deelnemers bij een nieuwe afspraak
-function contactSectieHtml() {
-  const c = CONTACTEN_INFO;
-  const d = c && new Date(c.datum);
-  return `<nav class="zblijst zbagenda zbcontacten" aria-label="Contacten"><h3>Contacten</h3>
-    <div class="zbbron">${I.persoon}<span>${c
-      ? `<span class="t1">${c.aantal === 1 ? '1 contact' : `${c.aantal} contacten`}</span><span class="t2">Ingeladen op ${d.getDate()} ${MONTHS_SHORT[d.getMonth()]} · alleen op dit toestel</span>`
-      : '<span class="t1">Geen contacten</span><span class="t2">Om namen aan te vullen bij een nieuwe afspraak</span>'}</span></div>
-    <button data-actie="contacten-inladen">${I.inladen}<span>${c ? 'Nieuwer bestand inladen' : 'Contacten inladen'}</span></button>
-    ${c ? `<button data-actie="contacten-wis">${I.wissen}<span>Contacten wissen</span></button>` : ''}
+// Onder de kalender (weekkiezer en zijbalk): één regel naar Instellingen, met welke agenda je ziet
+function instellingenRijHtml() {
+  // Kort: welke agenda je ziet, en bij de agenda-link wanneer die is bijgewerkt
+  let kort = 'Voorbeeldgegevens';
+  if (BESTAND && BESTAND.link) {
+    const d = new Date(BESTAND.gecontroleerd || BESTAND.datum);
+    kort = `Outlook-agenda · ${LINK_BEZIG ? 'bijwerken…' : BESTAND.linkFout ? 'bijwerken lukte niet' : sameDay(d, vandaag()) ? `bijgewerkt om ${hhmm(d)}` : `bijgewerkt ${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}`}`;
+  } else if (BESTAND) kort = esc(BESTAND.naam);
+  return `<nav class="zblijst zbagenda zbinstellingen" aria-label="Instellingen">
+    <button class="instrij" data-actie="instellingen">${I.instellingen}<span class="tekst"><span class="t1">Instellingen</span><span class="t2">${kort}</span></span>${I.verder}</button>
   </nav>`;
 }
 function renderZijbalk() {
@@ -290,7 +273,7 @@ function renderZijbalk() {
   z.innerHTML = `<div class="zbbinnen">
     <div class="minikal">${maandRasterHtml(zijMaand, gekozenMaandag(), 'zijbalk')}</div>
     <nav class="zblijst zbweergave" aria-label="Weergave"><h3>Weergave</h3>${item('week', I.week, 'Week')}${item('forecast', I.vooruit, 'Vooruitblik')}</nav>
-    ${agendaSectieHtml()}
+    ${instellingenRijHtml()}
   </div>`;
   const rasterStart = startOfWeek(zijMaand);
   const ditMaand = zijMaand;
@@ -524,14 +507,14 @@ function outlookNieuwLink(v) {
     const enc = encodeURIComponent;
     const q = [
       ['title', v.titel && enc(v.titel)], ['start', lokaleTijd(v.start)], ['end', lokaleTijd(v.start + v.duur * 6e4)],
-      ['location', v.locatie && enc(v.locatie)], ['attendees', adressen(v.deelnemers).map(enc).join(',')], ['description', v.notitie && enc(v.notitie)],
+      ['location', v.locatie && enc(v.locatie)], ['attendees', alleAdressen(v).map(enc).join(',')], ['description', v.notitie && enc(v.notitie)],
     ].filter(([, w]) => w).map(([k, w]) => `${k}=${w}`).join('&');
     return `ms-outlook://events/new?${q}`;
   }
   const q = [
     ['rru', 'addevent'],
     ['subject', v.titel], ['startdt', new Date(v.start).toISOString()], ['enddt', new Date(v.start + v.duur * 6e4).toISOString()],
-    ['location', v.locatie], ['body', v.notitie], ['to', adressen(v.deelnemers).join(',')],
+    ['location', v.locatie], ['body', v.notitie], ['to', alleAdressen(v).join(',')],
   ].filter(([, w]) => w).map(([k, w]) => `${k}=${encodeURIComponent(w)}`).join('&');
   return `https://outlook.office.com/calendar/deeplink/compose?path=/calendar/action/compose&${q}`;
 }
@@ -543,7 +526,7 @@ function downloadIcs(v) {
     `DTSTART:${icsTijd(v.start)}`, `DTEND:${icsTijd(v.start + v.duur * 6e4)}`, `SUMMARY:${icsTekst(v.titel || 'Nieuwe afspraak')}`,
     ...(v.locatie ? [`LOCATION:${icsTekst(v.locatie)}`] : []),
     ...(v.notitie ? [`DESCRIPTION:${icsTekst(v.notitie)}`] : []),
-    ...adressen(v.deelnemers).map((a) => `ATTENDEE;RSVP=TRUE:mailto:${a}`),
+    ...alleAdressen(v).map((a) => `ATTENDEE;RSVP=TRUE:mailto:${a}`),
     'END:VEVENT', 'END:VCALENDAR',
   ];
   const url = URL.createObjectURL(new Blob([regels.join('\r\n')], { type: 'text/calendar' }));
@@ -553,10 +536,75 @@ function downloadIcs(v) {
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 
+// Suggesties direct onder een invoerveld, in dezelfde kaart (deelnemers en locatie).
+// zoek(vraag) geeft { nu: [items], later?: Promise<[items]> }; een item is { t1, t2, kop? }. kies(item) vult het veld.
+// leegTonen: ook zonder tekst suggesties tonen, zodra je in het veld tikt (de ruimtes bij Locatie).
+function koppelSuggesties(veld, lijstEl, { vraagVan = (w) => w.trim(), zoek, kies, leegTonen = false }) {
+  let items = [], actief = -1, beurt = 0, stil = false;
+  const sluit = () => { items = []; actief = -1; lijstEl.innerHTML = ''; lijstEl.hidden = true; veld.setAttribute('aria-expanded', 'false'); veld.removeAttribute('aria-activedescendant'); };
+  const teken = () => {
+    if (!items.length) { sluit(); return; }
+    lijstEl.hidden = false;
+    veld.setAttribute('aria-expanded', 'true');
+    lijstEl.innerHTML = items.map((c, i) => `${c.kop ? `<div class="aanvulkop" role="presentation">${esc(c.kop)}</div>` : ''}<button type="button" role="option" id="${lijstEl.id}-${i}" class="aanvuloptie${i === actief ? ' actief' : ''}" aria-selected="${i === actief}" data-aanvul="${i}" tabindex="-1">
+        <span class="t1">${esc(c.t1)}</span>${c.t2 ? `<span class="t2">${esc(c.t2)}</span>` : ''}</button>`).join('');
+    if (actief >= 0) veld.setAttribute('aria-activedescendant', `${lijstEl.id}-${actief}`); else veld.removeAttribute('aria-activedescendant');
+  };
+  const zoekNu = () => {
+    const mijn = ++beurt;
+    const vraag = vraagVan(veld.value);
+    if (!vraag && !leegTonen) { sluit(); return; }
+    const { nu = [], later = null } = zoek(vraag) || {};
+    items = nu; actief = items.length && !IOS ? 0 : -1; teken();
+    if (later) later.then((meer) => {
+      if (mijn !== beurt || document.activeElement !== veld || !meer || !meer.length) return;
+      items = [...items, ...meer]; if (actief < 0 && !IOS) actief = 0; teken();
+    }).catch(() => { /* geen extra suggesties */ });
+  };
+  const neem = (i) => {
+    const c = items[i];
+    if (!c) return;
+    stil = true;
+    kies(c);
+    veld.dispatchEvent(new Event('input', { bubbles: true }));
+    sluit();
+    veld.focus();
+  };
+  veld.setAttribute('role', 'combobox');
+  veld.setAttribute('aria-autocomplete', 'list');
+  veld.setAttribute('aria-controls', lijstEl.id);
+  lijstEl.setAttribute('role', 'listbox');
+  sluit();
+  veld.addEventListener('input', () => { if (stil) { stil = false; beurt++; return; } zoekNu(); });
+  if (leegTonen) veld.addEventListener('focus', () => { if (lijstEl.hidden) zoekNu(); });
+  veld.addEventListener('keydown', (ev) => {
+    if (lijstEl.hidden) return;
+    if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') {
+      ev.preventDefault();
+      const n = items.length;
+      actief = ev.key === 'ArrowDown' ? (actief + 1) % n : (actief - 1 + n) % n;
+      teken();
+    } else if ((ev.key === 'Enter' || ev.key === 'Tab') && actief >= 0) { ev.preventDefault(); neem(actief); }
+    else if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); beurt++; sluit(); }
+  });
+  // Het toetsenbord open houden: niet laten blurren bij een tik op een suggestie
+  lijstEl.addEventListener('pointerdown', (ev) => ev.preventDefault());
+  lijstEl.addEventListener('mousedown', (ev) => ev.preventDefault());
+  lijstEl.addEventListener('click', (ev) => { const o = ev.target.closest('[data-aanvul]'); if (o) { ev.stopPropagation(); neem(Number(o.dataset.aanvul)); } });
+  veld.addEventListener('blur', () => setTimeout(() => { if (document.activeElement !== veld) { beurt++; sluit(); } }, 150));
+}
+
+// Deelnemers: alle adressen uit het veld, plus de gekozen ruimte (zo reserveert Outlook hem)
+function alleAdressen(v) {
+  const uit = adressen(v.deelnemers);
+  if (v.ruimte && v.ruimte.email && !uit.some((a) => a.toLowerCase() === v.ruimte.email.toLowerCase())) uit.push(v.ruimte.email);
+  return uit;
+}
+
 // dag: de gekozen dag (of null: eerste werkdag met ruimte).
 // blok: het vrije blok waarop is geklikt ({ start, end } in ms). Dan blijven dag en tijd binnen dat blok.
 async function openNieuw({ dag = null, blok = null } = {}) {
-  const v = { titel: '', locatie: '', deelnemers: '', notitie: '', duur: 60, start: null, eigen: false, dag: null, blok };
+  const v = { titel: '', locatie: '', deelnemers: '', notitie: '', ruimte: null, duur: 60, start: null, eigen: false, dag: null, blok };
   if (blok) {
     v.dag = startOfDay(new Date(blok.start));
     v.max = Math.floor((blok.end - blok.start) / 9e5) * 15; // duur hoogstens het hele blok, in kwartieren
@@ -579,6 +627,7 @@ async function openNieuw({ dag = null, blok = null } = {}) {
       <div class="formkaart">
         <label class="frij"><span class="flabel">Onderwerp</span><input name="titel" placeholder="Waar gaat het over?" autocomplete="off" enterkeyhint="next"></label>
         <label class="frij"><span class="flabel">Locatie</span><input name="locatie" placeholder="Ruimte, adres of Teams" autocomplete="off" enterkeyhint="next"></label>
+        <div class="aanvullijst" id="nlocaties" hidden></div>
       </div>
       <div class="formkaart">
         <div class="frij"><span class="flabel">Dag</span>${blok
@@ -627,7 +676,8 @@ async function openNieuw({ dag = null, blok = null } = {}) {
       const botst = lijst.filter((e) => !e.allDay && !e.free && e.start.getTime() < b && e.end.getTime() > a);
       if (botst.length) ov = `<div class="doverlap">Overlap met ${esc(botst[0].title || 'een afspraak')} (${hhmm(botst[0].start)} – ${hhmm(botst[0].end)})${botst.length > 1 ? ` en ${botst.length - 1} andere` : ''}</div>`;
     }
-    $('#nsamen', el).innerHTML = `<div class="${ok ? '' : 'leeg'}">${esc(tekst)}</div>${ov}`;
+    const ruimte = v.ruimte && v.ruimte.email ? `<div class="nruimte">${esc(v.ruimte.naam)} staat bij de deelnemers, zodat Outlook de ruimte reserveert</div>` : '';
+    $('#nsamen', el).innerHTML = `<div class="${ok ? '' : 'leeg'}">${esc(tekst)}</div>${ov}${ruimte}`;
   };
   const chip = (t) => `<button class="chip num${!v.eigen && t === v.start ? ' aan' : ''}" data-start="${t}">${hhmm(new Date(t))}</button>`;
   const tekenTijden = async () => {
@@ -672,10 +722,38 @@ async function openNieuw({ dag = null, blok = null } = {}) {
   tekenDuur();
   const p = openPaneel(el, { greepSelector: '.detailgreep' });
   tekenTijden();
-  koppelAanvullen($('input[name="deelnemers"]', el), $('#naanvul', el));
+  // Deelnemers: namen aanvullen uit je contacten. Het adres komt in het veld, met '; ' erachter.
+  const deelVeld = $('input[name="deelnemers"]', el);
+  const deelVraag = () => { const w = deelVeld.value; const i = Math.max(w.lastIndexOf(','), w.lastIndexOf(';')); return { voor: w.slice(0, i + 1), vraag: w.slice(i + 1).trim() }; };
+  koppelSuggesties(deelVeld, $('#naanvul', el), {
+    vraagVan: () => deelVraag().vraag,
+    zoek: (vraag) => ({ nu: zoekContacten(vraag, adressen(deelVeld.value)).map((c) => ({ t1: c.naam || c.email, t2: c.naam ? c.email : '', email: c.email })) }),
+    kies: (c) => { const { voor } = deelVraag(); deelVeld.value = `${voor ? `${voor.trim()} ` : ''}${c.email}; `; },
+  });
+  // Locatie: je ruimtes (direct bij een tik), en met een Google-sleutel ook adressen en plaatsen
+  const locVeld = $('input[name="locatie"]', el);
+  let sessie = nieuweSessie(), googleWacht = null;
+  koppelSuggesties(locVeld, $('#nlocaties', el), {
+    leegTonen: true,
+    zoek: (vraag) => {
+      const rs = zoekRuimtes(vraag).map((r) => ({ t1: r.naam, t2: r.email ? `Ruimte · ${r.email}` : 'Ruimte', ruimte: r }));
+      if (!googleSleutel() || vraag.length < 3) return { nu: rs };
+      clearTimeout(googleWacht);
+      const later = new Promise((ok) => { googleWacht = setTimeout(ok, 250); })
+        .then(() => zoekPlaatsen(vraag, sessie))
+        .then((ps) => ps.map((pl, i) => ({ t1: pl.naam, t2: pl.sub, tekst: pl.tekst, kop: i === 0 && rs.length ? 'Plaatsen' : '' })));
+      if (rs.length) rs[0].kop = 'Ruimtes';
+      return { nu: rs, later };
+    },
+    kies: (c) => {
+      if (c.ruimte) { locVeld.value = c.ruimte.naam; v.ruimte = c.ruimte; }
+      else { locVeld.value = c.tekst || c.t1; v.ruimte = null; sessie = nieuweSessie(); }
+    },
+  });
 
   el.addEventListener('input', (ev) => {
     const n = ev.target.name;
+    if (n === 'locatie' && v.ruimte && ev.target.value.trim() !== v.ruimte.naam) v.ruimte = null; // zelf iets anders getypt: geen ruimte meer
     if (n) { v[n] = ev.target.value; tekenSamen(); }
     if (ev.target.id === 'neigen' && ev.target.value) {
       const [h, m] = ev.target.value.split(':').map(Number);
@@ -801,5 +879,92 @@ function openBronPaneel() {
     p.sluit();
     if (keuze === 'link') setTimeout(() => openLinkPaneel(), 250);
     else if (keuze === 'voorbeeld' && nu !== 'voorbeeld' && confirm(wisVraag())) vergeetBestand();
+  });
+}
+
+/* ------------------------------------------------------------------ */
+/*  Instellingen                                                       */
+/* ------------------------------------------------------------------ */
+
+// Alles wat alleen op dit toestel staat: je agenda, je contacten, je ruimtes en de Google-sleutel
+function openInstellingen() {
+  const el = document.createElement('div');
+  el.className = 'paneel detail nieuw instellingen' + (isDesktop() ? ' dialoog' : '');
+  el.setAttribute('role', 'dialog');
+  el.setAttribute('aria-label', 'Instellingen');
+  const knop = (actie, icoon, tekst, uit = false) => `<button class="frij instknop" data-actie="${actie}"${uit ? ' disabled' : ''}>${icoon}<span>${tekst}</span></button>`;
+  const status = (icoon, t1, t2) => `<div class="frij inststatus">${icoon}<span class="tekst"><span class="t1">${t1}</span><span class="t2">${t2}</span></span></div>`;
+  const agendaHtml = () => {
+    const [t1, t2] = agendaBron();
+    return status(BESTAND && BESTAND.link ? I.koppel : BESTAND ? I.inladen : I.kalender, t1, t2)
+      + (BESTAND && BESTAND.link ? knop('ics-nu', I.herhaal, 'Nu bijwerken', LINK_BEZIG) : BESTAND ? knop('ics-openen', I.inladen, 'Nieuwer bestand inladen') : '')
+      + knop('ics-kies', I.kalender, BESTAND ? 'Andere agenda kiezen' : 'Je eigen agenda kiezen');
+  };
+  const contactHtml = () => {
+    const c = CONTACTEN_INFO;
+    const d = c && new Date(c.datum);
+    return (c ? status(I.persoon, c.aantal === 1 ? '1 contact' : `${c.aantal} contacten`, `Ingeladen op ${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}`)
+      : status(I.persoon, 'Geen contacten', 'Om namen aan te vullen bij een nieuwe afspraak'))
+      + knop('contacten-inladen', I.inladen, c ? 'Nieuwer bestand inladen' : 'Contacten inladen')
+      + (c ? knop('contacten-wis', I.wissen, 'Contacten wissen') : '');
+  };
+  const r = ruimteInstelling();
+  el.innerHTML = `<div class="detailgreep"><div class="greep"></div>
+      <div class="detailnav"><button class="rond glas" data-actie="sluit" aria-label="Sluiten">${I.kruis}</button></div></div>
+    <div class="detailinhoud">
+      <div class="dkop"><h2 class="dtitel">Instellingen</h2></div>
+      <section class="instsectie"><h3>Agenda</h3><div class="formkaart" id="iagenda">${agendaHtml()}</div></section>
+      <section class="instsectie"><h3>Contacten</h3><div class="formkaart" id="icontacten">${contactHtml()}</div>
+        <p class="insttoelichting">Een csv uit NK2Edit of Outlook, of een vCard (.vcf). Bij een nieuwe afspraak vult de app namen aan tot e-mailadressen.</p></section>
+      <section class="instsectie"><h3>Ruimtes</h3><div class="formkaart">
+        <label class="frij boven"><span class="flabel">Namen</span><textarea id="iruimtes" rows="5" placeholder="Eén ruimte per regel" autocomplete="off" autocapitalize="words" spellcheck="false">${esc(r.tekst)}</textarea></label>
+        <label class="frij"><span class="flabel">Maildomein</span><input id="idomein" type="text" inputmode="url" placeholder="Bijvoorbeeld bedrijf.nl" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(r.domein)}"></label>
+      </div><p class="insttoelichting" id="iruimtevb"></p></section>
+      <section class="instsectie"><h3>Plaatsen via Google</h3><div class="formkaart">
+        <label class="frij"><span class="flabel">Sleutel</span><input id="igoogle" type="text" placeholder="Optioneel" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(googleSleutel())}"></label>
+        <button class="frij instknop" id="igoogletest">${I.vink}<span>Sleutel testen</span></button>
+      </div><p class="insttoelichting" id="igoogleuitslag">Met een sleutel voor de Places API (New) vult de app bij Locatie ook adressen en plaatsen aan. Wat je daar typt, gaat naar Google. Beperk de sleutel in Google Cloud tot de Places API (New) en tot rserne.github.io.</p></section>
+      <p class="voetnoot">Alles op dit scherm staat alleen op dit toestel. In Outlook verandert er niets.</p>
+    </div>`;
+  const p = openPaneel(el, { greepSelector: '.detailgreep' });
+  const tekenAgenda = () => { const a = $('#iagenda', el); if (a) a.innerHTML = agendaHtml(); };
+  const tekenContacten = () => { const a = $('#icontacten', el); if (a) a.innerHTML = contactHtml(); };
+  // Een voorbeeld laat zien welk adres een ruimte krijgt
+  const tekenRuimteVb = () => {
+    const rs = ruimtes();
+    const vb = rs.find((x) => x.email) || null;
+    $('#iruimtevb', el).textContent = !rs.length
+      ? 'Bij een nieuwe afspraak staan je ruimtes klaar onder Locatie. Geef je een maildomein op, dan zet de app de ruimte ook als deelnemer in de uitnodiging, zodat Outlook hem reserveert.'
+      : vb ? `Bij een nieuwe afspraak staan ${rs.length === 1 ? 'deze ruimte' : `deze ${rs.length} ruimtes`} klaar onder Locatie. ${vb.naam} krijgt het adres ${vb.email}; klopt dat niet, schrijf dan ${vb.naam} <adres> op de regel.`
+      : `Bij een nieuwe afspraak staan ${rs.length === 1 ? 'deze ruimte' : `deze ${rs.length} ruimtes`} klaar onder Locatie. Met een maildomein reserveert Outlook de ruimte ook.`;
+  };
+  tekenRuimteVb();
+  el.addEventListener('input', (ev) => {
+    if (ev.target.id === 'iruimtes' || ev.target.id === 'idomein') { zetRuimteInstelling({ tekst: $('#iruimtes', el).value, domein: $('#idomein', el).value }); tekenRuimteVb(); }
+    if (ev.target.id === 'igoogle') zetGoogleSleutel(ev.target.value);
+  });
+  el.addEventListener('click', async (ev) => {
+    const t = ev.target;
+    if (t.closest('[data-actie="sluit"]')) { p.sluit(); return; }
+    const a = t.closest('[data-actie]');
+    const actie = a && a.dataset.actie;
+    // Een bestandsvenster moet direct bij de tik openen (iOS), dus vóór het sluiten van het paneel
+    if (actie === 'ics-openen') { $('#icsinvoer').click(); p.sluit(); return; }
+    if (actie === 'contacten-inladen') { $('#contactinvoer').click(); p.sluit(); return; }
+    if (actie === 'ics-kies') { p.sluit(); setTimeout(openBronPaneel, 250); return; }
+    if (actie === 'ics-nu') { Promise.resolve(nuBijwerken()).finally(tekenAgenda); tekenAgenda(); return; }
+    if (actie === 'contacten-wis') {
+      if (confirm('Contacten wissen? Ze verdwijnen alleen van dit toestel; je bestand blijft gewoon bestaan.')) { await vergeetContacten(); tekenContacten(); render(); renderZijbalk(); }
+      return;
+    }
+    if (t.closest('#igoogletest')) {
+      const uit = $('#igoogleuitslag', el);
+      const sleutel = $('#igoogle', el).value.trim();
+      if (!sleutel) { uit.textContent = 'Vul eerst een sleutel in.'; return; }
+      uit.textContent = 'Testen…';
+      const r = await testGoogleSleutel(sleutel);
+      uit.textContent = r.tekst;
+      uit.classList.toggle('fout', !r.ok);
+    }
   });
 }

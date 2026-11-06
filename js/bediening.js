@@ -175,12 +175,14 @@ function koppel() {
   const t = LS.get('ag_tab');
   if (['week', 'forecast'].includes(t)) ST.tab = t;
   koppel();
-  // Toetsenbord op iOS: het schuift over de pagina heen. Meet hoeveel, zodat panelen erboven blijven en je tot onderaan kunt scrollen.
+  // Toetsenbord op iOS: het schuift over de pagina heen. Meet hoeveel, zodat je in een paneel tot onderaan kunt scrollen.
   if (window.visualViewport) {
     const vv = window.visualViewport;
     const meet = () => {
-      const tb = Math.round(window.innerHeight - vv.height - vv.offsetTop);
-      document.documentElement.style.setProperty('--tb', `${tb > 80 ? tb : 0}px`);
+      const tb = Math.round(window.innerHeight - vv.height);
+      const open = tb > 80;
+      document.documentElement.style.setProperty('--tb', `${open ? tb : 0}px`);
+      document.documentElement.classList.toggle('toetsenbord', open);
     };
     vv.addEventListener('resize', meet);
     vv.addEventListener('scroll', meet);

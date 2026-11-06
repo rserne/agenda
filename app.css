@@ -357,14 +357,16 @@ main.kolom.trekt { transition: none; }
 .paneel {
   position: fixed; z-index: 51; left: 50%; bottom: 0;
   width: 100%; transform: translate(-50%, 100%);
-  transition: transform 0.32s cubic-bezier(0.2, 0.9, 0.3, 1), bottom 0.25s ease, max-height 0.25s ease;
+  transition: transform 0.32s cubic-bezier(0.2, 0.9, 0.3, 1);
   border-radius: 28px 28px 0 0;
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
   display: flex; flex-direction: column;
-  max-height: calc(100% - env(safe-area-inset-top, 0px) - 12px - var(--tb, 0px));
+  max-height: calc(100% - env(safe-area-inset-top, 0px) - 12px);
 }
-/* Met het toetsenbord open (iOS) schuift een paneel mee omhoog: --tb is de hoogte van het toetsenbord */
-.paneel:not(.dialoog) { bottom: var(--tb, 0px); }
+/* Met het toetsenbord open (iOS) blijft het paneel staan, maar kun je verder scrollen: ruimte onderaan ter hoogte van het
+   toetsenbord (--tb), en de knoppen onderaan scrollen mee in plaats van achter het toetsenbord te blijven plakken */
+.toetsenbord .paneel:not(.dialoog) .detailinhoud { padding-bottom: calc(var(--tb, 0px) + 24px); }
+.toetsenbord .paneel:not(.dialoog) .nvast { position: static; }
 .paneel.open { transform: translate(-50%, 0); }
 .paneel.sleept { transition: none; }
 /* Strook in de kleur van het paneel eronder, zodat er bij omhoog rekken geen gat onderaan ontstaat */
@@ -438,7 +440,7 @@ main.kolom.trekt { transition: none; }
 /* Ook bij weinig inhoud opent het paneel hoog genoeg dat de tekst prettig in beeld staat; de knoppen staan onderaan */
 .paneel.detail { min-height: min(72vh, 680px); min-height: min(72dvh, 680px); }
 /* Tijden uit een mail opent meteen op volle hoogte: er komt veel onder de tekst */
-.paneel.mailtijden:not(.dialoog) { height: calc(100% - env(safe-area-inset-top, 0px) - 12px - var(--tb, 0px)); }
+.paneel.mailtijden:not(.dialoog) { height: calc(100% - env(safe-area-inset-top, 0px) - 12px); }
 .paneel.detail .detailinhoud { flex: 1 1 auto; }
 .paneel.detail .dvoet { margin-top: auto; }
 /* Alleen een sluitknop, rechts naast de eerste regel: de rij zelf neemt geen hoogte in */

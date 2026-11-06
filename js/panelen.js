@@ -621,7 +621,11 @@ async function openNieuw({ dag = null, blok = null, start = null, duur = null, l
     v.max = Math.floor((blok.end - blok.start) / 9e5) * 15; // duur hoogstens het hele blok, in kwartieren
     v.duur = Math.min(duur || 60, v.max);
     if (start != null) v.start = start; // gekozen in Tijden uit een mail
-  } else if (dag) v.dag = startOfDay(dag);
+  } else if (dag) {
+    v.dag = startOfDay(dag);
+    if (duur) v.duur = duur;
+    if (start != null) { v.start = start; v.vast = true; } // gekozen tijd houden, ook als hij overlapt
+  }
   else {
     const t = vandaag();
     const week = ST.tab === 'week' ? startOfWeek(ST.anker) : ST.fcStart;
@@ -708,6 +712,7 @@ async function openNieuw({ dag = null, blok = null, start = null, duur = null, l
     } else {
       const blokken = startTijden(lijst, d, v.duur);
       const alle = blokken.flatMap((b) => b.tijden);
+      if (v.vast) { v.vast = false; if (!alle.includes(v.start)) v.eigen = true; } // de gekozen tijd staat dan bij Andere tijd
       if (!v.eigen && !alle.includes(v.start)) v.start = alle.length ? alle[0] : null;
       // Alle begintijden in één rij; de vrije blokken zelf hoeven niet apart genoemd
       html = '';
@@ -1043,8 +1048,19 @@ function toetsVak(lijst, o, duur) {
   botst.map((e) => [Math.max(e.start.getTime(), van), Math.min(e.end.getTime(), tot)]).sort((x, y) => x[0] - y[0])
     .forEach(([x, y]) => { if (x > c) vrij.push([c, x]); c = Math.max(c, y); });
   if (tot > c) vrij.push([c, tot]);
-  const tijden = vrij.filter(([x, y]) => y - x >= duur * 6e4).flatMap(([x, y]) => tijdenInBlok(x, y, duur).map((t) => ({ t, blok: [x, y] })));
-  return { status: tijden.length ? 'vrij' : vrij.length ? 'kort' : 'bezet', vrij, tijden, botst, heel: !botst.length && van === a.getTime() };
+  const ms = duur * 6e4;
+  const vrijeTijden = vrij.filter(([x, y]) => y - x >= ms).flatMap(([x, y]) => tijdenInBlok(x, y, duur));
+  // Ook tijden die overlappen kun je kiezen: je beslist zelf of die andere afspraak voor kan gaan
+  const alle = [...new Set([...vrijeTijden, ...tijdenInBlok(van, Math.max(tot, van + ms), duur)])].sort((x, y) => x - y);
+  const tijden = alle.map((t) => ({ t, blok: vrij.find(([x, y]) => t >= x && t + ms <= y) || null, botst: botst.filter((e) => e.start.getTime() < t + ms && e.end.getTime() > t) }));
+  return { status: vrijeTijden.length ? 'vrij' : vrij.length ? 'kort' : 'bezet', vrij, tijden, botst, heel: !botst.length && van === a.getTime(), van, tot };
+}
+// 'Overlap met A (09:00 – 17:00) en B (13:00 – 14:00)'; bij meer: 'en 2 andere'
+function overlapZin(botst) {
+  if (!botst.length) return '';
+  const naam = (e) => `${e.title || 'een afspraak'} (${hhmm(e.start)} – ${hhmm(e.end)})`;
+  if (botst.length <= 2) return `Overlap met ${botst.map(naam).join(' en ')}`;
+  return `Overlap met ${naam(botst[0])}, ${naam(botst[1])} en ${botst.length - 2} andere`;
 }
 
 // 'maandag 9 november van 14:00 tot 15:00'
@@ -1088,7 +1104,8 @@ function openMailTijden() {
   const veld = $('#mtekst', el);
   veld.value = MAILTEKST;
   let duur = 60, duurZelf = false, gelezen = { opties: [], duur: null, online: false, zonderDag: [] }, beurt = 0, wacht = null;
-  const gekozen = new Map(); // begintijd → het vrije blok waarin hij valt
+  const tijdInfo = new Map(); // per getekende begintijd: vrij blok en overlap
+  const gekozen = new Map(); // begintijd → { blok: het vrije blok (of null), botst: afspraken die overlappen }
   const tekenDuur = () => {
     $('#mduur', el).textContent = duurKort(duur);
     $('[data-stap="-15"]', el).disabled = duur <= 15;
@@ -1098,14 +1115,19 @@ function openMailTijden() {
     const n = gekozen.size;
     $('#minplannen', el).disabled = n !== 1;
     $('#mkopieer', el).disabled = !n;
-    $('#msamen', el).innerHTML = n ? `<div>${esc(mtAntwoord(gekozen.keys(), duur))}</div>` : `<div class="leeg">${gelezen.opties.length ? 'Kies een of meer tijden' : 'Nog geen tijden'}</div>`;
+    // Overlap staat er voor jou bij; in het antwoord komt alleen de tijd
+    const let_op = [...gekozen].filter(([, g]) => g.botst.length).sort((x, y) => x[0] - y[0])
+      .map(([t, g]) => { const d = new Date(t); return `<div class="doverlap">${esc(cap(`${DAYS_LONG[d.getDay()]} ${hhmm(d)}`))}: ${esc(overlapZin(g.botst).replace(/^Overlap/, 'overlap'))}</div>`; }).join('');
+    $('#msamen', el).innerHTML = n ? `<div>${esc(mtAntwoord(gekozen.keys(), duur))}</div>${let_op}` : `<div class="leeg">${gelezen.opties.length ? 'Tik op een tijd om hem te kiezen' : 'Nog geen tijden'}</div>`;
   };
+  // Eerst hoe het ervoor staat (in kleur), daaronder altijd waarmee het overlapt
   const statusTekst = (u) => {
     const vak = ([x, y]) => `${hhmm(new Date(x))} – ${hhmm(new Date(y))}`;
     if (u.status === 'voorbij') return '<span class="mstatus grijs">Al voorbij</span>';
-    if (u.status === 'bezet') return `<span class="mstatus rood">Bezet: ${esc(u.botst[0].title || 'een afspraak')} (${hhmm(u.botst[0].start)} – ${hhmm(u.botst[0].end)})${u.botst.length > 1 ? ` en ${u.botst.length - 1} andere` : ''}</span>`;
-    if (u.status === 'kort') return `<span class="mstatus oranje">Te kort: alleen ${u.vrij.map(vak).join(' en ')} vrij</span>`;
-    return `<span class="mstatus groen">${u.heel ? 'Helemaal vrij' : `Vrij ${u.vrij.filter(([x, y]) => y - x >= duur * 6e4).map(vak).join(' en ')}`}</span>`;
+    const kop = u.status === 'bezet' ? '<span class="mstatus rood">Bezet</span>'
+      : u.status === 'kort' ? `<span class="mstatus oranje">Te kort: alleen ${u.vrij.map(vak).join(' en ')} vrij</span>`
+      : `<span class="mstatus groen">${u.heel ? 'Helemaal vrij' : `Vrij ${u.vrij.filter(([x, y]) => y - x >= duur * 6e4).map(vak).join(' en ')}`}</span>`;
+    return kop + (u.botst.length ? `<span class="mstatus sub">${esc(overlapZin(u.botst))}</span>` : '');
   };
   const teken = async () => {
     const mijn = ++beurt;
@@ -1117,6 +1139,7 @@ function openMailTijden() {
     for (const k of per.keys()) lijsten.set(k, await afsprakenOp(parseYmd(k)));
     if (mijn !== beurt) return;
     const bestaand = new Set();
+    tijdInfo.clear();
     let html = '';
     if (!gelezen.opties.length) html = `<p class="insttoelichting fout">Geen dagen en tijden gevonden. Staat er bij elke dag een datum of weekdag, zoals "maandag 9 november tussen 13:00 en 16:00"?</p>`;
     for (const [k, os] of per) {
@@ -1125,17 +1148,18 @@ function openMailTijden() {
       html += `<section class="instsectie"><h3>${esc(cap(`${DAYS_LONG[d.getDay()]} ${d.getDate()} ${MONTHS_LONG[d.getMonth()]}`))}</h3><div class="formkaart">`;
       for (const o of os) {
         const u = toetsVak(lijsten.get(k), o, duur);
-        // Een gekozen tijd blijft staan zolang hij nog past, ook als hij bij deze duur geen voorstel is
+        // Een gekozen tijd blijft staan zolang hij in het tijdvak valt, ook als hij bij deze duur geen voorstel is
+        const ms = duur * 6e4;
         for (const t of gekozen.keys()) {
-          const blok = u.vrij.find(([x, y]) => t >= x && t + duur * 6e4 <= y);
-          if (blok && !u.tijden.some((x) => x.t === t)) u.tijden.push({ t, blok });
+          if (t >= u.van && t + ms <= Math.max(u.tot, u.van + ms) && !u.tijden.some((x) => x.t === t)) {
+            u.tijden.push({ t, blok: u.vrij.find(([x, y]) => t >= x && t + ms <= y) || null, botst: u.botst.filter((e) => e.start.getTime() < t + ms && e.end.getTime() > t) });
+          }
         }
         u.tijden.sort((x, y) => x.t - y.t);
-        if (u.tijden.length && u.status !== 'vrij') u.status = 'vrij';
-        u.tijden.forEach((x) => bestaand.add(x.t));
+        u.tijden.forEach((x) => { bestaand.add(x.t); tijdInfo.set(x.t, { blok: x.blok, botst: x.botst }); if (gekozen.has(x.t)) gekozen.set(x.t, { blok: x.blok, botst: x.botst }); });
         const van = `${pad(Math.floor(o.van / 60))}:${pad(o.van % 60)}`, tot = `${pad(Math.floor(o.tot / 60))}:${pad(o.tot % 60)}`;
         html += `<div class="frij kolom mvak"><span class="mkop"><span class="t1 num">${o.heleDag ? 'Hele dag' : `${van} – ${tot}`}</span>${statusTekst(u)}</span>
-          ${u.tijden.length ? `<div class="chips">${u.tijden.map((x) => `<button class="chip num${gekozen.has(x.t) ? ' aan' : ''}" data-t="${x.t}" data-blok="${x.blok.join('-')}" aria-pressed="${gekozen.has(x.t)}">${hhmm(new Date(x.t))}</button>`).join('')}</div>` : ''}</div>`;
+          ${u.tijden.length ? `<div class="chips">${u.tijden.map((x) => `<button class="chip num${gekozen.has(x.t) ? ' aan' : ''}${x.botst.length ? ' botst' : ''}" data-t="${x.t}" aria-pressed="${gekozen.has(x.t)}"${x.botst.length ? ` aria-label="${hhmm(new Date(x.t))}, ${esc(overlapZin(x.botst).toLowerCase())}"` : ''}>${hhmm(new Date(x.t))}</button>`).join('')}</div>` : ''}</div>`;
       }
       html += `</div>${waarschuwing ? `<p class="insttoelichting fout">${esc(cap(waarschuwing.waarschuwing))}. Klopt de datum?</p>` : ''}</section>`;
     }
@@ -1167,7 +1191,7 @@ function openMailTijden() {
     const c = t.closest('[data-t]');
     if (c) {
       const tijd = Number(c.dataset.t);
-      if (gekozen.has(tijd)) gekozen.delete(tijd); else gekozen.set(tijd, c.dataset.blok.split('-').map(Number));
+      if (gekozen.has(tijd)) gekozen.delete(tijd); else gekozen.set(tijd, tijdInfo.get(tijd) || { blok: null, botst: [] });
       c.classList.toggle('aan', gekozen.has(tijd));
       c.setAttribute('aria-pressed', String(gekozen.has(tijd)));
       tekenSamen();
@@ -1180,9 +1204,11 @@ function openMailTijden() {
       return;
     }
     if (t.closest('#minplannen') && gekozen.size === 1) {
-      const [[tijd, [x, y]]] = [...gekozen];
+      const [[tijd, g]] = [...gekozen];
+      const locatie = gelezen.online ? 'Microsoft Teams' : '';
       p.sluit();
-      setTimeout(() => openNieuw({ blok: { start: x, end: y }, start: tijd, duur, locatie: gelezen.online ? 'Microsoft Teams' : '' }), 250);
+      // In een vrij blok: Nieuwe afspraak binnen dat blok. Overlapt de tijd: gewoon die dag en tijd, met de overlap erbij.
+      setTimeout(() => (g.blok ? openNieuw({ blok: { start: g.blok[0], end: g.blok[1] }, start: tijd, duur, locatie }) : openNieuw({ dag: new Date(tijd), start: tijd, duur, locatie })), 250);
     }
   });
   tekenDuur();

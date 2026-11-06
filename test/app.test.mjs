@@ -433,10 +433,18 @@ test('mail: tijden naast de agenda, kiezen, antwoord kopiëren en inplannen', as
   await p.locator('[data-actie="mailtijden"]').tap(); await wacht(900);
   await p.fill('#mtekst', MAIL); await wacht(1500);
   assert.deepEqual(await p.locator('#muitslag h3').allInnerTexts(), ['MAANDAG 9 NOVEMBER', 'WOENSDAG 11 NOVEMBER', 'DONDERDAG 12 NOVEMBER']);
-  assert.deepEqual(await p.locator('#muitslag .mstatus').allInnerTexts(), ['Vrij 13:00 – 14:30', 'Te kort: alleen 15:00 – 15:30 en 16:30 – 17:00 vrij', 'Helemaal vrij', 'Vrij 14:00 – 15:00']);
+  assert.deepEqual(await p.locator('#muitslag .mstatus').allInnerTexts(), [
+    'Vrij 13:00 – 14:30', 'Overlap met Demo Kies op Maat voor SURF (14:30 – 15:30)',
+    'Te kort: alleen 15:00 – 15:30 en 16:30 – 17:00 vrij', 'Overlap met Bespreken Flusso (15:30 – 16:30)',
+    'Helemaal vrij',
+    'Vrij 14:00 – 15:00', 'Overlap met 1-op-1 Jochem (15:00 – 15:45) en Architectuuroverleg (16:00 – 17:00)',
+  ], 'altijd waarmee het overlapt, ook bij te kort');
+  const vak = (i) => p.locator('#muitslag .mvak').nth(i);
+  assert.deepEqual(await vak(1).locator('.chip.botst').allInnerTexts(), ['15:00', '16:00'], 'ook een tijd die overlapt kun je kiezen');
+  assert.equal(await p.locator('#msamen').innerText(), 'Tik op een tijd om hem te kiezen');
   assert.equal(await p.locator('#minplannen').isDisabled(), true);
-  await p.locator('#muitslag .chip', { hasText: '13:30' }).tap();
-  await p.locator('#muitslag .chip', { hasText: '14:00' }).tap(); await wacht(200);
+  await vak(0).locator('.chip', { hasText: '13:30' }).tap();
+  await vak(3).locator('.chip', { hasText: '14:00' }).tap(); await wacht(200);
   const antwoord = 'Ik kan op maandag 9 november van 13:30 tot 14:30, of op donderdag 12 november van 14:00 tot 15:00.';
   assert.equal(await p.locator('#msamen').innerText(), antwoord);
   assert.equal(await p.locator('#minplannen').isDisabled(), true, 'inplannen kan met één tijd');
@@ -444,7 +452,7 @@ test('mail: tijden naast de agenda, kiezen, antwoord kopiëren en inplannen', as
   assert.equal(await p.evaluate(() => window.gekopieerd), antwoord);
   // Een half uur: andere tijden; wat niet meer past, valt af
   await p.locator('.mailtijden [data-stap="-15"]').tap(); await p.locator('.mailtijden [data-stap="-15"]').tap(); await wacht(400);
-  assert.match(await p.locator('#muitslag .mstatus').nth(1).innerText(), /^Vrij 15:00 – 15:30 en 16:30 – 17:00$/);
+  assert.equal(await vak(1).locator('.mstatus').first().innerText(), 'Vrij 15:00 – 15:30 en 16:30 – 17:00');
   assert.deepEqual(await p.locator('#muitslag .chip.aan').allInnerTexts(), ['13:30', '14:00'], 'gekozen tijden die nog passen, blijven staan');
   await p.locator('#muitslag .chip.aan').first().tap(); await wacht(100);
   assert.equal(await p.locator('#muitslag .chip.aan').count(), 1);
@@ -452,6 +460,24 @@ test('mail: tijden naast de agenda, kiezen, antwoord kopiëren en inplannen', as
   assert.equal(await p.locator('.paneel.mailtijden').count(), 0);
   assert.match(await p.locator('.paneel.nieuw #nsamen').innerText(), /^Donderdag 12 november, 14:00 – 14:30/);
   assert.equal(await p.locator('.paneel [name="locatie"]').inputValue(), 'Microsoft Teams', 'online: Teams bij Locatie');
+  assert.deepEqual(p.fouten, []);
+});
+
+test('mail: een tijd die overlapt kiezen; het antwoord noemt geen reden, inplannen toont de overlap', async ({ browser, url }) => {
+  const p = await nieuwePagina(browser, TELEFOON);
+  await p.goto(url); await wacht(900);
+  await p.locator('[data-nieuw]:visible').first().tap(); await wacht(900);
+  await p.locator('[data-actie="mailtijden"]').tap(); await wacht(900);
+  await p.fill('#mtekst', 'Woensdag 11 november tussen 15:00 en 17:00'); await wacht(1200);
+  await p.locator('#muitslag .chip.botst', { hasText: '15:00' }).tap(); await wacht(200);
+  assert.equal(await p.locator('#muitslag .chip.botst.aan').count(), 1);
+  const samen = await p.locator('#msamen').innerText();
+  assert.match(samen, /^Ik kan op woensdag 11 november van 15:00 tot 16:00\.\n/);
+  assert.match(samen, /Woensdag 15:00: overlap met Bespreken Flusso \(15:30 – 16:30\)$/, 'alleen voor jou');
+  assert.equal(await p.locator('#minplannen').isDisabled(), false);
+  await p.locator('#minplannen').tap(); await wacht(1200);
+  assert.match(await p.locator('.paneel.nieuw #nsamen').innerText(), /^Woensdag 11 november, 15:00 – 16:00\nOverlap met Bespreken Flusso/);
+  assert.match(await p.locator('#noutlook').getAttribute('href'), /start=2026-11-11T15:00:00/);
   assert.deepEqual(p.fouten, []);
 });
 

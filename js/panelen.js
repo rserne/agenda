@@ -1075,7 +1075,7 @@ function overlapZin(botst) {
 const mtUur = (d) => `${d.getHours()}:${pad(d.getMinutes())}`; // in een zin: 9:00, niet 09:00
 const mtMoment = (t, duur) => { const d = new Date(t); return `${DAYS_LONG[d.getDay()]} ${d.getDate()} ${MONTHS_LONG[d.getMonth()]} van ${mtUur(d)} tot ${mtUur(new Date(t + duur * 6e4))}`; };
 // Het antwoord: bij één tijd een zin, bij meer eerst de zin en dan de tijden als opsomming.
-// tekst: platte tekst met •, html: voor een mail die opmaak overneemt (Outlook, Apple Mail)
+// tekst: wat op het klembord komt (platte tekst met •), html: hoe het in de app staat
 function mtAntwoord(tijden, duur) {
   const momenten = [...tijden].sort((x, y) => x - y).map((t) => mtMoment(t, duur));
   if (!momenten.length) return { tekst: '', html: '' };
@@ -1200,12 +1200,10 @@ function openMailTijden() {
       return;
     }
     if (t.closest('#mkopieer') && gekozen.size) {
-      const { tekst, html } = mtAntwoord(gekozen.keys(), duur);
+      const { tekst } = mtAntwoord(gekozen.keys(), duur);
       try {
-        // Met opmaak als dat kan (de opsomming blijft een lijst in je mail), anders als platte tekst
-        if (window.ClipboardItem && navigator.clipboard.write) {
-          await navigator.clipboard.write([new ClipboardItem({ 'text/plain': new Blob([tekst], { type: 'text/plain' }), 'text/html': new Blob([html], { type: 'text/html' }) })]);
-        } else await navigator.clipboard.writeText(tekst);
+        // Alleen platte tekst: in je mail neemt hij het lettertype en de kleur van de mail aan
+        await navigator.clipboard.writeText(tekst);
         toonStatus('Antwoord gekopieerd.', { soort: 'klaar', duur: 2000 });
       }
       catch (e) { toonStatus('Kopiëren lukte niet. Selecteer de tekst boven de knop.', { soort: 'fout', duur: 3500 }); }

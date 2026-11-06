@@ -482,10 +482,7 @@ test('mail: tijden naast de agenda, kiezen, antwoord kopiëren en inplannen', as
   assert.equal(await p.locator('#minplannen').isDisabled(), true, 'inplannen kan met één tijd');
   assert.match(await p.locator('.mailtijden .groteknop.vol').innerText(), /Antwoord kopiëren/, 'kopiëren is de hoofdknop');
   await p.locator('#mkopieer').tap(); await wacht(300);
-  assert.deepEqual(await p.evaluate(() => window.gekopieerd), {
-    tekst: 'Ik kan op de volgende tijdstippen:\n• Maandag 9 november van 13:30 tot 14:30\n• Donderdag 12 november van 14:00 tot 15:00',
-    html: '<p>Ik kan op de volgende tijdstippen:</p><ul><li>Maandag 9 november van 13:30 tot 14:30</li><li>Donderdag 12 november van 14:00 tot 15:00</li></ul>',
-  });
+  assert.deepEqual(await p.evaluate(() => window.gekopieerd), { tekst: 'Ik kan op de volgende tijdstippen:\n• Maandag 9 november van 13:30 tot 14:30\n• Donderdag 12 november van 14:00 tot 15:00' }, 'platte tekst, zonder opmaak of kleur');
   // Een half uur: andere tijden; wat niet meer past, valt af
   await p.locator('.mailtijden [data-stap="-15"]').tap(); await p.locator('.mailtijden [data-stap="-15"]').tap(); await wacht(400);
   assert.deepEqual(await vak(1).locator('.chip.vrij').allInnerTexts(), ['15:00', '16:30']);

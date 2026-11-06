@@ -12,6 +12,7 @@
    Kleine aanpassingen per schermformaat staan bij het onderdeel zelf (bijvoorbeeld @media (max-width: 767px)). */
 
 :root {
+  --fabPil: #D5E8F4; --fabPilTekst: #0E4766; /* pillen boven de plusknop */
   --dimLaag: rgba(0, 0, 0, 0.24); /* achter een menu */
   --bg: #F2F2F7;
   --fcBg: #F2F2F7;
@@ -139,6 +140,7 @@
     --freeTileBorder: rgba(134, 195, 225, 0.55);
     --backdrop: rgba(0, 0, 0, 0.5);
     --sheetBg: #000000;
+    --fabPil: #1D465E; --fabPilTekst: #D6ECF8;
     --dimLaag: rgba(0, 0, 0, 0.55);
     --popBg: #2C2C2E; /* zwevende lijsten, iets lichter dan een kaart */
   }
@@ -587,17 +589,22 @@ button.drij:active { opacity: 0.6; }
 .keuzemenu.open { opacity: 1; pointer-events: auto; transform: none; }
 .keuzemenu button { display: flex; align-items: center; gap: 10px; color: var(--label); font-size: 16px; font-weight: 600; white-space: nowrap; }
 .keuzemenu button .icoon { width: 20px; height: 20px; color: var(--accent); flex: none; }
-/* Boven de plusknop: één menu zoals in iOS, dat vanuit de knop opengaat; tekst links, icoon rechts */
-.keuzemenu.fab {
-  width: min(270px, calc(100vw - 32px)); border-radius: 14px; overflow: hidden;
-  background: var(--popBg, var(--card)); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.28), 0 2px 8px rgba(0, 0, 0, 0.12);
-  transform: scale(0.6); transform-origin: bottom right;
+/* Boven de plusknop: losse pillen dicht op elkaar, rechts uitgelijnd met de knop, die één voor één opkomen */
+.keuzemenu.fab { align-items: flex-end; gap: 4px; }
+.keuzemenu.fab button {
+  height: 56px; padding: 0 24px 0 12px; gap: 12px; border-radius: 28px;
+  background: var(--fabPil); color: var(--fabPilTekst); font-size: 17px; font-weight: 500;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.14);
+  opacity: 0; transform: translateY(10px) scale(0.92); transform-origin: right center;
+  transition: opacity 0.16s ease, transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.15);
 }
-.keuzemenu.fab.open { transform: none; } /* na het opengaan: op ware grootte */
-.keuzemenu.fab button { justify-content: space-between; height: 52px; padding: 0 16px; font-size: 17px; font-weight: 400; text-align: left; }
-.keuzemenu.fab button .icoon { order: 2; width: 21px; height: 21px; }
-.keuzemenu.fab button + button { border-top: 0.5px solid var(--separator); }
-.keuzemenu.fab button:active { background: var(--fill); }
+.keuzemenu.fab button .icoon { box-sizing: content-box; width: 18px; height: 18px; padding: 7px; border-radius: 50%; background: var(--accent); color: var(--onAccent); }
+.keuzemenu.fab.open button { opacity: 1; transform: none; }
+.keuzemenu.fab.open button:last-child { transition-delay: 0s; } /* het dichtst bij de knop eerst */
+.keuzemenu.fab.open button:first-child { transition-delay: 0.04s; }
+.keuzemenu.fab button:active { filter: brightness(0.95); }
+/* Open: de knop zelf vol in de accentkleur, met een wit kruisje */
+.tabbalk .plusknop.open { background: var(--accent); color: var(--onAccent); border-color: transparent; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22); -webkit-backdrop-filter: none; backdrop-filter: none; }
 /* Onder Nieuw op de desktop: een klein menu zoals op de Mac */
 .keuzemenu:not(.fab) {
   min-width: 220px; padding: 5px; border-radius: 12px; transform: translateY(-4px);

@@ -1243,7 +1243,7 @@ function wisselKeuzemenu(knop) {
   if (!fab) menu.insertBefore(menu.lastElementChild, menu.firstElementChild); // onder Nieuw: nieuwe afspraak bovenaan
   document.body.append(laag, menu);
   const r = knop.getBoundingClientRect();
-  if (fab) { menu.style.right = `${Math.max(8, innerWidth - r.right)}px`; menu.style.bottom = `${innerHeight - r.top + 12}px`; }
+  if (fab) { menu.style.right = `${Math.max(8, innerWidth - r.right)}px`; menu.style.bottom = `${innerHeight - r.top + 8}px`; }
   else { menu.style.right = `${Math.max(8, innerWidth - r.right)}px`; menu.style.top = `${r.bottom + 8}px`; }
   KEUZEMENU = { laag, menu, knop };
   knop.classList.add('open');

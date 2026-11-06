@@ -612,6 +612,8 @@ button.drij:active { opacity: 0.6; }
 .aanvullijst + .frij { border-top: 0.5px solid var(--separator); }
 .aanvulkop { padding: 10px 16px 2px; color: var(--secondary); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.2px; }
 .aanvulkop + .aanvuloptie::before { display: none; }
+.aanvulmelding { margin: 0 16px; padding: 10px 0; color: var(--overlap); font-size: 13px; line-height: 18px; } /* lijn erboven springt in, zoals tussen de suggesties */
+.aanvuloptie + .aanvulmelding { border-top: 0.5px solid var(--separator); }
 .nsamenvatting .nruimte { margin-top: 4px; color: var(--secondary); font-size: 13px; line-height: 18px; font-weight: 400; }
 .frij input:-webkit-autofill { -webkit-box-shadow: 0 0 0 40px var(--card) inset; -webkit-text-fill-color: var(--label); }
 label.frij:focus-within .flabel { color: var(--accent); }

@@ -539,15 +539,16 @@ function downloadIcs(v) {
 // Suggesties in een zwevende lijst onder een invoerveld (deelnemers en locatie). De lijst ligt over het formulier heen,
 // zodat er niets verspringt terwijl je typt.
 // zoek(vraag) geeft { nu: [items], later?: Promise<[items]> }; later vervangt de hele lijst zodra het binnen is.
-// Een item is { t1, t2, kop? }. kies(item) vult het veld.
+// Een item is { t1, t2, kop? }. kies(item) vult het veld. Een lijst kan een .melding hebben (onderaan, niet te kiezen).
 // leegTonen: ook zonder tekst suggesties tonen, zodra je in het veld tikt (de ruimtes bij Locatie).
 function koppelSuggesties(veld, lijstEl, { vraagVan = (w) => w.trim(), zoek, kies, leegTonen = false }) {
-  let items = [], actief = -1, beurt = 0, stil = false, getekend = '';
-  const sluit = () => { items = []; actief = -1; getekend = ''; lijstEl.innerHTML = ''; lijstEl.hidden = true; veld.setAttribute('aria-expanded', 'false'); veld.removeAttribute('aria-activedescendant'); };
+  let items = [], melding = '', actief = -1, beurt = 0, stil = false, getekend = '';
+  const sluit = () => { items = []; melding = ''; actief = -1; getekend = ''; lijstEl.innerHTML = ''; lijstEl.hidden = true; veld.setAttribute('aria-expanded', 'false'); veld.removeAttribute('aria-activedescendant'); };
   const teken = () => {
-    if (!items.length) { sluit(); return; }
+    if (!items.length && !melding) { sluit(); return; }
     const html = items.map((c, i) => `${c.kop ? `<div class="aanvulkop" role="presentation">${esc(c.kop)}</div>` : ''}<button type="button" role="option" id="${lijstEl.id}-${i}" class="aanvuloptie${i === actief ? ' actief' : ''}" aria-selected="${i === actief}" data-aanvul="${i}" tabindex="-1">
-        <span class="t1">${esc(c.t1)}</span>${c.t2 ? `<span class="t2">${esc(c.t2)}</span>` : ''}</button>`).join('');
+        <span class="t1">${esc(c.t1)}</span>${c.t2 ? `<span class="t2">${esc(c.t2)}</span>` : ''}</button>`).join('')
+      + (melding ? `<div class="aanvulmelding" role="status">${esc(melding)}</div>` : '');
     // Net onder de rij met het veld, over de rest van het formulier heen
     const rij = veld.closest('.frij');
     if (rij) lijstEl.style.top = `${rij.offsetTop + rij.offsetHeight - 4}px`;
@@ -561,11 +562,11 @@ function koppelSuggesties(veld, lijstEl, { vraagVan = (w) => w.trim(), zoek, kie
     const vraag = vraagVan(veld.value);
     if (!vraag && !leegTonen) { sluit(); return; }
     const { nu = [], later = null } = zoek(vraag) || {};
-    items = nu; actief = items.length && !IOS ? 0 : -1; teken();
+    items = nu; melding = nu.melding || ''; actief = items.length && !IOS ? 0 : -1; teken();
     if (later) later.then((nieuw) => {
       if (mijn !== beurt || document.activeElement !== veld || !nieuw) return;
       const was = items[actief];
-      items = nieuw;
+      items = nieuw; melding = nieuw.melding || '';
       actief = was ? Math.max(0, items.findIndex((c) => c.t1 === was.t1 && c.t2 === was.t2)) : (items.length && !IOS ? 0 : -1);
       if (actief >= items.length) actief = items.length - 1;
       teken();
@@ -742,12 +743,14 @@ async function openNieuw({ dag = null, blok = null } = {}) {
   });
   // Locatie: je ruimtes (direct bij een tik), en met een Google-sleutel ook adressen en plaatsen
   const locVeld = $('input[name="locatie"]', el);
-  let sessie = nieuweSessie(), googleWacht = null, plaatsen = [];
+  let sessie = nieuweSessie(), googleWacht = null, plaatsen = [], googleMelding = '';
   // Ruimtes eerst, dan plaatsen; koppen alleen als er van allebei iets is
   const metKoppen = (rs, ps) => {
     const r = rs.map((x, i) => ({ ...x, kop: i === 0 && ps.length ? 'Ruimtes' : '' }));
     const p2 = ps.map((x, i) => ({ ...x, kop: i === 0 && rs.length ? 'Plaatsen' : '' }));
-    return [...r, ...p2];
+    const lijst = [...r, ...p2];
+    lijst.melding = googleMelding;
+    return lijst;
   };
   koppelSuggesties(locVeld, $('#nlocaties', el), {
     leegTonen: true,
@@ -755,10 +758,17 @@ async function openNieuw({ dag = null, blok = null } = {}) {
       const rs = zoekRuimtes(vraag).map((r) => ({ t1: r.naam, t2: r.email ? `Ruimte · ${r.email}` : 'Ruimte', ruimte: r }));
       clearTimeout(googleWacht);
       if (!googleSleutel() || vraag.length < 3) { plaatsen = []; return { nu: rs }; }
+      // Weigert Google de sleutel (of is het tegoed op), dan zeggen we dat onderaan de lijst. Zonder verbinding: gewoon geen plaatsen.
+      const fout = (e) => {
+        plaatsen = [];
+        googleMelding = e.status === 400 || e.status === 403 ? 'Google accepteert je sleutel niet meer. Controleer hem onder Instellingen.'
+          : e.status === 429 ? 'Google geeft even geen plaatsen: de limiet van je sleutel is bereikt.' : '';
+        return metKoppen(rs, []);
+      };
       // De vorige plaatsen blijven staan tot de nieuwe binnen zijn: zo verspringt de lijst niet bij elke letter
       const later = new Promise((ok) => { googleWacht = setTimeout(ok, 300); })
         .then(() => zoekPlaatsen(vraag, sessie))
-        .then((ps) => { plaatsen = ps.map((pl) => ({ t1: pl.naam, t2: pl.sub, tekst: pl.tekst })); return metKoppen(rs, plaatsen); });
+        .then((ps) => { googleMelding = ''; plaatsen = ps.map((pl) => ({ t1: pl.naam, t2: pl.sub, tekst: pl.tekst })); return metKoppen(rs, plaatsen); }, fout);
       return { nu: metKoppen(rs, plaatsen), later };
     },
     kies: (c) => {
@@ -937,7 +947,7 @@ function openInstellingen() {
     if (bewerk) return `<label class="frij"><span class="flabel">Sleutel</span><input id="igoogle" class="geheim" type="text" placeholder="Plak hier je sleutel" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done"></label>`
       + knop('google-bewaar', I.vink, 'Bewaren') + knop('google-annuleer', I.kruis, 'Annuleren');
     if (googleSleutel()) return status(I.speld, 'Sleutel ingesteld', 'Bij Locatie zoek je ook naar adressen en plaatsen')
-      + knop('google-test', I.vink, 'Sleutel testen') + knop('google-wijzig', I.herhaal, 'Sleutel wijzigen') + knop('google-wis', I.wissen, 'Sleutel verwijderen', false, true);
+      + knop('google-wijzig', I.herhaal, 'Sleutel wijzigen') + knop('google-wis', I.wissen, 'Sleutel verwijderen', false, true);
     return status(I.speld, 'Geen sleutel', 'Met een sleutel zoek je bij Locatie ook naar adressen en plaatsen')
       + knop('google-wijzig', I.plus, 'Sleutel opgeven');
   };
@@ -969,13 +979,12 @@ function openInstellingen() {
   async function googleActie(actie) {
     if (actie === 'google-wijzig') { uitslag(''); tekenGoogle(true); }
     else if (actie === 'google-annuleer') { uitslag(''); tekenGoogle(); }
-    else if (actie === 'google-test') testSleutel();
     else if (actie === 'google-bewaar') {
       const nieuw = $('#igoogle', el).value.trim();
       if (!nieuw) { uitslag('Plak eerst een sleutel.', true); $('#igoogle', el).focus(); return; }
       zetGoogleSleutel(nieuw);
       tekenGoogle();
-      testSleutel(); // meteen laten zien of hij werkt
+      testSleutel(); // meteen laten zien of hij werkt (later ziet Locatie het vanzelf als Google hem weigert)
     } else if (actie === 'google-wis' && confirm('De Google-sleutel van dit toestel verwijderen?')) { zetGoogleSleutel(''); uitslag(''); tekenGoogle(); }
   }
   el.addEventListener('keydown', (ev) => {

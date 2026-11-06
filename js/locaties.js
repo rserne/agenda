@@ -83,7 +83,7 @@ async function zoekPlaatsen(vraag, sessie, sleutel = googleSleutel()) {
   }).filter((p) => p.naam);
 }
 
-// Klopt de sleutel? Voor de knop 'Sleutel testen' onder Instellingen.
+// Klopt de sleutel? Na het bewaren onder Instellingen.
 async function testGoogleSleutel(sleutel) {
   try {
     const r = await zoekPlaatsen('Amsterdam Centraal', nieuweSessie(), sleutel);

@@ -939,13 +939,12 @@ function openInstellingen() {
       <div class="dkop"><h2 class="dtitel">Instellingen</h2></div>
       <section class="instsectie"><h3>Agenda</h3><div class="formkaart" id="iagenda">${agendaHtml()}</div></section>
       <section class="instsectie"><h3>Contacten</h3><div class="formkaart" id="icontacten">${contactHtml()}</div>
-        <p class="insttoelichting">Een csv uit NK2Edit of Outlook, of een vCard (.vcf). Bij een nieuwe afspraak vult de app namen aan tot e-mailadressen.</p></section>
-      <section class="instsectie"><h3>Ruimtes</h3><div class="formkaart" id="iruimtes">${ruimtesHtml()}</div>
-        <p class="insttoelichting">Bij een nieuwe afspraak staan je ruimtes klaar onder Locatie. Met een e-mailadres zet de app de ruimte ook als deelnemer in de uitnodiging, zodat Outlook hem reserveert.</p></section>
+        <p class="insttoelichting">Een csv uit NK2Edit of Outlook, of een vCard (.vcf).</p></section>
+      <section class="instsectie"><h3>Ruimtes</h3><div class="formkaart" id="iruimtes">${ruimtesHtml()}</div></section>
       <section class="instsectie"><h3>Plaatsen via Google</h3><div class="formkaart">
         <label class="frij"><span class="flabel">Sleutel</span><input id="igoogle" type="text" placeholder="Optioneel" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(googleSleutel())}"></label>
         <button class="frij instknop" id="igoogletest">${I.vink}<span>Sleutel testen</span></button>
-      </div><p class="insttoelichting" id="igoogleuitslag">Met een sleutel voor de Places API (New) vult de app bij Locatie ook adressen en plaatsen aan. Wat je daar typt, gaat naar Google. Beperk de sleutel in Google Cloud tot de Places API (New) en tot rserne.github.io.</p></section>
+      </div><p class="insttoelichting" id="igoogleuitslag" aria-live="polite"></p></section>
       <p class="voetnoot">Alles op dit scherm staat alleen op dit toestel. In Outlook verandert er niets.</p>
     </div>`;
   const p = openPaneel(el, { greepSelector: '.detailgreep' });

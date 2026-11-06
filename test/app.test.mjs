@@ -356,10 +356,10 @@ test('plaatsen: met een Google-sleutel vult Locatie ook adressen aan, en de sleu
   await p.fill('#igoogle', 'proefsleutel');
   weiger = true;
   await p.locator('[data-actie="google-bewaar"]').tap(); await wacht(600); // bewaren test meteen
-  assert.match(await p.locator('#igoogleuitslag').innerText(), /Google weigert de sleutel: API key not valid\./);
+  assert.match(await p.locator('#igoogleuitslag').innerText(), /^Google accepteert deze sleutel niet\. Controleer de sleutel en de beperkingen in Google Cloud\. \(API key not valid\.\)$/);
   weiger = false;
   await p.locator('[data-actie="google-test"]').tap(); await wacht(600);
-  assert.match(await p.locator('#igoogleuitslag').innerText(), /^De sleutel werkt\. Bijvoorbeeld: Damrak 1/);
+  assert.match(await p.locator('#igoogleuitslag').innerText(), /^De sleutel werkt\.$/);
   assert.match(await kaart.innerText(), /Sleutel ingesteld/);
   assert.equal(await p.locator('.paneel.instellingen').evaluate((e) => e.innerHTML.includes('proefsleutel')), false, 'de sleutel staat nergens in beeld');
   // Wijzigen begint met een leeg veld; annuleren laat de sleutel staan

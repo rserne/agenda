@@ -87,10 +87,10 @@ async function zoekPlaatsen(vraag, sessie, sleutel = googleSleutel()) {
 async function testGoogleSleutel(sleutel) {
   try {
     const r = await zoekPlaatsen('Amsterdam Centraal', nieuweSessie(), sleutel);
-    return { ok: true, tekst: r.length ? `De sleutel werkt. Bijvoorbeeld: ${r[0].tekst}.` : 'De sleutel werkt, maar Google gaf geen plaatsen terug.' };
+    return { ok: true, tekst: 'De sleutel werkt.' };
   } catch (e) {
-    if (e.status === 400 || e.status === 403) return { ok: false, tekst: `Google weigert de sleutel: ${e.message}` };
-    if (e.status) return { ok: false, tekst: `Dat lukte niet: ${e.message}` };
-    return { ok: false, tekst: 'Google is niet bereikbaar. Is er verbinding, en staat de Places API (New) aan voor deze sleutel?' };
+    if (e.status === 400 || e.status === 403) return { ok: false, tekst: `Google accepteert deze sleutel niet. Controleer de sleutel en de beperkingen in Google Cloud.${e.message ? ` (${e.message.replace(/\.$/, '')}.)` : ''}` };
+    if (e.status) return { ok: false, tekst: `Testen lukte niet: ${e.message}` };
+    return { ok: false, tekst: 'Google is niet bereikbaar. Controleer je verbinding en probeer het opnieuw.' };
   }
 }

@@ -83,7 +83,7 @@ function koppel() {
     const f = ev.target.files[0];
     ev.target.value = '';
     openContacten(f).then((n) => { if (n) { render(); renderZijbalk(); toonStatus(n === 1 ? '1 contact ingeladen.' : `${n} contacten ingeladen.`, { soort: 'klaar', duur: 2500 }); } })
-      .catch(() => alert('In dit bestand staan geen contacten die de app kan lezen. Kies een csv-bestand (bijvoorbeeld uit NK2Edit of Outlook) of een vCard (.vcf).'));
+      .catch(() => alert('In dit bestand vindt de app geen contacten. Kies een csv uit NK2Edit of Outlook, of een vCard (.vcf).'));
   });
   $('#datumregel').addEventListener('click', () => verschuif(0));
   // iPad: de zijbalk in- en uitklappen; de keuze blijft bewaard

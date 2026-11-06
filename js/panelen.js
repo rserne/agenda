@@ -249,7 +249,7 @@ function agendaBron() {
   }
   if (BESTAND) {
     const d = new Date(BESTAND.datum);
-    return [esc(BESTAND.naam), `Ingeladen op ${d.getDate()} ${MONTHS_SHORT[d.getMonth()]} · alleen op dit toestel`];
+    return [esc(BESTAND.naam), `Ingeladen op ${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}`];
   }
   return ['Voorbeeldgegevens', 'Verzonnen afspraken en namen'];
 }
@@ -913,16 +913,16 @@ function openInstellingen() {
   const agendaHtml = () => {
     const [t1, t2] = agendaBron();
     return status(BESTAND && BESTAND.link ? I.koppel : BESTAND ? I.inladen : I.kalender, t1, t2)
-      + (BESTAND && BESTAND.link ? knop('ics-nu', I.herhaal, 'Nu bijwerken', LINK_BEZIG) : BESTAND ? knop('ics-openen', I.inladen, 'Nieuwer bestand inladen') : '')
+      + (BESTAND && BESTAND.link ? knop('ics-nu', I.herhaal, 'Nu bijwerken', LINK_BEZIG) : BESTAND ? knop('ics-openen', I.inladen, 'Ander bestand inladen') : '')
       + knop('ics-kies', I.kalender, BESTAND ? 'Andere agenda kiezen' : 'Je eigen agenda kiezen');
   };
   const contactHtml = () => {
     const c = CONTACTEN_INFO;
     const d = c && new Date(c.datum);
     return (c ? status(I.persoon, c.aantal === 1 ? '1 contact' : `${c.aantal} contacten`, `Ingeladen op ${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}`)
-      : status(I.persoon, 'Geen contacten', 'Om namen aan te vullen bij een nieuwe afspraak'))
-      + knop('contacten-inladen', I.inladen, c ? 'Nieuwer bestand inladen' : 'Contacten inladen')
-      + (c ? knop('contacten-wis', I.wissen, 'Contacten wissen') : '');
+      : status(I.persoon, 'Geen contacten', 'Met contacten kun je makkelijk deelnemers bij een afspraak opgeven'))
+      + knop('contacten-inladen', I.inladen, c ? 'Ander bestand inladen' : 'Contacten inladen')
+      + (c ? knop('contacten-wis', I.wissen, 'Contacten verwijderen') : '');
   };
   // Ruimtes: per ruimte een naam en een e-mailadres, met een knop om hem te verwijderen
   const ruimteRij = (r, i) => `<div class="frij ruimterij" data-i="${i}">
@@ -1006,7 +1006,7 @@ function openInstellingen() {
     if (actie === 'ruimte-weg') { const l = leesRuimtes(); l.splice(Number(a.closest('.ruimterij').dataset.i), 1); zetRuimteLijst(l); tekenRuimtes(); return; }
     if (actie === 'ics-nu') { Promise.resolve(nuBijwerken()).finally(tekenAgenda); tekenAgenda(); return; }
     if (actie === 'contacten-wis') {
-      if (confirm('Contacten wissen? Ze verdwijnen alleen van dit toestel; je bestand blijft gewoon bestaan.')) { await vergeetContacten(); tekenContacten(); render(); renderZijbalk(); }
+      if (confirm('Contacten van dit toestel verwijderen? Je bestand zelf blijft bestaan.')) { await vergeetContacten(); tekenContacten(); render(); renderZijbalk(); }
       return;
     }
     if (actie && actie.startsWith('google-')) googleActie(actie);

@@ -457,13 +457,15 @@ test('mail: tijden naast de agenda, kiezen, antwoord kopiëren en inplannen', as
   await kies(p, 'mail');
   await p.fill('#mtekst', MAIL); await wacht(1500);
   assert.deepEqual(await p.locator('#muitslag h3').allInnerTexts(), ['MAANDAG 9 NOVEMBER', 'WOENSDAG 11 NOVEMBER', 'DONDERDAG 12 NOVEMBER']);
-  assert.deepEqual(await p.locator('#muitslag .mstatus').allInnerTexts(), [
-    'Vrij 13:00 – 14:30', 'Overlap met Demo Kies op Maat voor SURF (14:30 – 15:30)',
-    'Te kort: alleen 15:00 – 15:30 en 16:30 – 17:00 vrij', 'Overlap met Bespreken Flusso (15:30 – 16:30)',
-    'Helemaal vrij',
-    'Vrij 14:00 – 15:00', 'Overlap met 1-op-1 Jochem (15:00 – 15:45) en Architectuuroverleg (16:00 – 17:00)',
-  ], 'altijd waarmee het overlapt, ook bij te kort');
   const vak = (i) => p.locator('#muitslag .mvak').nth(i);
+  assert.deepEqual(await p.locator('#muitslag .mstatus:not(.sub)').allInnerTexts(), ['Vrij 13:00 – 14:30', 'Te kort: alleen 15:00 – 15:30 en 16:30 – 17:00 vrij', 'Helemaal vrij', 'Vrij 14:00 – 15:00']);
+  assert.equal(await vak(1).locator('.mstatus.geel').count(), 1, 'te kort is geel');
+  // Altijd waarmee het overlapt, elk overleg op een eigen regel (ook bij te kort)
+  const overlap = (i) => vak(i).locator('.moverlap li').evaluateAll((l) => l.map((x) => x.innerText.replace(/\s+/g, ' ')));
+  assert.deepEqual(await overlap(0), ['14:30 – 15:30 Demo Kies op Maat voor SURF']);
+  assert.deepEqual(await overlap(1), ['15:30 – 16:30 Bespreken Flusso']);
+  assert.deepEqual(await overlap(2), []);
+  assert.deepEqual(await overlap(3), ['15:00 – 15:45 1-op-1 Jochem', '16:00 – 17:00 Architectuuroverleg']);
   assert.deepEqual(await vak(1).locator('.chip.botst').allInnerTexts(), ['15:00', '16:00'], 'ook een tijd die overlapt kun je kiezen');
   assert.equal(await p.locator('#msamen').innerText(), 'Tik op een tijd om hem te kiezen');
   assert.equal(await p.locator('#minplannen').isDisabled(), true);
@@ -492,6 +494,10 @@ test('mail: een tijd die overlapt kiezen; het antwoord noemt geen reden, inplann
   await p.goto(url); await wacht(900);
   await kies(p, 'mail');
   await p.fill('#mtekst', 'Woensdag 11 november tussen 15:00 en 17:00'); await wacht(1200);
+  assert.deepEqual(await p.locator('#muitslag .chip.botst').allInnerTexts(), ['15:00', '16:00'], 'gedeeltelijk: geel');
+  await p.locator('.mailtijden [data-stap="-15"]').tap(); await p.locator('.mailtijden [data-stap="-15"]').tap(); await wacht(400);
+  assert.deepEqual(await p.locator('#muitslag .chip.vol').allInnerTexts(), ['15:30', '16:00'], 'helemaal bezet: rood');
+  await p.locator('.mailtijden [data-stap="15"]').tap(); await p.locator('.mailtijden [data-stap="15"]').tap(); await wacht(400);
   await p.locator('#muitslag .chip.botst', { hasText: '15:00' }).tap(); await wacht(200);
   assert.equal(await p.locator('#muitslag .chip.botst.aan').count(), 1);
   const samen = await p.locator('#msamen').innerText();

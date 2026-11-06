@@ -1050,15 +1050,22 @@ function toetsVak(lijst, o, duur) {
   const vrijeTijden = vrij.filter(([x, y]) => y - x >= ms).flatMap(([x, y]) => tijdenInBlok(x, y, duur));
   // Ook tijden die overlappen kun je kiezen: je beslist zelf of die andere afspraak voor kan gaan
   const alle = [...new Set([...vrijeTijden, ...tijdenInBlok(van, Math.max(tot, van + ms), duur)])].sort((x, y) => x - y);
-  const tijden = alle.map((t) => ({ t, blok: vrij.find(([x, y]) => t >= x && t + ms <= y) || null, botst: botst.filter((e) => e.start.getTime() < t + ms && e.end.getTime() > t) }));
+  const tijden = alle.map((t) => metOverlap(t, ms, vrij, botst));
   return { status: vrijeTijden.length ? 'vrij' : vrij.length ? 'kort' : 'bezet', vrij, tijden, botst, heel: !botst.length && van === a.getTime(), van, tot };
 }
-// 'Overlap met A (09:00 – 17:00) en B (13:00 – 14:00)'; bij meer: 'en 2 andere'
+// Een begintijd met wat erin zit: het vrije blok (als hij past), de afspraken die overlappen, en of hij helemaal bezet is
+function metOverlap(t, ms, vrij, botst) {
+  const b = botst.filter((e) => e.start.getTime() < t + ms && e.end.getTime() > t);
+  let bezet = 0, c = t;
+  b.map((e) => [Math.max(e.start.getTime(), t), Math.min(e.end.getTime(), t + ms)]).sort((x, y) => x[0] - y[0])
+    .forEach(([x, y]) => { if (y > c) { bezet += y - Math.max(x, c); c = y; } });
+  return { t, blok: vrij.find(([x, y]) => t >= x && t + ms <= y) || null, botst: b, vol: bezet >= ms };
+}
+// 'Overlap met A (09:00 – 17:00), B (13:00 – 14:00) en C (14:00 – 15:00)': altijd allemaal
 function overlapZin(botst) {
   if (!botst.length) return '';
-  const naam = (e) => `${e.title || 'een afspraak'} (${hhmm(e.start)} – ${hhmm(e.end)})`;
-  if (botst.length <= 2) return `Overlap met ${botst.map(naam).join(' en ')}`;
-  return `Overlap met ${naam(botst[0])}, ${naam(botst[1])} en ${botst.length - 2} andere`;
+  const namen = botst.map((e) => `${e.title || 'een afspraak'} (${hhmm(e.start)} – ${hhmm(e.end)})`);
+  return `Overlap met ${namen.length > 1 ? `${namen.slice(0, -1).join(', ')} en ${namen.at(-1)}` : namen[0]}`;
 }
 
 // 'maandag 9 november van 14:00 tot 15:00'
@@ -1083,7 +1090,7 @@ function openMailTijden() {
     <div class="detailinhoud">
       <div class="dkop"><h2 class="dtitel">Tijden uit een mail</h2></div>
       <div class="formkaart">
-        <label class="frij volbreed"><textarea id="mtekst" rows="5" placeholder="Plak hier de dagen en tijden uit de mail" aria-label="Tekst uit de mail" spellcheck="false"></textarea></label>
+        <label class="frij volbreed"><textarea id="mtekst" rows="5" placeholder="Plak hier de dagen en tijden uit de mail" aria-label="Tekst uit de mail" autocomplete="off" autocorrect="off" spellcheck="false"></textarea></label>
         ${kanPlakken ? `<button class="frij instknop" data-actie="plak">${I.plakken}<span>Plakken</span></button>` : ''}
       </div>
       <div class="formkaart">
@@ -1115,7 +1122,7 @@ function openMailTijden() {
     $('#mkopieer', el).disabled = !n;
     // Overlap staat er voor jou bij; in het antwoord komt alleen de tijd
     const let_op = [...gekozen].filter(([, g]) => g.botst.length).sort((x, y) => x[0] - y[0])
-      .map(([t, g]) => { const d = new Date(t); return `<div class="doverlap">${esc(cap(`${DAYS_LONG[d.getDay()]} ${hhmm(d)}`))}: ${esc(overlapZin(g.botst).replace(/^Overlap/, 'overlap'))}</div>`; }).join('');
+      .map(([t, g]) => { const d = new Date(t); return `<div class="doverlap${g.vol ? ' vol' : ''}">${esc(cap(`${DAYS_LONG[d.getDay()]} ${hhmm(d)}`))}: ${esc(overlapZin(g.botst).replace(/^Overlap/, 'overlap'))}</div>`; }).join('');
     $('#msamen', el).innerHTML = n ? `<div>${esc(mtAntwoord(gekozen.keys(), duur))}</div>${let_op}` : `<div class="leeg">${gelezen.opties.length ? 'Tik op een tijd om hem te kiezen' : 'Nog geen tijden'}</div>`;
   };
   // Eerst hoe het ervoor staat (in kleur), daaronder altijd waarmee het overlapt
@@ -1123,9 +1130,10 @@ function openMailTijden() {
     const vak = ([x, y]) => `${hhmm(new Date(x))} – ${hhmm(new Date(y))}`;
     if (u.status === 'voorbij') return '<span class="mstatus grijs">Al voorbij</span>';
     const kop = u.status === 'bezet' ? '<span class="mstatus rood">Bezet</span>'
-      : u.status === 'kort' ? `<span class="mstatus oranje">Te kort: alleen ${u.vrij.map(vak).join(' en ')} vrij</span>`
+      : u.status === 'kort' ? `<span class="mstatus geel">Te kort: alleen ${u.vrij.map(vak).join(' en ')} vrij</span>`
       : `<span class="mstatus groen">${u.heel ? 'Helemaal vrij' : `Vrij ${u.vrij.filter(([x, y]) => y - x >= duur * 6e4).map(vak).join(' en ')}`}</span>`;
-    return kop + (u.botst.length ? `<span class="mstatus sub">${esc(overlapZin(u.botst))}</span>` : '');
+    // Elk overleg dat overlapt op een eigen regel, met de tijd ervoor
+    return kop + (u.botst.length ? `<span class="mstatus sub">Overlap met</span><ul class="moverlap">${u.botst.map((e) => `<li><span class="num">${hhmm(e.start)} – ${hhmm(e.end)}</span><span>${esc(e.title || 'Een afspraak')}</span></li>`).join('')}</ul>` : '');
   };
   const teken = async () => {
     const mijn = ++beurt;
@@ -1150,14 +1158,14 @@ function openMailTijden() {
         const ms = duur * 6e4;
         for (const t of gekozen.keys()) {
           if (t >= u.van && t + ms <= Math.max(u.tot, u.van + ms) && !u.tijden.some((x) => x.t === t)) {
-            u.tijden.push({ t, blok: u.vrij.find(([x, y]) => t >= x && t + ms <= y) || null, botst: u.botst.filter((e) => e.start.getTime() < t + ms && e.end.getTime() > t) });
+            u.tijden.push(metOverlap(t, ms, u.vrij, u.botst));
           }
         }
         u.tijden.sort((x, y) => x.t - y.t);
-        u.tijden.forEach((x) => { bestaand.add(x.t); tijdInfo.set(x.t, { blok: x.blok, botst: x.botst }); if (gekozen.has(x.t)) gekozen.set(x.t, { blok: x.blok, botst: x.botst }); });
+        u.tijden.forEach((x) => { bestaand.add(x.t); tijdInfo.set(x.t, { blok: x.blok, botst: x.botst, vol: x.vol }); if (gekozen.has(x.t)) gekozen.set(x.t, { blok: x.blok, botst: x.botst, vol: x.vol }); });
         const van = `${pad(Math.floor(o.van / 60))}:${pad(o.van % 60)}`, tot = `${pad(Math.floor(o.tot / 60))}:${pad(o.tot % 60)}`;
         html += `<div class="frij kolom mvak"><span class="mkop"><span class="t1 num">${o.heleDag ? 'Hele dag' : `${van} – ${tot}`}</span>${statusTekst(u)}</span>
-          ${u.tijden.length ? `<div class="chips">${u.tijden.map((x) => `<button class="chip num${gekozen.has(x.t) ? ' aan' : ''}${x.botst.length ? ' botst' : ''}" data-t="${x.t}" aria-pressed="${gekozen.has(x.t)}"${x.botst.length ? ` aria-label="${hhmm(new Date(x.t))}, ${esc(overlapZin(x.botst).toLowerCase())}"` : ''}>${hhmm(new Date(x.t))}</button>`).join('')}</div>` : ''}</div>`;
+          ${u.tijden.length ? `<div class="chips">${u.tijden.map((x) => `<button class="chip num${gekozen.has(x.t) ? ' aan' : ''}${x.vol ? ' vol' : x.botst.length ? ' botst' : ''}" data-t="${x.t}" aria-pressed="${gekozen.has(x.t)}"${x.botst.length ? ` aria-label="${hhmm(new Date(x.t))}, ${esc(overlapZin(x.botst).toLowerCase())}"` : ''}>${hhmm(new Date(x.t))}</button>`).join('')}</div>` : ''}</div>`;
       }
       html += `</div>${waarschuwing ? `<p class="insttoelichting fout">${esc(cap(waarschuwing.waarschuwing))}. Klopt de datum?</p>` : ''}</section>`;
     }

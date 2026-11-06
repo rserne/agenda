@@ -458,8 +458,8 @@ test('mail: tijden naast de agenda, kiezen, antwoord kopiëren en inplannen', as
   await p.fill('#mtekst', MAIL); await wacht(1500);
   assert.deepEqual(await p.locator('#muitslag h3').allInnerTexts(), ['MAANDAG 9 NOVEMBER', 'WOENSDAG 11 NOVEMBER', 'DONDERDAG 12 NOVEMBER']);
   const vak = (i) => p.locator('#muitslag .mvak').nth(i);
-  assert.deepEqual(await p.locator('#muitslag .mstatus:not(.sub)').allInnerTexts(), ['Vrij 13:00 – 14:30', 'Te kort: alleen 15:00 – 15:30 en 16:30 – 17:00 vrij', 'Helemaal vrij', 'Vrij 14:00 – 15:00']);
-  assert.equal(await vak(1).locator('.mstatus.geel').count(), 1, 'te kort is geel');
+  assert.equal(await p.locator('#muitslag .mstatus:not(.sub)').count(), 0, 'geen zinnetje als "te kort": de kleuren van de tijden zeggen genoeg');
+  assert.deepEqual(await vak(2).locator('.chip.vrij').allInnerTexts(), ['11:00'], 'vrij: groen');
   // Altijd waarmee het overlapt, elk overleg op een eigen regel (ook bij te kort)
   const overlap = (i) => vak(i).locator('.moverlap li').evaluateAll((l) => l.map((x) => x.innerText.replace(/\s+/g, ' ')));
   assert.deepEqual(await overlap(0), ['14:30 – 15:30 Demo Kies op Maat voor SURF']);
@@ -480,7 +480,7 @@ test('mail: tijden naast de agenda, kiezen, antwoord kopiëren en inplannen', as
   assert.equal(await p.evaluate(() => window.gekopieerd), antwoord);
   // Een half uur: andere tijden; wat niet meer past, valt af
   await p.locator('.mailtijden [data-stap="-15"]').tap(); await p.locator('.mailtijden [data-stap="-15"]').tap(); await wacht(400);
-  assert.equal(await vak(1).locator('.mstatus').first().innerText(), 'Vrij 15:00 – 15:30 en 16:30 – 17:00');
+  assert.deepEqual(await vak(1).locator('.chip.vrij').allInnerTexts(), ['15:00', '16:30']);
   assert.deepEqual(await p.locator('#muitslag .chip.aan').allInnerTexts(), ['13:30', '14:00'], 'gekozen tijden die nog passen, blijven staan');
   await p.locator('#muitslag .chip.aan').first().tap(); await wacht(100);
   assert.equal(await p.locator('#muitslag .chip.aan').count(), 1);
@@ -514,6 +514,7 @@ test('mail: een tijd die overlapt kiezen; het antwoord noemt geen reden, inplann
   await p.locator('.mailtijden [data-stap="15"]').tap(); await p.locator('.mailtijden [data-stap="15"]').tap(); await wacht(400);
   await p.locator('#muitslag .chip.botst', { hasText: '15:00' }).tap(); await wacht(200);
   assert.equal(await p.locator('#muitslag .chip.botst.aan').count(), 1);
+  assert.equal(await p.locator('#muitslag .mkeuze').innerText(), '15:00 – 16:00 overlapt met Bespreken Flusso (15:30 – 16:30)', 'direct onder de tijden');
   const samen = await p.locator('#msamen').innerText();
   assert.match(samen, /^Ik kan op woensdag 11 november van 15:00 tot 16:00\.\n/);
   assert.match(samen, /Woensdag 15:00: overlap met Bespreken Flusso \(15:30 – 16:30\)$/, 'alleen voor jou');

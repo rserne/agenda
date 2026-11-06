@@ -1117,6 +1117,19 @@ function openMailTijden() {
     $('[data-stap="-15"]', el).disabled = duur <= 15;
     $('[data-stap="15"]', el).disabled = duur >= 8 * 60;
   };
+  // Direct onder de tijden: waarmee een gekozen tijd overlapt (ook zichtbaar als het toetsenbord open is)
+  const tekenKeuze = () => {
+    for (const vak of el.querySelectorAll('.mvak')) {
+      const regels = [...vak.querySelectorAll('.chip.aan')].map((c) => {
+        const t = Number(c.dataset.t), g = tijdInfo.get(t);
+        if (!g || !g.botst.length) return '';
+        const namen = g.botst.map((e) => `${esc(e.title || 'een afspraak')} (${hhmm(e.start)} – ${hhmm(e.end)})`);
+        return `<div class="${g.vol ? 'rood' : 'geel'}">${hhmm(new Date(t))} – ${hhmm(new Date(t + duur * 6e4))} overlapt met ${namen.length > 1 ? `${namen.slice(0, -1).join(', ')} en ${namen.at(-1)}` : namen[0]}</div>`;
+      });
+      const plek = $('.mkeuze', vak);
+      if (plek) plek.innerHTML = regels.join('');
+    }
+  };
   const tekenSamen = () => {
     const n = gekozen.size;
     $('#minplannen', el).disabled = n !== 1;
@@ -1127,14 +1140,10 @@ function openMailTijden() {
     $('#msamen', el).innerHTML = n ? `<div>${esc(mtAntwoord(gekozen.keys(), duur))}</div>${let_op}` : `<div class="leeg">${gelezen.opties.length ? 'Tik op een tijd om hem te kiezen' : 'Nog geen tijden'}</div>`;
   };
   // Eerst hoe het ervoor staat (in kleur), daaronder altijd waarmee het overlapt
+  // De kleuren van de tijden zeggen genoeg; eronder alleen elk overleg dat in het tijdvak valt, op een eigen regel
   const statusTekst = (u) => {
-    const vak = ([x, y]) => `${hhmm(new Date(x))} – ${hhmm(new Date(y))}`;
     if (u.status === 'voorbij') return '<span class="mstatus grijs">Al voorbij</span>';
-    const kop = u.status === 'bezet' ? '<span class="mstatus rood">Bezet</span>'
-      : u.status === 'kort' ? `<span class="mstatus geel">Te kort: alleen ${u.vrij.map(vak).join(' en ')} vrij</span>`
-      : `<span class="mstatus groen">${u.heel ? 'Helemaal vrij' : `Vrij ${u.vrij.filter(([x, y]) => y - x >= duur * 6e4).map(vak).join(' en ')}`}</span>`;
-    // Elk overleg dat overlapt op een eigen regel, met de tijd ervoor
-    return kop + (u.botst.length ? `<span class="mstatus sub">Overlap met</span><ul class="moverlap">${u.botst.map((e) => `<li><span class="num">${hhmm(e.start)} – ${hhmm(e.end)}</span><span>${esc(e.title || 'Een afspraak')}</span></li>`).join('')}</ul>` : '');
+    return (u.botst.length ? `<span class="mstatus sub">Overlap met</span><ul class="moverlap">${u.botst.map((e) => `<li><span class="num">${hhmm(e.start)} – ${hhmm(e.end)}</span><span>${esc(e.title || 'Een afspraak')}</span></li>`).join('')}</ul>` : '');
   };
   const teken = async () => {
     const mijn = ++beurt;
@@ -1166,13 +1175,14 @@ function openMailTijden() {
         u.tijden.forEach((x) => { bestaand.add(x.t); tijdInfo.set(x.t, { blok: x.blok, botst: x.botst, vol: x.vol }); if (gekozen.has(x.t)) gekozen.set(x.t, { blok: x.blok, botst: x.botst, vol: x.vol }); });
         const van = `${pad(Math.floor(o.van / 60))}:${pad(o.van % 60)}`, tot = `${pad(Math.floor(o.tot / 60))}:${pad(o.tot % 60)}`;
         html += `<div class="frij kolom mvak"><span class="mkop"><span class="t1 num">${o.heleDag ? 'Hele dag' : `${van} – ${tot}`}</span>${statusTekst(u)}</span>
-          ${u.tijden.length ? `<div class="chips">${u.tijden.map((x) => `<button class="chip num${gekozen.has(x.t) ? ' aan' : ''}${x.vol ? ' vol' : x.botst.length ? ' botst' : ''}" data-t="${x.t}" aria-pressed="${gekozen.has(x.t)}"${x.botst.length ? ` aria-label="${hhmm(new Date(x.t))}, ${esc(overlapZin(x.botst).toLowerCase())}"` : ''}>${hhmm(new Date(x.t))}</button>`).join('')}</div>` : ''}</div>`;
+          ${u.tijden.length ? `<div class="chips">${u.tijden.map((x) => `<button class="chip num${gekozen.has(x.t) ? ' aan' : ''}${x.vol ? ' vol' : x.botst.length ? ' botst' : ' vrij'}" data-t="${x.t}" aria-pressed="${gekozen.has(x.t)}"${x.botst.length ? ` aria-label="${hhmm(new Date(x.t))}, ${esc(overlapZin(x.botst).toLowerCase())}"` : ''}>${hhmm(new Date(x.t))}</button>`).join('')}</div><div class="mkeuze" aria-live="polite"></div>` : ''}</div>`;
       }
       html += `</div>${waarschuwing ? `<p class="insttoelichting fout">${esc(cap(waarschuwing.waarschuwing))}. Klopt de datum?</p>` : ''}</section>`;
     }
     if (gelezen.zonderDag.length) html += `<p class="insttoelichting fout">Zonder dag, dus overgeslagen: ${gelezen.zonderDag.map((x) => `"${esc(x)}"`).join(', ')}</p>`;
     uit.innerHTML = html;
     for (const t of [...gekozen.keys()]) if (!bestaand.has(t)) gekozen.delete(t); // past niet meer (andere duur of tekst)
+    tekenKeuze();
     tekenSamen();
   };
   // Het veld groeit mee met de tekst (tot een grens; daarna scrolt het)
@@ -1197,6 +1207,7 @@ function openMailTijden() {
       if (gekozen.has(tijd)) gekozen.delete(tijd); else gekozen.set(tijd, tijdInfo.get(tijd) || { blok: null, botst: [] });
       c.classList.toggle('aan', gekozen.has(tijd));
       c.setAttribute('aria-pressed', String(gekozen.has(tijd)));
+      tekenKeuze();
       tekenSamen();
       return;
     }

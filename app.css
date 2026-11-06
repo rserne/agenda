@@ -596,7 +596,7 @@ button.drij:active { opacity: 0.6; }
 .keuzemenu button { display: flex; align-items: center; gap: 10px; color: var(--label); font-size: 16px; font-weight: 600; white-space: nowrap; }
 .keuzemenu button .icoon { width: 20px; height: 20px; color: var(--accent); flex: none; }
 /* Boven de plusknop: losse pillen dicht op elkaar, rechts uitgelijnd met de knop, die één voor één opkomen */
-.keuzemenu.fab { align-items: flex-end; gap: 4px; }
+.keuzemenu.fab { align-items: flex-end; gap: 10px; }
 .keuzemenu.fab button {
   height: 56px; padding: 0 24px 0 12px; gap: 12px; border-radius: 28px; /* icoon links, tekst ernaast */
   background: var(--fabPil); color: var(--fabPilTekst); font-size: 17px; font-weight: 500;

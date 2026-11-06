@@ -275,15 +275,24 @@ test('ruimtes: opgeven in Instellingen, bij Locatie kiezen, en de ruimte gaat me
   await p.goto(url); await wacht(800);
   await p.click('#titelknop'); await wacht(700);
   await p.locator('.paneel [data-actie="instellingen"]').tap(); await wacht(900);
-  await p.fill('#iruimtes', 'Zonnezaal\nCoupé\nGroot Overleg\nKelder <beneden@elders.example>');
-  await p.fill('#idomein', '@voorbeeld.nl');
-  assert.match(await p.locator('#iruimtevb').innerText(), /Zonnezaal krijgt het adres zonnezaal@voorbeeld\.nl/);
+  for (const [naam, email] of [['Zonnezaal', 'zonnezaal@voorbeeld.nl'], ['Coupé', 'coupe@voorbeeld.nl'], ['Groot Overleg', 'grootoverleg@voorbeeld.nl'], ['Weg', ''], ['Kelder', 'kelder@']]) {
+    await p.locator('[data-actie="ruimte-erbij"]').tap(); await wacht(150);
+    await p.keyboard.type(naam); // de naam van de nieuwe ruimte heeft meteen de focus
+    if (email) await p.locator('.ruimterij').last().locator('.rmail').fill(email);
+  }
+  assert.equal(await p.locator('.ruimterij').last().locator('.rmail.ongeldig').count(), 1, 'een onvolledig adres valt op');
+  await p.locator('.ruimterij').nth(3).locator('[data-actie="ruimte-weg"]').tap(); await wacht(150);
+  assert.deepEqual(await p.locator('.ruimterij .rnaam').evaluateAll((l) => l.map((i) => i.value)), ['Zonnezaal', 'Coupé', 'Groot Overleg', 'Kelder']);
   await p.reload(); await wacht(1000); // bewaard op het toestel
   await p.locator('[data-nieuw]:visible').first().tap(); await wacht(900);
   await p.locator('.paneel .chip').first().tap(); await wacht(200);
   const loc = p.locator('.paneel [name="locatie"]');
+  const dagY = () => p.locator('.paneel .formkaart').nth(1).boundingBox().then((x) => Math.round(x.y));
+  const y0 = await dagY();
   await loc.focus(); await wacht(300);
   assert.deepEqual(await p.locator('#nlocaties .aanvuloptie .t1').allInnerTexts(), ['Zonnezaal', 'Coupé', 'Groot Overleg', 'Kelder'], 'alle ruimtes bij een tik');
+  assert.deepEqual(await p.locator('#nlocaties .aanvuloptie .t2').allInnerTexts(), ['Ruimte · zonnezaal@voorbeeld.nl', 'Ruimte · coupe@voorbeeld.nl', 'Ruimte · grootoverleg@voorbeeld.nl', 'Ruimte'], 'een ongeldig adres telt niet');
+  assert.equal(await dagY(), y0, 'de lijst ligt over het formulier: niets verspringt');
   await loc.type('ov', { delay: 20 }); await wacht(200);
   assert.deepEqual(await p.locator('#nlocaties .aanvuloptie .t1').allInnerTexts(), ['Groot Overleg']);
   await p.locator('#nlocaties .aanvuloptie').first().tap(); await wacht(200);
@@ -299,6 +308,14 @@ test('ruimtes: opgeven in Instellingen, bij Locatie kiezen, en de ruimte gaat me
   await loc.type(', achterin', { delay: 20 }); await wacht(200); // zelf iets anders: geen ruimte meer
   assert.doesNotMatch(await p.locator('#noutlook').getAttribute('href'), /attendees=/);
   assert.deepEqual(p.fouten, []);
+});
+
+test('ruimtes: de eerdere vorm (één per regel met een maildomein) wordt omgezet', async ({ browser, url }) => {
+  const p = await nieuwePagina(browser, TELEFOON);
+  await p.context().addInitScript(() => { if (!sessionStorage.getItem('gezet')) { sessionStorage.setItem('gezet', '1'); localStorage.setItem('ag_ruimtes', JSON.stringify({ tekst: 'Glazen Huis\nKelder <beneden@elders.example>', domein: '@voorbeeld.nl' })); } });
+  await p.goto(url); await wacht(800);
+  assert.deepEqual(await p.evaluate(() => ruimtes()), [{ naam: 'Glazen Huis', email: 'glazenhuis@voorbeeld.nl' }, { naam: 'Kelder', email: 'beneden@elders.example' }]);
+  assert.equal(await p.evaluate(() => localStorage.getItem('ag_ruimtes')), null, 'de oude vorm is opgeruimd');
 });
 
 test('plaatsen: met een Google-sleutel vult Locatie ook adressen aan, en de sleutel testen werkt', async ({ browser, url }) => {
@@ -329,6 +346,10 @@ test('plaatsen: met een Google-sleutel vult Locatie ook adressen aan, en de sleu
   assert.equal(vragen.length, 2, 'met twee letters nog niet naar Google');
   await loc.type('mrak', { delay: 20 }); await wacht(700);
   assert.equal(vragen.length, 3, 'één vraag na het typen, niet één per letter');
+  await loc.type(' ', { delay: 0 }); await wacht(30);
+  assert.deepEqual(await p.locator('#nlocaties .aanvuloptie .t2').allInnerTexts(), ['Amsterdam, Nederland'], 'de plaatsen blijven staan tot er nieuwe zijn');
+  await wacht(700);
+  await loc.press('Backspace'); await wacht(700);
   const v = vragen.at(-1);
   assert.equal(v.sleutel, 'proefsleutel');
   assert.equal(v.body.input, 'damrak');

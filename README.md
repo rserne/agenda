@@ -63,13 +63,13 @@ De lijst blijft alleen op het toestel, in IndexedDB, net als je agenda. Laad hem
 
 ## Ruimtes en plaatsen
 
-Onder **Instellingen**, **Ruimtes** zet je je vergaderruimtes, één per regel. Tik je bij een nieuwe afspraak op Locatie, dan staan ze meteen klaar; typ je iets, dan filtert de lijst mee (accenten hoeven niet).
+Onder **Instellingen**, **Ruimtes** zet je je vergaderruimtes, elk met een naam en (optioneel) een e-mailadres. Met **Ruimte toevoegen** komt er een regel bij, met de rode min haal je er een weg. Tik je bij een nieuwe afspraak op Locatie, dan staan je ruimtes meteen klaar; typ je iets, dan filtert de lijst mee (accenten hoeven niet). De suggesties zweven over het formulier, zodat er niets verspringt terwijl je typt.
 
-Met een **maildomein** krijgt elke ruimte een e-mailadres: de naam zonder spaties en accenten, gevolgd door het domein (Glazen Huis wordt `glazenhuis@…`). Klopt dat voor een ruimte niet, schrijf dan `Naam <adres>` op de regel. Kies je een ruimte met een adres, dan zet de app de ruimte ook als deelnemer in de uitnodiging, zodat Outlook hem reserveert. Of de ruimte vrij is, ziet de app niet; dat laat Outlook zien.
+Kies je een ruimte met een e-mailadres, dan zet de app de ruimte ook als deelnemer in de uitnodiging, zodat Outlook hem reserveert. Typ je daarna zelf iets anders bij Locatie, dan haalt de app de ruimte weer uit de deelnemers. Of de ruimte vrij is, ziet de app niet; dat laat Outlook zien.
 
-Met een **sleutel van Google** voor de Places API (New) vult Locatie vanaf drie letters ook adressen en plaatsen aan. De app vraagt pas als je even stopt met typen, met één sessie per afspraak. Wat je in Locatie typt, gaat dan naar Google. Beperk de sleutel in Google Cloud Console tot de Places API (New) en tot de website `rserne.github.io`, zodat niemand anders er iets aan heeft. Met **Sleutel testen** zie je meteen of hij werkt.
+Met een **sleutel van Google** voor de Places API (New) vult Locatie vanaf drie letters ook adressen en plaatsen aan. De app vraagt pas als je even stopt met typen, met één sessie per afspraak; de vorige plaatsen blijven staan tot de nieuwe binnen zijn. Wat je in Locatie typt, gaat dan naar Google. Beperk de sleutel in Google Cloud Console tot de Places API (New) en tot de website `rserne.github.io`, zodat niemand anders er iets aan heeft. Met **Sleutel testen** zie je meteen of hij werkt.
 
-Ruimtes, maildomein en sleutel staan alleen op het toestel (localStorage), nooit in de code of in de repository.
+Ruimtes en sleutel staan alleen op het toestel (localStorage), nooit in de code of in de repository.
 
 ## Indeling
 

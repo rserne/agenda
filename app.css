@@ -138,6 +138,7 @@
     --freeTileBorder: rgba(134, 195, 225, 0.55);
     --backdrop: rgba(0, 0, 0, 0.5);
     --sheetBg: #000000;
+    --popBg: #2C2C2E; /* zwevende lijsten, iets lichter dan een kaart */
   }
 }
 
@@ -591,9 +592,17 @@ button.drij:active { opacity: 0.6; }
 .frij input, .frij textarea { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--label); font: inherit; font-size: 16px; line-height: 22px; padding: 0; outline: none; resize: none; }
 .frij textarea { min-height: 66px; }
 .frij input::placeholder, .frij textarea::placeholder { color: var(--secondary); opacity: 0.8; }
-/* Aanvullen van deelnemers uit je contacten: de suggesties staan direct onder het veld, in dezelfde kaart */
-.aanvullijst { display: flex; flex-direction: column; margin: 0 -16px; }
+/* Suggesties bij deelnemers en locatie: een zwevende lijst onder het veld, over het formulier heen (niets verspringt) */
+.formkaart { position: relative; }
+.aanvullijst {
+  position: absolute; left: 8px; right: 8px; z-index: 20;
+  display: flex; flex-direction: column; padding: 4px 0;
+  max-height: min(320px, 50vh); overflow-y: auto; overscroll-behavior: contain;
+  background: var(--popBg, var(--card)); border: 0.5px solid var(--separator); border-radius: 14px;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.08);
+}
 .aanvullijst[hidden] { display: none; }
+.aanvullijst > .aanvuloptie:first-child::before { display: none; }
 .aanvuloptie { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 1px; width: 100%; min-height: 50px; padding: 7px 16px; text-align: left; color: var(--label); }
 .aanvuloptie::before { content: ''; position: absolute; top: 0; left: 16px; right: 16px; border-top: 0.5px solid var(--separator); } /* lijn springt in, zoals de andere rijen */
 .aanvuloptie:active, .aanvuloptie.actief { background: var(--fill); }
@@ -705,6 +714,13 @@ label.frij:focus-within .flabel { color: var(--accent); }
 .instknop:disabled { opacity: 0.5; }
 .insttoelichting { margin: 6px 0 0; padding: 0 16px; color: var(--secondary); font-size: 13px; line-height: 18px; }
 .insttoelichting.fout { color: var(--overlap); }
+/* Ruimtes: per regel een naam en een e-mailadres, en een knop om de ruimte te verwijderen */
+.ruimterij { gap: 12px; padding: 8px 0; }
+.ruimtevelden { display: flex; flex-direction: column; flex: 1; min-width: 0; gap: 2px; }
+.frij .ruimtevelden .rmail { font-size: 14px; line-height: 19px; color: var(--secondary); }
+.frij .ruimtevelden .rmail.ongeldig { color: var(--overlap); }
+.ruimteweg { display: grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: 14px; background: var(--fill); color: var(--statusNo); }
+.ruimteweg .icoon { width: 16px; height: 16px; }
 .instellingen .frij textarea { min-height: 110px; }
 
 /* ================================================================ Desktop (vanaf 1200): ontwerp A, in de stijl van Agenda op de Mac */

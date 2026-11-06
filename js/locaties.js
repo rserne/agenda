@@ -1,34 +1,46 @@
 // Locaties bij een nieuwe afspraak: je eigen ruimtes, en (met een Google-sleutel) adressen en plaatsen.
 // Ruimtes en sleutel geef je op onder Instellingen; ze blijven alleen op dit toestel (localStorage).
 
-// Ruimtes: één per regel, 'Naam' of 'Naam <adres@domein>'.
-// Met een maildomein krijgt een ruimte zonder adres: naam zonder spaties en accenten @ domein (Glazen Huis → glazenhuis@…).
+// Ruimtes: een lijst met per ruimte een naam en (optioneel) een e-mailadres.
 // Met een adres zet de app de ruimte ook als deelnemer in de uitnodiging, zodat Outlook hem reserveert.
-const RUIMTES_SLEUTEL = 'ag_ruimtes';
+const RUIMTES_SLEUTEL = 'ag_ruimtes2';
 const GOOGLE_SLEUTEL = 'ag_google';
 
-const ruimteInstelling = () => LS.get(RUIMTES_SLEUTEL) || { tekst: '', domein: '' };
-const zetRuimteInstelling = (r) => LS.set(RUIMTES_SLEUTEL, { tekst: String(r.tekst || ''), domein: String(r.domein || '').trim().replace(/^@/, '') });
 const googleSleutel = () => String(LS.get(GOOGLE_SLEUTEL) || '').trim();
 const zetGoogleSleutel = (k) => { const s = String(k || '').trim(); if (s) LS.set(GOOGLE_SLEUTEL, s); else LS.del(GOOGLE_SLEUTEL); };
 
-const ruimteAdres = (naam, domein) => {
-  const deel = zonderAccent(naam).replace(/[^a-z0-9._-]+/g, '');
-  return deel && domein ? `${deel}@${domein}` : '';
-};
+// Alles wat je hebt ingevuld, ook regels die nog niet af zijn (voor het scherm Instellingen)
+function ruimteLijst() {
+  const lijst = LS.get(RUIMTES_SLEUTEL);
+  if (Array.isArray(lijst)) return lijst.map((r) => ({ naam: String(r.naam || ''), email: String(r.email || '') }));
+  // Eerdere vorm: één ruimte per regel en een maildomein. Eenmalig omzetten.
+  const oud = LS.get('ag_ruimtes');
+  if (oud && typeof oud.tekst === 'string') {
+    const domein = String(oud.domein || '').trim().replace(/^@/, '');
+    const uit = oud.tekst.split('\n').map((x) => x.trim()).filter(Boolean).map((regel) => {
+      const na = naamEnAdres(regel);
+      if (na) return { naam: na.naam || na.email, email: na.email };
+      const deel = zonderAccent(regel).replace(/[^a-z0-9._-]+/g, '');
+      return { naam: regel, email: deel && domein ? `${deel}@${domein}` : '' };
+    });
+    zetRuimteLijst(uit);
+    LS.del('ag_ruimtes');
+    return uit;
+  }
+  return [];
+}
+const zetRuimteLijst = (lijst) => LS.set(RUIMTES_SLEUTEL, lijst.map((r) => ({ naam: String(r.naam || '').trim(), email: String(r.email || '').trim() })));
 
+// De bruikbare ruimtes: met een naam, zonder dubbele, en alleen een geldig adres
 function ruimtes() {
-  const { tekst, domein } = ruimteInstelling();
   const gezien = new Set();
   const uit = [];
-  for (const regel of String(tekst).split('\n')) {
-    const r = regel.trim();
-    if (!r) continue;
-    const na = naamEnAdres(r);
-    const naam = na ? na.naam || na.email : r;
-    if (gezien.has(naam.toLowerCase())) continue;
+  for (const r of ruimteLijst()) {
+    const naam = r.naam.trim();
+    if (!naam || gezien.has(naam.toLowerCase())) continue;
     gezien.add(naam.toLowerCase());
-    uit.push({ naam, email: na ? na.email : ruimteAdres(naam, domein) });
+    const email = r.email.trim();
+    uit.push({ naam, email: IS_ADRES.test(email) ? email : '' });
   }
   return uit;
 }

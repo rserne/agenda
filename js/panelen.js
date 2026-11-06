@@ -536,18 +536,24 @@ function downloadIcs(v) {
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 
-// Suggesties direct onder een invoerveld, in dezelfde kaart (deelnemers en locatie).
-// zoek(vraag) geeft { nu: [items], later?: Promise<[items]> }; een item is { t1, t2, kop? }. kies(item) vult het veld.
+// Suggesties in een zwevende lijst onder een invoerveld (deelnemers en locatie). De lijst ligt over het formulier heen,
+// zodat er niets verspringt terwijl je typt.
+// zoek(vraag) geeft { nu: [items], later?: Promise<[items]> }; later vervangt de hele lijst zodra het binnen is.
+// Een item is { t1, t2, kop? }. kies(item) vult het veld.
 // leegTonen: ook zonder tekst suggesties tonen, zodra je in het veld tikt (de ruimtes bij Locatie).
 function koppelSuggesties(veld, lijstEl, { vraagVan = (w) => w.trim(), zoek, kies, leegTonen = false }) {
-  let items = [], actief = -1, beurt = 0, stil = false;
-  const sluit = () => { items = []; actief = -1; lijstEl.innerHTML = ''; lijstEl.hidden = true; veld.setAttribute('aria-expanded', 'false'); veld.removeAttribute('aria-activedescendant'); };
+  let items = [], actief = -1, beurt = 0, stil = false, getekend = '';
+  const sluit = () => { items = []; actief = -1; getekend = ''; lijstEl.innerHTML = ''; lijstEl.hidden = true; veld.setAttribute('aria-expanded', 'false'); veld.removeAttribute('aria-activedescendant'); };
   const teken = () => {
     if (!items.length) { sluit(); return; }
+    const html = items.map((c, i) => `${c.kop ? `<div class="aanvulkop" role="presentation">${esc(c.kop)}</div>` : ''}<button type="button" role="option" id="${lijstEl.id}-${i}" class="aanvuloptie${i === actief ? ' actief' : ''}" aria-selected="${i === actief}" data-aanvul="${i}" tabindex="-1">
+        <span class="t1">${esc(c.t1)}</span>${c.t2 ? `<span class="t2">${esc(c.t2)}</span>` : ''}</button>`).join('');
+    // Net onder de rij met het veld, over de rest van het formulier heen
+    const rij = veld.closest('.frij');
+    if (rij) lijstEl.style.top = `${rij.offsetTop + rij.offsetHeight - 4}px`;
+    if (html !== getekend) { lijstEl.innerHTML = html; getekend = html; } // alleen tekenen als er iets veranderd is
     lijstEl.hidden = false;
     veld.setAttribute('aria-expanded', 'true');
-    lijstEl.innerHTML = items.map((c, i) => `${c.kop ? `<div class="aanvulkop" role="presentation">${esc(c.kop)}</div>` : ''}<button type="button" role="option" id="${lijstEl.id}-${i}" class="aanvuloptie${i === actief ? ' actief' : ''}" aria-selected="${i === actief}" data-aanvul="${i}" tabindex="-1">
-        <span class="t1">${esc(c.t1)}</span>${c.t2 ? `<span class="t2">${esc(c.t2)}</span>` : ''}</button>`).join('');
     if (actief >= 0) veld.setAttribute('aria-activedescendant', `${lijstEl.id}-${actief}`); else veld.removeAttribute('aria-activedescendant');
   };
   const zoekNu = () => {
@@ -556,9 +562,13 @@ function koppelSuggesties(veld, lijstEl, { vraagVan = (w) => w.trim(), zoek, kie
     if (!vraag && !leegTonen) { sluit(); return; }
     const { nu = [], later = null } = zoek(vraag) || {};
     items = nu; actief = items.length && !IOS ? 0 : -1; teken();
-    if (later) later.then((meer) => {
-      if (mijn !== beurt || document.activeElement !== veld || !meer || !meer.length) return;
-      items = [...items, ...meer]; if (actief < 0 && !IOS) actief = 0; teken();
+    if (later) later.then((nieuw) => {
+      if (mijn !== beurt || document.activeElement !== veld || !nieuw) return;
+      const was = items[actief];
+      items = nieuw;
+      actief = was ? Math.max(0, items.findIndex((c) => c.t1 === was.t1 && c.t2 === was.t2)) : (items.length && !IOS ? 0 : -1);
+      if (actief >= items.length) actief = items.length - 1;
+      teken();
     }).catch(() => { /* geen extra suggesties */ });
   };
   const neem = (i) => {
@@ -732,22 +742,28 @@ async function openNieuw({ dag = null, blok = null } = {}) {
   });
   // Locatie: je ruimtes (direct bij een tik), en met een Google-sleutel ook adressen en plaatsen
   const locVeld = $('input[name="locatie"]', el);
-  let sessie = nieuweSessie(), googleWacht = null;
+  let sessie = nieuweSessie(), googleWacht = null, plaatsen = [];
+  // Ruimtes eerst, dan plaatsen; koppen alleen als er van allebei iets is
+  const metKoppen = (rs, ps) => {
+    const r = rs.map((x, i) => ({ ...x, kop: i === 0 && ps.length ? 'Ruimtes' : '' }));
+    const p2 = ps.map((x, i) => ({ ...x, kop: i === 0 && rs.length ? 'Plaatsen' : '' }));
+    return [...r, ...p2];
+  };
   koppelSuggesties(locVeld, $('#nlocaties', el), {
     leegTonen: true,
     zoek: (vraag) => {
       const rs = zoekRuimtes(vraag).map((r) => ({ t1: r.naam, t2: r.email ? `Ruimte · ${r.email}` : 'Ruimte', ruimte: r }));
-      if (!googleSleutel() || vraag.length < 3) return { nu: rs };
       clearTimeout(googleWacht);
-      const later = new Promise((ok) => { googleWacht = setTimeout(ok, 250); })
+      if (!googleSleutel() || vraag.length < 3) { plaatsen = []; return { nu: rs }; }
+      // De vorige plaatsen blijven staan tot de nieuwe binnen zijn: zo verspringt de lijst niet bij elke letter
+      const later = new Promise((ok) => { googleWacht = setTimeout(ok, 300); })
         .then(() => zoekPlaatsen(vraag, sessie))
-        .then((ps) => ps.map((pl, i) => ({ t1: pl.naam, t2: pl.sub, tekst: pl.tekst, kop: i === 0 && rs.length ? 'Plaatsen' : '' })));
-      if (rs.length) rs[0].kop = 'Ruimtes';
-      return { nu: rs, later };
+        .then((ps) => { plaatsen = ps.map((pl) => ({ t1: pl.naam, t2: pl.sub, tekst: pl.tekst })); return metKoppen(rs, plaatsen); });
+      return { nu: metKoppen(rs, plaatsen), later };
     },
     kies: (c) => {
       if (c.ruimte) { locVeld.value = c.ruimte.naam; v.ruimte = c.ruimte; }
-      else { locVeld.value = c.tekst || c.t1; v.ruimte = null; sessie = nieuweSessie(); }
+      else { locVeld.value = c.tekst || c.t1; v.ruimte = null; sessie = nieuweSessie(); plaatsen = []; }
     },
   });
 
@@ -908,7 +924,15 @@ function openInstellingen() {
       + knop('contacten-inladen', I.inladen, c ? 'Nieuwer bestand inladen' : 'Contacten inladen')
       + (c ? knop('contacten-wis', I.wissen, 'Contacten wissen') : '');
   };
-  const r = ruimteInstelling();
+  // Ruimtes: per ruimte een naam en een e-mailadres, met een knop om hem te verwijderen
+  const ruimteRij = (r, i) => `<div class="frij ruimterij" data-i="${i}">
+      <span class="ruimtevelden">
+        <input class="rnaam" type="text" placeholder="Naam" aria-label="Naam van de ruimte" autocomplete="off" autocapitalize="words" spellcheck="false" value="${esc(r.naam)}">
+        <input class="rmail${r.email && !IS_ADRES.test(r.email.trim()) ? ' ongeldig' : ''}" type="email" inputmode="email" placeholder="E-mailadres (optioneel)" aria-label="E-mailadres van de ruimte" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(r.email)}">
+      </span>
+      <button class="ruimteweg" data-actie="ruimte-weg" aria-label="${esc(r.naam ? `${r.naam} verwijderen` : 'Ruimte verwijderen')}">${I.min}</button>
+    </div>`;
+  const ruimtesHtml = () => ruimteLijst().map(ruimteRij).join('') + `<button class="frij instknop" data-actie="ruimte-erbij">${I.plus}<span>Ruimte toevoegen</span></button>`;
   el.innerHTML = `<div class="detailgreep"><div class="greep"></div>
       <div class="detailnav"><button class="rond glas" data-actie="sluit" aria-label="Sluiten">${I.kruis}</button></div></div>
     <div class="detailinhoud">
@@ -916,10 +940,8 @@ function openInstellingen() {
       <section class="instsectie"><h3>Agenda</h3><div class="formkaart" id="iagenda">${agendaHtml()}</div></section>
       <section class="instsectie"><h3>Contacten</h3><div class="formkaart" id="icontacten">${contactHtml()}</div>
         <p class="insttoelichting">Een csv uit NK2Edit of Outlook, of een vCard (.vcf). Bij een nieuwe afspraak vult de app namen aan tot e-mailadressen.</p></section>
-      <section class="instsectie"><h3>Ruimtes</h3><div class="formkaart">
-        <label class="frij boven"><span class="flabel">Namen</span><textarea id="iruimtes" rows="5" placeholder="Eén ruimte per regel" autocomplete="off" autocapitalize="words" spellcheck="false">${esc(r.tekst)}</textarea></label>
-        <label class="frij"><span class="flabel">Maildomein</span><input id="idomein" type="text" inputmode="url" placeholder="Bijvoorbeeld bedrijf.nl" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(r.domein)}"></label>
-      </div><p class="insttoelichting" id="iruimtevb"></p></section>
+      <section class="instsectie"><h3>Ruimtes</h3><div class="formkaart" id="iruimtes">${ruimtesHtml()}</div>
+        <p class="insttoelichting">Bij een nieuwe afspraak staan je ruimtes klaar onder Locatie. Met een e-mailadres zet de app de ruimte ook als deelnemer in de uitnodiging, zodat Outlook hem reserveert.</p></section>
       <section class="instsectie"><h3>Plaatsen via Google</h3><div class="formkaart">
         <label class="frij"><span class="flabel">Sleutel</span><input id="igoogle" type="text" placeholder="Optioneel" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(googleSleutel())}"></label>
         <button class="frij instknop" id="igoogletest">${I.vink}<span>Sleutel testen</span></button>
@@ -929,18 +951,15 @@ function openInstellingen() {
   const p = openPaneel(el, { greepSelector: '.detailgreep' });
   const tekenAgenda = () => { const a = $('#iagenda', el); if (a) a.innerHTML = agendaHtml(); };
   const tekenContacten = () => { const a = $('#icontacten', el); if (a) a.innerHTML = contactHtml(); };
-  // Een voorbeeld laat zien welk adres een ruimte krijgt
-  const tekenRuimteVb = () => {
-    const rs = ruimtes();
-    const vb = rs.find((x) => x.email) || null;
-    $('#iruimtevb', el).textContent = !rs.length
-      ? 'Bij een nieuwe afspraak staan je ruimtes klaar onder Locatie. Geef je een maildomein op, dan zet de app de ruimte ook als deelnemer in de uitnodiging, zodat Outlook hem reserveert.'
-      : vb ? `Bij een nieuwe afspraak staan ${rs.length === 1 ? 'deze ruimte' : `deze ${rs.length} ruimtes`} klaar onder Locatie. ${vb.naam} krijgt het adres ${vb.email}; klopt dat niet, schrijf dan ${vb.naam} <adres> op de regel.`
-      : `Bij een nieuwe afspraak staan ${rs.length === 1 ? 'deze ruimte' : `deze ${rs.length} ruimtes`} klaar onder Locatie. Met een maildomein reserveert Outlook de ruimte ook.`;
+  // Wat er in de velden staat, meteen bewaren
+  const leesRuimtes = () => [...el.querySelectorAll('.ruimterij')].map((rij) => ({ naam: $('.rnaam', rij).value, email: $('.rmail', rij).value }));
+  const tekenRuimtes = (focusRij = -1) => {
+    $('#iruimtes', el).innerHTML = ruimtesHtml();
+    if (focusRij >= 0) { const i = el.querySelector(`.ruimterij[data-i="${focusRij}"] .rnaam`); if (i) i.focus(); }
   };
-  tekenRuimteVb();
   el.addEventListener('input', (ev) => {
-    if (ev.target.id === 'iruimtes' || ev.target.id === 'idomein') { zetRuimteInstelling({ tekst: $('#iruimtes', el).value, domein: $('#idomein', el).value }); tekenRuimteVb(); }
+    if (ev.target.closest('.ruimterij')) zetRuimteLijst(leesRuimtes());
+    if (ev.target.classList.contains('rmail')) { const w = ev.target.value.trim(); ev.target.classList.toggle('ongeldig', !!w && !IS_ADRES.test(w)); }
     if (ev.target.id === 'igoogle') zetGoogleSleutel(ev.target.value);
   });
   el.addEventListener('click', async (ev) => {
@@ -952,6 +971,8 @@ function openInstellingen() {
     if (actie === 'ics-openen') { $('#icsinvoer').click(); p.sluit(); return; }
     if (actie === 'contacten-inladen') { $('#contactinvoer').click(); p.sluit(); return; }
     if (actie === 'ics-kies') { p.sluit(); setTimeout(openBronPaneel, 250); return; }
+    if (actie === 'ruimte-erbij') { const l = leesRuimtes(); l.push({ naam: '', email: '' }); zetRuimteLijst(l); tekenRuimtes(l.length - 1); return; }
+    if (actie === 'ruimte-weg') { const l = leesRuimtes(); l.splice(Number(a.closest('.ruimterij').dataset.i), 1); zetRuimteLijst(l); tekenRuimtes(); return; }
     if (actie === 'ics-nu') { Promise.resolve(nuBijwerken()).finally(tekenAgenda); tekenAgenda(); return; }
     if (actie === 'contacten-wis') {
       if (confirm('Contacten wissen? Ze verdwijnen alleen van dit toestel; je bestand blijft gewoon bestaan.')) { await vergeetContacten(); tekenContacten(); render(); renderZijbalk(); }

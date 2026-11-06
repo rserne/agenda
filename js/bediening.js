@@ -175,6 +175,16 @@ function koppel() {
   const t = LS.get('ag_tab');
   if (['week', 'forecast'].includes(t)) ST.tab = t;
   koppel();
+  // Toetsenbord op iOS: het schuift over de pagina heen. Meet hoeveel, zodat panelen erboven blijven en je tot onderaan kunt scrollen.
+  if (window.visualViewport) {
+    const vv = window.visualViewport;
+    const meet = () => {
+      const tb = Math.round(window.innerHeight - vv.height - vv.offsetTop);
+      document.documentElement.style.setProperty('--tb', `${tb > 80 ? tb : 0}px`);
+    };
+    vv.addEventListener('resize', meet);
+    vv.addEventListener('scroll', meet);
+  }
   laadContacten().then(() => { if (CONTACTEN_INFO && isDesktop()) renderZijbalk(); });
   // Een eerder geopend .ics-bestand of je agenda-link gaat voor (behalve met ?demo)
   renderKop(); // de titel en knoppen staan er meteen, ook voordat de afspraken uit de opslag komen

@@ -435,6 +435,8 @@ main.kolom.trekt { transition: none; }
 .detail { background: var(--sheetBg); max-width: 680px; }
 /* Ook bij weinig inhoud opent het paneel hoog genoeg dat de tekst prettig in beeld staat; de knoppen staan onderaan */
 .paneel.detail { min-height: min(72vh, 680px); min-height: min(72dvh, 680px); }
+/* Tijden uit een mail opent meteen op volle hoogte: er komt veel onder de tekst */
+.paneel.mailtijden:not(.dialoog) { height: calc(100% - env(safe-area-inset-top, 0px) - 12px); }
 .paneel.detail .detailinhoud { flex: 1 1 auto; }
 .paneel.detail .dvoet { margin-top: auto; }
 /* Alleen een sluitknop, rechts naast de eerste regel: de rij zelf neemt geen hoogte in */
@@ -946,6 +948,7 @@ label.frij:focus-within .flabel { color: var(--accent); }
     box-shadow: 0 24px 64px rgba(0, 0, 0, 0.28), 0 0 0 0.5px rgba(0, 0, 0, 0.1);
   }
   .paneel.detail.dialoog.open { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  .paneel.mailtijden.dialoog { height: min(86vh, 900px); }
   .paneel.detail.dialoog .greep { display: none; }
   .paneel.detail.dialoog .detailnav { padding-top: 14px; }
   .paneel.detail.dialoog .dkop { padding-top: 0; }

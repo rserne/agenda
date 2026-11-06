@@ -968,6 +968,10 @@ label.frij:focus-within .flabel { color: var(--accent); }
   }
   .paneel.detail.dialoog.open { transform: translate(-50%, -50%) scale(1); opacity: 1; }
   .paneel.mailtijden.dialoog { height: min(86vh, 900px); }
+  /* iPad liggend met het toetsenbord open: het venster gaat naar boven en eindigt net boven het toetsenbord */
+  .toetsenbord .paneel.detail.dialoog { top: calc(env(safe-area-inset-top, 0px) + 16px); transform: translate(-50%, 0); max-height: calc(100% - var(--tb, 0px) - env(safe-area-inset-top, 0px) - 32px); min-height: 0; }
+  .toetsenbord .paneel.detail.dialoog.open { transform: translate(-50%, 0); }
+  .toetsenbord .paneel.mailtijden.dialoog { height: calc(100% - var(--tb, 0px) - env(safe-area-inset-top, 0px) - 32px); }
   .paneel.detail.dialoog .greep { display: none; }
   .paneel.detail.dialoog .detailnav { padding-top: 14px; }
   .paneel.detail.dialoog .dkop { padding-top: 0; }

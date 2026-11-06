@@ -936,9 +936,9 @@ function openInstellingen() {
   const googleHtml = (bewerk = false) => {
     if (bewerk) return `<label class="frij"><span class="flabel">Sleutel</span><input id="igoogle" class="geheim" type="text" placeholder="Plak hier je sleutel" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done"></label>`
       + knop('google-bewaar', I.vink, 'Bewaren') + knop('google-annuleer', I.kruis, 'Annuleren');
-    if (googleSleutel()) return status(I.speld, 'Sleutel opgegeven', 'Locatie vult ook adressen en plaatsen aan')
+    if (googleSleutel()) return status(I.speld, 'Sleutel ingesteld', 'Bij Locatie zoek je ook naar adressen en plaatsen')
       + knop('google-test', I.vink, 'Sleutel testen') + knop('google-wijzig', I.herhaal, 'Sleutel wijzigen') + knop('google-wis', I.wissen, 'Sleutel verwijderen');
-    return status(I.speld, 'Geen sleutel', 'Optioneel: ook adressen en plaatsen bij Locatie')
+    return status(I.speld, 'Geen sleutel', 'Met een sleutel zoek je bij Locatie ook naar adressen en plaatsen')
       + knop('google-wijzig', I.plus, 'Sleutel opgeven');
   };
   const ruimtesHtml = () => ruimteLijst().map(ruimteRij).join('') + `<button class="frij instknop" data-actie="ruimte-erbij">${I.plus}<span>Ruimte toevoegen</span></button>`;

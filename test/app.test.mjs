@@ -475,11 +475,21 @@ test('mail: tijden naast de agenda, kiezen, antwoord kopiëren en inplannen', as
   assert.deepEqual(await vak(1).locator('.chip.botst').allInnerTexts(), ['15:00'], 'gedeeltelijk: geel');
   assert.deepEqual(await vak(1).locator('.chip.vol').allInnerTexts(), ['15:30'], 'helemaal bezet: rood');
   assert.equal(await p.locator('#msamen').innerText(), 'Tik op een tijd om hem te kiezen');
-  assert.equal(await p.locator('#minplannen').isDisabled(), true);
+  // Na het plakken klapt het tekstveld in, zodat de tijden in beeld staan; 'Hele tekst tonen' klapt het weer uit
+  assert.equal(await p.locator('#mtekst.ingeklapt').count(), 1);
+  assert.ok((await p.locator('#mtekst').boundingBox()).height <= 80);
+  await p.locator('#mtoon').tap(); await wacht(200);
+  assert.equal(await p.locator('#mtekst.ingeklapt').count(), 0);
+  assert.equal(await p.locator('#mtoon').isHidden(), true);
+  // Niet alleen kleur: ook een gesproken label en een andere rand
+  assert.equal(await p.locator('#muitslag .chip.vrij').first().getAttribute('aria-label'), '13:00, vrij');
+  assert.equal(await p.locator('#muitslag .chip.vol').first().evaluate((e) => getComputedStyle(e).textDecorationLine), 'line-through');
+  assert.equal(await p.locator('#muitslag .chip.botst').first().evaluate((e) => getComputedStyle(e).outlineStyle), 'dashed');
+  assert.equal(await p.locator('#minplannen').isHidden(), true, 'inplannen pas met één tijd');
   await vak(0).locator('.chip', { hasText: '13:30' }).tap();
   await vak(3).locator('.chip', { hasText: '14:00' }).tap(); await wacht(200);
   assert.equal(await p.locator('#msamen .mantwoord li').count(), 2, 'het antwoord zoals het in de mail komt');
-  assert.equal(await p.locator('#minplannen').isDisabled(), true, 'inplannen kan met één tijd');
+  assert.equal(await p.locator('#minplannen').isHidden(), true, 'met twee tijden: geen inplannen');
   assert.match(await p.locator('.mailtijden .groteknop.vol').innerText(), /Antwoord kopiëren/, 'kopiëren is de hoofdknop');
   await p.locator('#mkopieer').tap(); await wacht(300);
   assert.deepEqual(await p.evaluate(() => window.gekopieerd), { tekst: 'Ik kan op de volgende tijdstippen:\n• Maandag 9 november van 13:30 tot 14:30\n• Donderdag 12 november van 14:00 tot 15:00' }, 'platte tekst, zonder opmaak of kleur');
@@ -520,7 +530,7 @@ test('mail: een tijd die overlapt kiezen; het antwoord noemt geen reden, inplann
   await p.locator('#muitslag .chip.botst', { hasText: '15:00' }).tap(); await wacht(200);
   assert.equal(await p.locator('#muitslag .chip.botst.aan').count(), 1);
   assert.equal(await p.locator('#msamen').innerText(), 'Ik kan op woensdag 11 november van 15:00 tot 16:00.', 'één tijd: een zin, zonder reden');
-  assert.equal(await p.locator('#minplannen').isDisabled(), false);
+  assert.equal(await p.locator('#minplannen').isVisible(), true, 'met één tijd: inplannen');
   await p.locator('#minplannen').tap(); await wacht(1200);
   assert.match(await p.locator('.paneel.nieuw #nsamen').innerText(), /^Woensdag 11 november, 15:00 – 16:00\nOverlap met Bespreken Flusso/);
   assert.match(await p.locator('#noutlook').getAttribute('href'), /start=2026-11-11T15:00:00/);

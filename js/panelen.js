@@ -1097,7 +1097,8 @@ function openMailTijden() {
     <div class="detailinhoud">
       <div class="dkop"><h2 class="dtitel">Tijden uit een mail</h2></div>
       <div class="formkaart">
-        <label class="frij volbreed"><textarea id="mtekst" rows="5" name="vrijetekst" placeholder="Plak hier de dagen en tijden" aria-label="Dagen en tijden" autocomplete="off" autocorrect="off" spellcheck="false" inputmode="text"></textarea></label>
+        <label class="frij volbreed"><textarea id="mtekst" rows="5" name="vrijetekst" placeholder="Plak hier de dagen en tijden, bijvoorbeeld: maandag 9 november tussen 13:00 en 16:00" aria-label="Dagen en tijden" autocomplete="off" autocorrect="off" spellcheck="false" inputmode="text"></textarea></label>
+        <button class="frij instknop" id="mtoon" hidden>Hele tekst tonen</button>
       </div>
       <div class="formkaart">
         <div class="frij"><span class="flabel">Duur</span><span class="fwaarde stapper">
@@ -1124,7 +1125,7 @@ function openMailTijden() {
   };
   const tekenSamen = () => {
     const n = gekozen.size;
-    $('#minplannen', el).disabled = n !== 1;
+    $('#minplannen', el).hidden = n !== 1; // inplannen kan met precies één tijd; anders is de knop er niet
     $('#mkopieer', el).disabled = !n;
     // Zo komt het antwoord in je mail (alleen de tijden, nooit een reden)
     $('#msamen', el).innerHTML = n ? `<div class="mantwoord">${mtAntwoord(gekozen.keys(), duur).html}</div>` : `<div class="leeg">${gelezen.opties.length ? 'Tik op een tijd om hem te kiezen' : 'Nog geen tijden'}</div>`;
@@ -1165,7 +1166,7 @@ function openMailTijden() {
         u.tijden.forEach((x) => { bestaand.add(x.t); tijdInfo.set(x.t, { blok: x.blok, botst: x.botst, vol: x.vol }); if (gekozen.has(x.t)) gekozen.set(x.t, { blok: x.blok, botst: x.botst, vol: x.vol }); });
         const van = `${pad(Math.floor(o.van / 60))}:${pad(o.van % 60)}`, tot = `${pad(Math.floor(o.tot / 60))}:${pad(o.tot % 60)}`;
         html += `<div class="frij kolom mvak"><span class="mkop"><span class="t1 num">${o.heleDag ? 'Hele dag' : `${van} – ${tot}`}</span>${statusTekst(u)}</span>
-          ${u.tijden.length ? `<div class="chips">${u.tijden.map((x) => `<button class="chip num${gekozen.has(x.t) ? ' aan' : ''}${x.vol ? ' vol' : x.botst.length ? ' botst' : ' vrij'}" data-t="${x.t}" aria-pressed="${gekozen.has(x.t)}"${x.botst.length ? ` aria-label="${hhmm(new Date(x.t))}, ${esc(overlapZin(x.botst).toLowerCase())}"` : ''}>${hhmm(new Date(x.t))}</button>`).join('')}</div>` : ''}</div>`;
+          ${u.tijden.length ? `<div class="chips">${u.tijden.map((x) => `<button class="chip num${gekozen.has(x.t) ? ' aan' : ''}${x.vol ? ' vol' : x.botst.length ? ' botst' : ' vrij'}" data-t="${x.t}" aria-pressed="${gekozen.has(x.t)}" aria-label="${hhmm(new Date(x.t))}, ${x.vol ? `helemaal bezet: ${esc(overlapZin(x.botst).replace(/^Overlap met /, ''))}` : x.botst.length ? esc(overlapZin(x.botst).toLowerCase()) : 'vrij'}">${hhmm(new Date(x.t))}</button>`).join('')}</div>` : ''}</div>`;
       }
       html += `</div>${waarschuwing ? `<p class="insttoelichting fout">${esc(cap(waarschuwing.waarschuwing))}. Klopt de datum?</p>` : ''}</section>`;
     }
@@ -1175,7 +1176,14 @@ function openMailTijden() {
     tekenSamen();
   };
   // Het veld groeit mee met de tekst (tot een grens; daarna scrolt het)
-  const groei = () => { veld.style.height = 'auto'; veld.style.height = `${Math.min(Math.max(veld.scrollHeight, 120), 320)}px`; };
+  const groei = () => { if (veld.classList.contains('ingeklapt')) return; veld.style.height = 'auto'; veld.style.height = `${Math.min(Math.max(veld.scrollHeight, 120), 320)}px`; };
+  // Na het plakken: het veld klapt in tot drie regels, zodat de gevonden tijden meteen in beeld staan
+  const klap = (in_) => {
+    veld.classList.toggle('ingeklapt', in_);
+    $('#mtoon', el).hidden = !in_;
+    if (in_) veld.style.height = ''; else groei();
+  };
+  let geplakt = false;
   const lees = () => {
     groei();
     MAILTEKST = veld.value;
@@ -1183,11 +1191,18 @@ function openMailTijden() {
     if (!duurZelf) duur = gelezen.duur || 60;
     tekenDuur();
     teken();
+    if (geplakt && gelezen.opties.length) klap(true);
+    geplakt = false;
   };
-  veld.addEventListener('input', () => { groei(); clearTimeout(wacht); wacht = setTimeout(lees, 200); });
+  veld.addEventListener('input', (ev) => {
+    if (ev.inputType === 'insertFromPaste' || ev.inputType === 'insertReplacementText' || veld.value.length - MAILTEKST.length > 20) geplakt = true;
+    groei(); clearTimeout(wacht); wacht = setTimeout(lees, 200);
+  });
+  veld.addEventListener('focus', () => { if (veld.classList.contains('ingeklapt')) klap(false); }); // zelf in de tekst tikken: alles tonen
   el.addEventListener('click', async (ev) => {
     const t = ev.target;
     if (t.closest('[data-actie="sluit"]')) { p.sluit(); return; }
+    if (t.closest('#mtoon')) { klap(false); return; }
     const stap = t.closest('[data-stap]');
     if (stap) { duur = Math.max(15, Math.min(8 * 60, duur + Number(stap.dataset.stap))); duurZelf = true; tekenDuur(); teken(); return; }
     const c = t.closest('[data-t]');
@@ -1218,7 +1233,7 @@ function openMailTijden() {
     }
   });
   tekenDuur();
-  if (veld.value.trim()) lees(); else tekenSamen();
+  if (veld.value.trim()) { geplakt = true; lees(); } else tekenSamen(); // eerder geplakte tekst: meteen ingeklapt
   if (!isDesktop() || !veld.value) setTimeout(() => { if (!veld.value) veld.focus(); }, 350);
 }
 

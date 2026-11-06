@@ -765,13 +765,14 @@ label.frij:focus-within .flabel { color: var(--accent); }
 .mstatus.rood { color: var(--statusNo); }
 .mstatus.grijs, .mstatus.sub { color: var(--secondary); }
 /* Een tijd die overlapt: oranje rand; gekozen: oranje vlak */
-.chip.botst { background: transparent; box-shadow: inset 0 0 0 1.5px var(--overlap); color: var(--overlap); }
-.chip.botst.aan { background: var(--overlap); box-shadow: none; color: var(--onAccent); }
+/* Niet alleen kleur: gedeeltelijk bezet heeft een gestreepte rand, helemaal bezet een doorgestreepte tijd */
+.chip.botst { background: transparent; box-shadow: none; outline: 1.5px dashed var(--overlap); outline-offset: -1.5px; color: var(--overlap); }
+.chip.botst.aan { background: var(--overlap); outline: none; color: var(--onAccent); }
 /* Helemaal vrij: groen */
 .chip.vrij { background: transparent; box-shadow: inset 0 0 0 1.5px var(--statusYes); color: var(--statusYes); }
 .chip.vrij.aan { background: var(--statusYes); box-shadow: none; color: var(--onAccent); }
 /* Helemaal bezet: rood */
-.chip.vol { background: transparent; box-shadow: inset 0 0 0 1.5px var(--statusNo); color: var(--statusNo); }
+.chip.vol { background: transparent; box-shadow: inset 0 0 0 1.5px var(--statusNo); color: var(--statusNo); text-decoration: line-through; text-decoration-thickness: 1.5px; }
 .chip.vol.aan { background: var(--statusNo); box-shadow: none; color: var(--onAccent); }
 /* Elk overleg dat overlapt op een eigen regel: tijd, dan titel */
 .moverlap { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
@@ -780,6 +781,12 @@ label.frij:focus-within .flabel { color: var(--accent); }
 .mailtijden #msamen { user-select: text; -webkit-user-select: text; } /* het antwoord kun je ook zelf selecteren */
 /* Het antwoord zoals het in je mail komt: zin en opsomming, links uitgelijnd */
 .mantwoord { text-align: left; font-weight: 400; }
+.mailtijden #msamen { text-align: left; } /* aanwijzing en antwoord allebei links: niets verspringt */
+.mailtijden .nvast .tekstknop { min-height: 44px; } /* Inplannen: een tikvlak van 44 punten */
+/* Ingeklapt na het plakken: drie regels, die naar onderen vervagen */
+.mailtijden textarea.ingeklapt { height: 72px; min-height: 0; overflow: hidden; -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent); mask-image: linear-gradient(to bottom, #000 55%, transparent); }
+/* Een tijdvak zonder overleggen: minder ruimte boven de tijden */
+.frij.kolom.mvak:not(:has(.moverlap)) { gap: 12px; }
 .mantwoord p { margin: 0; }
 .mantwoord ul { margin: 4px 0 0; padding-left: 22px; }
 .mantwoord li { margin: 2px 0; }

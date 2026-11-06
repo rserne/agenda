@@ -1087,14 +1087,12 @@ function openMailTijden() {
   el.className = 'paneel detail nieuw mailtijden' + (isDesktop() ? ' dialoog' : '');
   el.setAttribute('role', 'dialog');
   el.setAttribute('aria-label', 'Tijden uit een mail');
-  const kanPlakken = !!(navigator.clipboard && navigator.clipboard.readText);
   el.innerHTML = `<div class="detailgreep"><div class="greep"></div>
       <div class="detailnav"><button class="rond glas" data-actie="sluit" aria-label="Sluiten">${I.kruis}</button></div></div>
     <div class="detailinhoud">
       <div class="dkop"><h2 class="dtitel">Tijden uit een mail</h2></div>
       <div class="formkaart">
         <label class="frij volbreed"><textarea id="mtekst" rows="5" name="vrijetekst" placeholder="Plak hier de dagen en tijden" aria-label="Dagen en tijden" autocomplete="off" autocorrect="off" spellcheck="false" inputmode="text"></textarea></label>
-        ${kanPlakken ? `<button class="frij instknop" data-actie="plak">${I.plakken}<span>Plakken</span></button>` : ''}
       </div>
       <div class="formkaart">
         <div class="frij"><span class="flabel">Duur</span><span class="fwaarde stapper">
@@ -1191,10 +1189,6 @@ function openMailTijden() {
   el.addEventListener('click', async (ev) => {
     const t = ev.target;
     if (t.closest('[data-actie="sluit"]')) { p.sluit(); return; }
-    if (t.closest('[data-actie="plak"]')) {
-      try { const tekst = await navigator.clipboard.readText(); if (tekst) { veld.value = tekst; lees(); } } catch (e) { veld.focus(); }
-      return;
-    }
     const stap = t.closest('[data-stap]');
     if (stap) { duur = Math.max(15, Math.min(8 * 60, duur + Number(stap.dataset.stap))); duurZelf = true; tekenDuur(); teken(); return; }
     const c = t.closest('[data-t]');

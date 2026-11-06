@@ -582,6 +582,16 @@ button.drij:active { opacity: 0.6; }
 .frij input, .frij textarea { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--label); font: inherit; font-size: 16px; line-height: 22px; padding: 0; outline: none; resize: none; }
 .frij textarea { min-height: 66px; }
 .frij input::placeholder, .frij textarea::placeholder { color: var(--secondary); opacity: 0.8; }
+/* Aanvullen van deelnemers uit je contacten: de suggesties staan direct onder het veld, in dezelfde kaart */
+.aanvullijst { display: flex; flex-direction: column; margin: 0 -16px; }
+.aanvullijst[hidden] { display: none; }
+.aanvuloptie { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 1px; width: 100%; min-height: 50px; padding: 7px 16px; text-align: left; color: var(--label); }
+.aanvuloptie::before { content: ''; position: absolute; top: 0; left: 16px; right: 0; border-top: 0.5px solid var(--separator); } /* lijn springt in, zoals de andere rijen */
+.aanvuloptie:active, .aanvuloptie.actief { background: var(--fill); }
+.aanvuloptie .t1 { font-size: 16px; line-height: 21px; }
+.aanvuloptie .t2 { font-size: 13px; line-height: 17px; color: var(--secondary); }
+.aanvuloptie .t1, .aanvuloptie .t2 { max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.aanvullijst + .frij { border-top: 0.5px solid var(--separator); }
 .frij input:-webkit-autofill { -webkit-box-shadow: 0 0 0 40px var(--card) inset; -webkit-text-fill-color: var(--label); }
 label.frij:focus-within .flabel { color: var(--accent); }
 .fwaarde { flex: 1; min-width: 0; display: flex; flex-direction: column; font-size: 16px; }

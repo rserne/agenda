@@ -215,6 +215,8 @@ function openWeekkiezer() {
     }
     const rij = ev.target.closest('.weekrij');
     if (rij) { p.sluit(); kiesWeek(new Date(Number(rij.dataset.ma))); return; }
+    const ca = ev.target.closest('[data-actie^="contacten-"]');
+    if (ca) { p.sluit(); contactActie(ca.dataset.actie); return; }
     const ics = ev.target.closest('[data-actie^="ics-"]');
     if (ics) {
       if (ics.dataset.actie === 'ics-openen') { $('#icsinvoer').click(); p.sluit(); }
@@ -266,6 +268,18 @@ function agendaSectieHtml() {
   return `<nav class="zblijst zbagenda" aria-label="Agenda"><h3>Agenda</h3>
     <div class="zbbron">${BESTAND && BESTAND.link ? I.koppel : BESTAND ? I.inladen : I.kalender}<span><span class="t1">${bron[0]}</span><span class="t2">${bron[1]}</span></span></div>
     ${knoppen}
+  </nav>${contactSectieHtml()}`;
+}
+// Contacten voor het aanvullen van deelnemers bij een nieuwe afspraak
+function contactSectieHtml() {
+  const c = CONTACTEN_INFO;
+  const d = c && new Date(c.datum);
+  return `<nav class="zblijst zbagenda zbcontacten" aria-label="Contacten"><h3>Contacten</h3>
+    <div class="zbbron">${I.persoon}<span>${c
+      ? `<span class="t1">${c.aantal === 1 ? '1 contact' : `${c.aantal} contacten`}</span><span class="t2">Ingeladen op ${d.getDate()} ${MONTHS_SHORT[d.getMonth()]} · alleen op dit toestel</span>`
+      : '<span class="t1">Geen contacten</span><span class="t2">Om namen aan te vullen bij een nieuwe afspraak</span>'}</span></div>
+    <button data-actie="contacten-inladen">${I.inladen}<span>${c ? 'Nieuwer bestand inladen' : 'Contacten inladen'}</span></button>
+    ${c ? `<button data-actie="contacten-wis">${I.wissen}<span>Contacten wissen</span></button>` : ''}
   </nav>`;
 }
 function renderZijbalk() {
@@ -580,7 +594,8 @@ async function openNieuw({ dag = null, blok = null } = {}) {
         <div class="frij kolom"><span class="flabel">Begintijd</span><div id="ntijden"></div></div>
       </div>
       <div class="formkaart">
-        <label class="frij"><span class="flabel">Deelnemers</span><input name="deelnemers" type="text" inputmode="email" placeholder="E-mailadressen" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+        <label class="frij"><span class="flabel">Deelnemers</span><input name="deelnemers" type="text" inputmode="email" placeholder="${CONTACTEN.length ? 'Naam of e-mailadres' : 'E-mailadressen'}" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+        <div class="aanvullijst" id="naanvul" hidden></div>
         <label class="frij boven"><span class="flabel">Notitie</span><textarea name="notitie" rows="3" placeholder="Optioneel"></textarea></label>
       </div>
       <div class="nvast">
@@ -657,6 +672,7 @@ async function openNieuw({ dag = null, blok = null } = {}) {
   tekenDuur();
   const p = openPaneel(el, { greepSelector: '.detailgreep' });
   tekenTijden();
+  koppelAanvullen($('input[name="deelnemers"]', el), $('#naanvul', el));
 
   el.addEventListener('input', (ev) => {
     const n = ev.target.name;

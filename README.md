@@ -48,6 +48,17 @@ De link van je gepubliceerde Outlook-agenda zelf werkt niet: Outlook staat niet 
 
 Kies **Eigen agenda inladen**. De app leest het bestand in de browser en stuurt het nergens naartoe. Met **Wissen** gaat de app terug naar de voorbeeldgegevens. Het inlezen van een groot bestand kost op een telefoon enkele seconden; daarna staat de agenda bij elke start meteen in beeld.
 
+## Contacten
+
+Onder **Contacten** (in de weekkiezer, op de desktop in de zijbalk) laad je een bestand met namen en e-mailadressen in. Typ je daarna bij een nieuwe afspraak een naam in het veld Deelnemers, dan stelt de app de passende contacten voor. Tik je er een aan, dan staat het adres in het veld. Op de desktop kies je met de pijltjes en Enter.
+
+De app leest drie soorten bestanden:
+- **De adrescache van Outlook**, geëxporteerd met [NK2Edit](https://www.nirsoft.net/utils/outlook_nk2_edit.html) als csv. Dit zijn de adressen die Outlook zelf aanvult, en de adressen die je het vaakst gebruikt, staan bovenaan.
+- **Een csv met kopregel**, zoals een export van je contactpersonen uit Outlook of Gmail.
+- **Een vCard** (.vcf), bijvoorbeeld uit Contacten op de iPhone of de Mac.
+
+De lijst blijft alleen op het toestel, in IndexedDB, net als je agenda. Laad hem op elk toestel apart in. Zet nooit een echt contactenbestand in de repository: `test/contacten.csv` bevat alleen verzonnen namen.
+
 ## Indeling
 
 | Soort | Wanneer | Kleur |
@@ -100,6 +111,7 @@ Open de app in Safari, tik op Delen, Zet op beginscherm. Geef daarna onder Agend
 | `index.html`, `app.css` | De pagina en de opmaak. Bovenin `app.css` staat een inhoudsopgave. |
 | `app.js` | Instellingen, hulpjes en iconen. Hier staat ook `APP_VERSIE`. |
 | `js/gegevens.js` | Waar de afspraken vandaan komen: voorbeeld, .ics-bestand, agenda-link, IndexedDB. |
+| `js/contacten.js` | Contacten inlezen (NK2Edit, csv, vCard), bewaren en aanvullen bij een nieuwe afspraak. |
 | `js/indeling.js` | Extern of intern, vast of ad hoc, overlap, vrije blokken en hoe vol een dag is. |
 | `js/weergave.js` | Week, Vooruitblik, de kop en het tekenen van het scherm. |
 | `js/panelen.js` | Weekkiezer, zijbalk, detailscherm, nieuwe afspraak en de agendakeuze. |
@@ -128,7 +140,7 @@ npm run schermen -- na basis      # nieuwe afbeeldingen in na/ en vergelijken me
 python3 -m http.server 8080       # en open http://localhost:8080/
 ```
 
-`npm test` start de app met een vaste klok (woensdag 4 november 2026, 9:00) en de voorbeeldgegevens. De tests controleren onder meer het opstarten, wisselen van filter, doortrekken naar de volgende week, het detailscherm, de weekkiezer, een nieuwe afspraak, het inladen van een .ics-bestand (met en zonder Web Worker), de agenda-link en de desktop. Zet je een deel van een naam erachter, dan draaien alleen die tests, bijvoorbeeld `npm test -- desktop`.
+`npm test` start de app met een vaste klok (woensdag 4 november 2026, 9:00) en de voorbeeldgegevens. De tests controleren onder meer het opstarten, wisselen van filter, doortrekken naar de volgende week, het detailscherm, de weekkiezer, een nieuwe afspraak, het inladen van een .ics-bestand (met en zonder Web Worker), de agenda-link, de contacten en de desktop. Zet je een deel van een naam erachter, dan draaien alleen die tests, bijvoorbeeld `npm test -- desktop`.
 
 `npm run schermen` maakt 66 schermafbeeldingen: telefoon, telefoon met .ics, iPad liggend en staand, en Mac, elk in licht en donker. Maak voor een grote wijziging eerst een basis en vergelijk daarna; zo zie je meteen of er iets verschuift.
 

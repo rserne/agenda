@@ -79,6 +79,12 @@ function koppel() {
   $('#capsule').innerHTML = capsuleHtml('Week terug', 'Week verder');
   $('#titelknop').addEventListener('click', openWeekkiezer);
   $('#icsinvoer').addEventListener('change', (ev) => { openBestand(ev.target.files[0]).catch((e) => alert('Dit bestand kan de app niet lezen. Kies een agenda-bestand (.ics) uit Outlook.')); ev.target.value = ''; });
+  $('#contactinvoer').addEventListener('change', (ev) => {
+    const f = ev.target.files[0];
+    ev.target.value = '';
+    openContacten(f).then((n) => { if (n) { render(); renderZijbalk(); toonStatus(n === 1 ? '1 contact ingeladen.' : `${n} contacten ingeladen.`, { soort: 'klaar', duur: 2500 }); } })
+      .catch(() => alert('In dit bestand staan geen contacten die de app kan lezen. Kies een csv-bestand (bijvoorbeeld uit NK2Edit of Outlook) of een vCard (.vcf).'));
+  });
   $('#datumregel').addEventListener('click', () => verschuif(0));
   // iPad: de zijbalk in- en uitklappen; de keuze blijft bewaard
   const zetZijbalk = (dicht) => { document.body.classList.toggle('zbdicht', dicht); $('#zijbalkknop').setAttribute('aria-expanded', String(!dicht)); };
@@ -91,6 +97,8 @@ function koppel() {
     if (ev.target.closest('#lagen')) return; // panelen regelen hun eigen knoppen
     const nav = ev.target.closest('[data-nav]');
     if (nav) { verschuif(Number(nav.dataset.nav)); return; }
+    const ca = ev.target.closest('[data-actie^="contacten-"]');
+    if (ca) { contactActie(ca.dataset.actie); return; }
     const actie = ev.target.closest('[data-actie^="ics-"]');
     if (actie) {
       if (actie.dataset.actie === 'ics-openen') $('#icsinvoer').click();
@@ -167,6 +175,7 @@ function koppel() {
   const t = LS.get('ag_tab');
   if (['week', 'forecast'].includes(t)) ST.tab = t;
   koppel();
+  laadContacten().then(() => { if (CONTACTEN_INFO && isDesktop()) renderZijbalk(); });
   // Een eerder geopend .ics-bestand of je agenda-link gaat voor (behalve met ?demo)
   renderKop(); // de titel en knoppen staan er meteen, ook voordat de afspraken uit de opslag komen
   Promise.all([IDB.get('ics').catch(() => null), IDB.get('icsweken').catch(() => null)]).then(async ([b, kopie]) => {

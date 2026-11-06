@@ -81,12 +81,13 @@ test('telefoon: detail opent, en omlaag vegen midden op het paneel sluit het', a
 test('telefoon: omlaag vegen op de achtergrond boven het paneel sluit het ook', async ({ browser, url }) => {
   const p = await nieuwePagina(browser, TELEFOON);
   await p.goto(url); await wacht(1000);
-  await p.click('#titelknop'); await wacht(800);
-  const r = await p.locator('.paneel.kiezer').boundingBox();
-  assert.ok(r.y > 120, `ruimte boven het paneel: ${r.y}`);
-  await veeg(p, 200, r.y - 100, r.y - 70); // korte trek: blijft open
-  assert.equal(await p.locator('.paneel.kiezer.open').count(), 1);
-  await veeg(p, 200, r.y - 100, r.y + 200);
+  await p.locator('#inhoud [data-id]').first().tap(); await wacht(800);
+  const r = await p.locator('.paneel.detail').boundingBox();
+  assert.ok(r.y > 60, `ruimte boven het paneel: ${r.y}`);
+  const y = Math.round(r.y / 2);
+  await veeg(p, 200, y, y + 30); // korte trek: blijft open
+  assert.equal(await p.locator('.paneel.detail.open').count(), 1);
+  await veeg(p, 200, y, y + 300);
   assert.equal(await p.locator('.paneel').count(), 0);
 });
 
@@ -190,6 +191,82 @@ test('bestand: zonder Web Worker leest de app het bestand zelf in', async ({ bro
   assert.ok((await p.locator('#inhoud [data-id]').count()) > 3);
   assert.equal(await p.evaluate(() => !!window.ICAL), true);
   assert.deepEqual(p.fouten, []);
+});
+
+/* -------------------------------------------------------------- contacten */
+
+const CONTACTEN_CSV = path.join(MAP, 'test', 'contacten.csv');
+
+test('contacten: NK2Edit, csv met kopregel en vCard worden gelezen', async ({ browser, url }) => {
+  const p = await nieuwePagina(browser, TELEFOON);
+  await p.goto(url); await wacht(800);
+  const uit = await p.evaluate((nk2) => ({
+    nk2: leesContacten(nk2),
+    csv: leesContacten('Voornaam;Tussenvoegsel;Achternaam;E-mailadres\nAnna;van;Peeters;anna@x.example\n;;;los@x.example\n'),
+    vcf: leesContacten('BEGIN:VCARD\r\nVERSION:3.0\r\nN:Bos;Piet;;;\r\nFN:Piet Bos\r\nitem1.EMAIL;type=INTERNET:piet@x.example\r\nEMAIL;type=WORK:p.bos@werk.ex\r\n ample\r\nEND:VCARD\r\n'),
+  }), fs.readFileSync(CONTACTEN_CSV, 'utf8'));
+  assert.deepEqual(uit.nk2.map((c) => c.naam), ['Marieke de Vries', '', 'Jan Jansen', 'Kees Bakker', 'José Álvarez', 'Jannie Smit'], 'zwaarste eerst, dubbele weg, achternaam-komma omgedraaid');
+  assert.equal(uit.nk2[0].email, 'marieke.de.vries@voorbeeld.nl');
+  assert.deepEqual(uit.csv, [{ naam: 'Anna van Peeters', email: 'anna@x.example', gewicht: 0 }, { naam: '', email: 'los@x.example', gewicht: 0 }]);
+  assert.deepEqual(uit.vcf.map((c) => `${c.naam} ${c.email}`), ['Piet Bos piet@x.example', 'Piet Bos p.bos@werk.example']);
+});
+
+test('contacten: inladen, en bij een nieuwe afspraak namen aanvullen tot adressen', async ({ browser, url }) => {
+  const p = await nieuwePagina(browser, TELEFOON);
+  await p.goto(url); await wacht(800);
+  await p.setInputFiles('#contactinvoer', CONTACTEN_CSV); await wacht(600);
+  assert.equal(await p.locator('#statustekst').innerText(), '6 contacten ingeladen.');
+  await p.reload(); await wacht(1000); // blijft bewaard op het toestel
+  await p.locator('[data-nieuw]:visible').first().tap(); await wacht(900);
+  await p.locator('.paneel .chip').first().tap(); await wacht(300);
+  const veld = p.locator('.paneel [name="deelnemers"]');
+  assert.equal(await veld.getAttribute('placeholder'), 'Naam of e-mailadres');
+  await veld.focus();
+  await veld.type('jan', { delay: 20 }); await wacht(200);
+  assert.deepEqual(await p.locator('.aanvuloptie .t1').allInnerTexts(), ['Jan Jansen', 'Jannie Smit']);
+  await p.locator('.aanvuloptie').first().tap(); await wacht(200);
+  assert.equal(await veld.inputValue(), 'jan.jansen@voorbeeld.nl; ');
+  assert.equal(await p.locator('#naanvul').isHidden(), true);
+  await veld.type('jose', { delay: 20 }); await wacht(200); // zonder accent vindt hij José
+  await p.locator('.aanvuloptie').first().tap(); await wacht(200);
+  await veld.type('jan', { delay: 20 }); await wacht(200);
+  assert.deepEqual(await p.locator('.aanvuloptie .t1').allInnerTexts(), ['Jannie Smit'], 'wie er al in staat, komt niet nog eens');
+  assert.match(await p.locator('#noutlook').getAttribute('href'), /attendees=jan\.jansen%40voorbeeld\.nl,jose%40partner\.example(&|$)/);
+  assert.deepEqual(p.fouten, []);
+});
+
+test('contacten: wissen, en zonder contacten geen suggesties', async ({ browser, url }) => {
+  const p = await nieuwePagina(browser, TELEFOON);
+  await p.goto(url); await wacht(800);
+  await p.setInputFiles('#contactinvoer', CONTACTEN_CSV); await wacht(600);
+  p.on('dialog', (d) => d.accept());
+  await p.click('#titelknop'); await wacht(800);
+  await p.locator('.paneel [data-actie="contacten-wis"]').tap(); await wacht(600);
+  await p.click('#titelknop'); await wacht(800);
+  assert.match(await p.locator('.paneel .zbcontacten').innerText(), /Geen contacten/);
+  await p.keyboard.press('Escape'); await wacht(500);
+  await p.locator('[data-nieuw]:visible').first().tap(); await wacht(900);
+  await p.locator('.paneel [name="deelnemers"]').type('jan', { delay: 20 }); await wacht(200);
+  assert.equal(await p.locator('.aanvuloptie').count(), 0);
+});
+
+/* -------------------------------------------------------------- desktop */
+
+test('desktop: contacten aanvullen met het toetsenbord; Escape sluit eerst de suggesties', async ({ browser, url }) => {
+  const p = await nieuwePagina(browser, MAC);
+  await p.goto(url); await wacht(800);
+  await p.setInputFiles('#contactinvoer', CONTACTEN_CSV); await wacht(600);
+  assert.match(await p.locator('#zijbalk .zbcontacten').innerText(), /6 contacten/);
+  await p.locator('[data-nieuw]:visible').first().click(); await wacht(800);
+  const veld = p.locator('.paneel [name="deelnemers"]');
+  await veld.click(); await veld.type('ja', { delay: 20 }); await wacht(200);
+  assert.equal(await p.locator('.aanvuloptie.actief .t1').innerText(), 'Jan Jansen', 'de eerste staat klaar');
+  await p.keyboard.press('ArrowDown'); await p.keyboard.press('Enter'); await wacht(200);
+  assert.equal(await veld.inputValue(), 'jannie.smit@voorbeeld.nl; ');
+  await veld.type('mar', { delay: 20 }); await wacht(200);
+  await p.keyboard.press('Escape'); await wacht(300);
+  assert.equal(await p.locator('#naanvul').isHidden(), true);
+  assert.equal(await p.locator('.paneel').count(), 1, 'het venster blijft open');
 });
 
 /* -------------------------------------------------------------- desktop */

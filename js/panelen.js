@@ -1066,8 +1066,8 @@ function metOverlap(t, ms, vrij, botst) {
     .forEach(([x, y]) => { if (y > c) { bezet += y - Math.max(x, c); c = y; } });
   return { t, blok: vrij.find(([x, y]) => t >= x && t + ms <= y) || null, botst: b, vol: bezet >= ms };
 }
-// Een tijdlijntje van een uur voor tot een uur na het tijdvak, met de overleggen en de gekozen tijden:
-// zo zie je of een tijd aansluit op een overleg ervoor of erna
+// Een tijdlijntje van een uur voor tot een uur na het tijdvak: elk overleg, de vrije tijd binnen het tijdvak
+// en de gekozen tijden. Zo zie je of een tijd aansluit op een overleg ervoor of erna.
 function tijdlijn(lijst, o, gekozenT, ms) {
   if (o.heleDag) return '';
   const d0 = new Date(o.dag); d0.setHours(0, 0, 0, 0);
@@ -1076,9 +1076,20 @@ function tijdlijn(lijst, o, gekozenT, ms) {
   const breed = (a, b) => `${((Math.min(we, b) - Math.max(ws, a)) / (we - ws)) * 100}%`;
   const min = (x) => (x - d0.getTime()) / 6e4;
   const blok = (a, b, cls) => `<span class="${cls}" style="left:${pos(a)};width:${breed(a, b)}"></span>`;
-  let html = `<div class="mtijdlijn" aria-hidden="true"><div class="mbalk">${blok(o.van, o.tot, 'mvakband')}`;
+  // Bezet: overleggen die overlappen of aansluiten samen; de rest van het tijdvak is vrij
+  const bezet = [];
+  lijst.filter((e) => !e.allDay && !e.free).map((e) => [Math.max(ws, min(e.start.getTime())), Math.min(we, min(e.end.getTime()))])
+    .filter(([a, b]) => b > a).sort((x, y) => x[0] - y[0])
+    .forEach(([a, b]) => { const l = bezet.at(-1); if (l && a <= l[1]) l[1] = Math.max(l[1], b); else bezet.push([a, b]); });
+  const vrij = [];
+  let c = o.van;
+  bezet.forEach(([a, b]) => { if (a > c && c < o.tot) vrij.push([c, Math.min(a, o.tot)]); c = Math.max(c, b); });
+  if (c < o.tot) vrij.push([c, o.tot]);
+  let html = '<div class="mtijdlijn" aria-hidden="true"><div class="mbalk">';
+  vrij.forEach(([a, b]) => { html += blok(a, b, 'mvrij'); });
   lijst.filter((e) => !e.allDay && !e.free && min(e.end.getTime()) > ws && min(e.start.getTime()) < we)
     .forEach((e) => { html += blok(min(e.start.getTime()), min(e.end.getTime()), 'moverleg'); });
+  html += blok(o.van, o.tot, 'mvakband');
   gekozenT.filter((t) => min(t) >= o.van && min(t) < o.tot).forEach((t) => { html += blok(min(t), min(t + ms), 'mkeus'); });
   html += '</div><div class="muren">';
   for (let h = Math.ceil(ws / 60); h <= Math.floor(we / 60); h++) html += `<span style="left:${pos(h * 60)}">${h}:00</span>`;

@@ -1091,7 +1091,8 @@ function tijdlijn(lijst, o, gekozenT, ms) {
     .forEach((e) => { html += blok(min(e.start.getTime()), min(e.end.getTime()), 'moverleg'); });
   // Het kader om het tijdvak: links en rechts net zoveel marge als boven en onder
   html += `<span class="mvakband" style="left:calc(${pos(o.van)} - 3px);width:calc(${breed(o.van, o.tot)} + 6px)"></span>`;
-  gekozenT.filter((t) => min(t) >= o.van && min(t) < o.tot).forEach((t) => { html += blok(min(t), min(t + ms), 'mkeus'); });
+  // De gekozen tijd: net als het kader om het tijdvak met marge links en rechts
+  gekozenT.filter((t) => min(t) >= o.van && min(t) < o.tot).forEach((t) => { html += `<span class="mkeus" style="left:calc(${pos(min(t))} - 3px);width:calc(${breed(min(t), min(t + ms))} + 6px)"></span>`; });
   html += '</div><div class="muren">';
   for (let h = Math.ceil(ws / 60); h <= Math.floor(we / 60); h++) html += `<span style="left:${pos(h * 60)}">${h}:00</span>`;
   return html + '</div></div>';

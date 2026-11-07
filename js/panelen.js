@@ -1089,7 +1089,8 @@ function tijdlijn(lijst, o, gekozenT, ms) {
   vrij.forEach(([a, b]) => { html += blok(a, b, 'mvrij'); });
   lijst.filter((e) => !e.allDay && !e.free && min(e.end.getTime()) > ws && min(e.start.getTime()) < we)
     .forEach((e) => { html += blok(min(e.start.getTime()), min(e.end.getTime()), 'moverleg'); });
-  html += blok(o.van, o.tot, 'mvakband');
+  // Het kader om het tijdvak: links en rechts net zoveel marge als boven en onder
+  html += `<span class="mvakband" style="left:calc(${pos(o.van)} - 3px);width:calc(${breed(o.van, o.tot)} + 6px)"></span>`;
   gekozenT.filter((t) => min(t) >= o.van && min(t) < o.tot).forEach((t) => { html += blok(min(t), min(t + ms), 'mkeus'); });
   html += '</div><div class="muren">';
   for (let h = Math.ceil(ws / 60); h <= Math.floor(we / 60); h++) html += `<span style="left:${pos(h * 60)}">${h}:00</span>`;

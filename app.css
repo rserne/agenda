@@ -798,7 +798,7 @@ label.frij:focus-within .flabel { color: var(--accent); }
 .mbalk span { position: absolute; top: 0; bottom: 0; }
 .mbalk .moverleg { top: 3px; bottom: 3px; background: var(--tlOverleg); box-shadow: inset 1px 0 0 var(--card), inset -1px 0 0 var(--card); }
 .mbalk .mvrij { top: 3px; bottom: 3px; background: var(--tlVrij); } /* even hoog als de overleggen */
-.mvakband { box-shadow: inset 0 0 0 1px var(--freeTileBorder); border-radius: 5px; }
+.mvakband { box-shadow: inset 0 0 0 1px var(--freeTileBorder); } /* rechte hoeken, net als de blokjes */
 .mkeus { box-shadow: inset 0 0 0 2px var(--label); border-radius: 4px; }
 .muren { position: relative; height: 16px; margin-top: 4px; }
 .muren span { position: absolute; transform: translateX(-50%); font-size: 11px; line-height: 16px; color: var(--secondary); font-variant-numeric: tabular-nums; white-space: nowrap; }

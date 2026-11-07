@@ -794,7 +794,7 @@ label.frij:focus-within .flabel { color: var(--accent); }
 /* Een tijdvak zonder overleggen: minder ruimte boven de tijden */
 .frij.kolom.mvak:not(:has(.moverlap)) { gap: 12px; }
 /* Tijdlijntje per tijdvak: elk overleg in één dekkende grijstint (overlap wordt niet donkerder), vrij lichtblauw */
-.mbalk { position: relative; height: 20px; border-radius: 5px; background: var(--fill); overflow: hidden; }
+.mbalk { position: relative; height: 20px; background: var(--fill); overflow: hidden; } /* rechte hoeken, net als de blokjes en kaders */
 .mbalk span { position: absolute; top: 0; bottom: 0; }
 .mbalk .moverleg { top: 3px; bottom: 3px; background: var(--tlOverleg); box-shadow: inset 1px 0 0 var(--card), inset -1px 0 0 var(--card); }
 .mbalk .mvrij { top: 3px; bottom: 3px; background: var(--tlVrij); } /* even hoog als de overleggen */

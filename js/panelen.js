@@ -1066,6 +1066,24 @@ function metOverlap(t, ms, vrij, botst) {
     .forEach(([x, y]) => { if (y > c) { bezet += y - Math.max(x, c); c = y; } });
   return { t, blok: vrij.find(([x, y]) => t >= x && t + ms <= y) || null, botst: b, vol: bezet >= ms };
 }
+// Een tijdlijntje van een uur voor tot een uur na het tijdvak, met de overleggen en de gekozen tijden:
+// zo zie je of een tijd aansluit op een overleg ervoor of erna
+function tijdlijn(lijst, o, gekozenT, ms) {
+  if (o.heleDag) return '';
+  const d0 = new Date(o.dag); d0.setHours(0, 0, 0, 0);
+  const ws = Math.max(0, o.van - 60), we = Math.min(24 * 60, o.tot + 60);
+  const pos = (m) => `${((Math.min(we, Math.max(ws, m)) - ws) / (we - ws)) * 100}%`;
+  const breed = (a, b) => `${((Math.min(we, b) - Math.max(ws, a)) / (we - ws)) * 100}%`;
+  const min = (x) => (x - d0.getTime()) / 6e4;
+  const blok = (a, b, cls) => `<span class="${cls}" style="left:${pos(a)};width:${breed(a, b)}"></span>`;
+  let html = `<div class="mtijdlijn" aria-hidden="true"><div class="mbalk">${blok(o.van, o.tot, 'mvakband')}`;
+  lijst.filter((e) => !e.allDay && !e.free && min(e.end.getTime()) > ws && min(e.start.getTime()) < we)
+    .forEach((e) => { html += blok(min(e.start.getTime()), min(e.end.getTime()), 'moverleg'); });
+  gekozenT.filter((t) => min(t) >= o.van && min(t) < o.tot).forEach((t) => { html += blok(min(t), min(t + ms), 'mkeus'); });
+  html += '</div><div class="muren">';
+  for (let h = Math.ceil(ws / 60); h <= Math.floor(we / 60); h++) html += `<span style="left:${pos(h * 60)}">${h}:00</span>`;
+  return html + '</div></div>';
+}
 // 'Overlap met A (09:00 – 17:00), B (13:00 – 14:00) en C (14:00 – 15:00)': altijd allemaal
 function overlapZin(botst) {
   if (!botst.length) return '';
@@ -1168,6 +1186,7 @@ function openMailTijden() {
         u.tijden.forEach((x) => { bestaand.add(x.t); tijdInfo.set(x.t, { blok: x.blok, botst: x.botst, vol: x.vol }); if (gekozen.has(x.t)) gekozen.set(x.t, { blok: x.blok, botst: x.botst, vol: x.vol }); });
         const van = `${pad(Math.floor(o.van / 60))}:${pad(o.van % 60)}`, tot = `${pad(Math.floor(o.tot / 60))}:${pad(o.tot % 60)}`;
         html += `<div class="frij kolom mvak"><span class="mkop"><span class="t1 num">${o.heleDag ? 'Hele dag' : `${van} – ${tot}`}</span>${statusTekst(u)}</span>
+          ${tijdlijn(lijsten.get(k), o, [...gekozen.keys()], ms)}
           ${u.tijden.length ? `<div class="chips">${u.tijden.map((x) => `<button class="chip num${gekozen.has(x.t) ? ' aan' : ''}${x.vol ? ' vol' : x.botst.length ? ' botst' : ' vrij'}" data-t="${x.t}" aria-pressed="${gekozen.has(x.t)}" aria-label="${hhmm(new Date(x.t))}, ${x.vol ? `helemaal bezet: ${esc(overlapZin(x.botst).replace(/^Overlap met /, ''))}` : x.botst.length ? esc(overlapZin(x.botst).toLowerCase()) : 'vrij'}">${hhmm(new Date(x.t))}</button>`).join('')}</div>` : ''}</div>`;
       }
       html += `</div>${waarschuwing ? `<p class="insttoelichting fout">${esc(cap(waarschuwing.waarschuwing))}. Klopt de datum?</p>` : ''}</section>`;
@@ -1214,6 +1233,7 @@ function openMailTijden() {
       c.classList.toggle('aan', gekozen.has(tijd));
       c.setAttribute('aria-pressed', String(gekozen.has(tijd)));
       tekenSamen();
+      teken(); // de gekozen tijd ook in het tijdlijntje
       return;
     }
     if (t.closest('#mkopieer') && gekozen.size) {

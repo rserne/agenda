@@ -485,6 +485,11 @@ test('mail: tijden naast de agenda, kiezen, antwoord kopiëren en inplannen', as
   assert.equal(await p.locator('#minplannen').isHidden(), true, 'inplannen pas met één tijd');
   await vak(0).locator('.chip', { hasText: '13:30' }).tap();
   await vak(3).locator('.chip', { hasText: '14:00' }).tap(); await wacht(200);
+  // Per tijdvak een tijdlijntje met de overleggen eromheen en de gekozen tijd, zodat je ziet of hij aansluit
+  assert.equal(await p.locator('#muitslag .mtijdlijn').count(), 4);
+  assert.ok(await vak(1).locator('.moverleg').count() >= 1, 'Bespreken Flusso in het tijdlijntje van woensdag');
+  assert.equal(await vak(0).locator('.mkeus').count(), 1, 'de gekozen tijd staat in het tijdlijntje');
+  assert.equal(await vak(1).locator('.mkeus').count(), 0);
   assert.equal(await p.locator('#msamen .mantwoord li').count(), 2, 'het antwoord zoals het in de mail komt');
   assert.equal(await p.locator('#minplannen').isHidden(), true, 'met twee tijden: geen inplannen');
   assert.match(await p.locator('.mailtijden .groteknop.vol').innerText(), /Antwoord kopiëren/, 'kopiëren is de hoofdknop');

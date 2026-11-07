@@ -789,6 +789,16 @@ label.frij:focus-within .flabel { color: var(--accent); }
 .mailtijden textarea.ingeklapt { height: 72px; min-height: 0; overflow: hidden; -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent); mask-image: linear-gradient(to bottom, #000 55%, transparent); }
 /* Een tijdvak zonder overleggen: minder ruimte boven de tijden */
 .frij.kolom.mvak:not(:has(.moverlap)) { gap: 12px; }
+/* Tijdlijntje per tijdvak: grijs de overleggen, blauw omlijnd het tijdvak en de gekozen tijd */
+.mbalk { position: relative; height: 20px; border-radius: 5px; background: var(--fill); overflow: hidden; }
+.mbalk span { position: absolute; top: 0; bottom: 0; }
+.mvakband { background: var(--freeTileBg); box-shadow: inset 0 0 0 1px var(--freeTileBorder); border-radius: 5px; }
+.mbalk .moverleg { top: 3px; bottom: 3px; background: var(--regularDot); box-shadow: inset 1px 0 0 var(--card), inset -1px 0 0 var(--card); }
+.mkeus { background: transparent; box-shadow: inset 0 0 0 2px var(--accent); border-radius: 4px; }
+.muren { position: relative; height: 16px; margin-top: 4px; }
+.muren span { position: absolute; transform: translateX(-50%); font-size: 11px; line-height: 16px; color: var(--secondary); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.muren span:first-child { transform: none; }
+.muren span:last-child { transform: translateX(-100%); }
 .mantwoord p { margin: 0; }
 .mantwoord ul { margin: 4px 0 0; padding-left: 22px; }
 .mantwoord li { margin: 2px 0; }

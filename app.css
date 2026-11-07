@@ -765,9 +765,9 @@ label.frij:focus-within .flabel { color: var(--accent); }
 .mstatus.rood { color: var(--statusNo); }
 .mstatus.grijs, .mstatus.sub { color: var(--secondary); }
 /* Een tijd die overlapt: oranje rand; gekozen: oranje vlak */
-/* Niet alleen kleur: gedeeltelijk bezet heeft een gestreepte rand */
-.chip.botst { background: transparent; box-shadow: none; outline: 1.5px dashed var(--overlap); outline-offset: -1.5px; color: var(--overlap); }
-.chip.botst.aan { background: var(--overlap); outline: none; color: var(--onAccent); }
+/* Gedeeltelijk bezet: geel */
+.chip.botst { background: transparent; box-shadow: inset 0 0 0 1.5px var(--overlap); color: var(--overlap); }
+.chip.botst.aan { background: var(--overlap); box-shadow: none; color: var(--onAccent); }
 /* Helemaal vrij: groen */
 .chip.vrij { background: transparent; box-shadow: inset 0 0 0 1.5px var(--statusYes); color: var(--statusYes); }
 .chip.vrij.aan { background: var(--statusYes); box-shadow: none; color: var(--onAccent); }

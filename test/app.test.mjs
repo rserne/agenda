@@ -483,7 +483,6 @@ test('mail: tijden naast de agenda, kiezen, antwoord kopiëren en inplannen', as
   assert.equal(await p.locator('#mtoon').isHidden(), true);
   // Niet alleen kleur: ook een gesproken label en een andere rand
   assert.equal(await p.locator('#muitslag .chip.vrij').first().getAttribute('aria-label'), '13:00, vrij');
-  assert.equal(await p.locator('#muitslag .chip.botst').first().evaluate((e) => getComputedStyle(e).outlineStyle), 'dashed');
   assert.equal(await p.locator('#minplannen').isHidden(), true, 'inplannen pas met één tijd');
   await vak(0).locator('.chip', { hasText: '13:30' }).tap();
   await vak(3).locator('.chip', { hasText: '14:00' }).tap(); await wacht(200);

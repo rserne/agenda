@@ -464,8 +464,7 @@ test('mail: tijden naast de agenda, kiezen, antwoord kopiëren en inplannen', as
   assert.deepEqual(await p.locator('#muitslag h3').allInnerTexts(), ['MAANDAG 9 NOVEMBER', 'WOENSDAG 11 NOVEMBER', 'DONDERDAG 12 NOVEMBER']);
   const vak = (i) => p.locator('#muitslag .mvak').nth(i);
   assert.equal(await p.locator('#muitslag .mstatus:not(.sub)').count(), 0, 'geen zinnetje als "te kort": de kleuren van de tijden zeggen genoeg');
-  assert.deepEqual(await vak(2).locator('.chip.vrij').allInnerTexts(), ['11:00'], 'vrij: groen');
-  // Altijd waarmee het overlapt, elk overleg op een eigen regel (ook bij te kort)
+  assert.deepEqual(await vak(2).locator('.chip.vrij').allInnerTexts(), ['11:00'], 'vrij: groen');  // Altijd waarmee het overlapt, elk overleg op een eigen regel (ook bij te kort)
   const overlap = (i) => vak(i).locator('.moverlap li').evaluateAll((l) => l.map((x) => x.innerText.replace(/\s+/g, ' ')));
   assert.deepEqual(await overlap(0), ['14:30 – 15:30 Demo Kies op Maat voor SURF']);
   assert.deepEqual(await overlap(1), ['15:30 – 16:30 Bespreken Flusso']);
@@ -514,6 +513,19 @@ test('mail: bij een drukke middag het begin en einde van elk overleg als voorste
     return toetsVak(lijst, { dag: d, van: 13 * 60, tot: 16 * 60 }, 60).tijden.map((x) => `${hhmm(new Date(x.t))}${x.vol ? ' rood' : x.botst.length ? ' geel' : ''}`);
   });
   assert.deepEqual(uit, ['13:00 rood', '13:30 rood', '14:00 rood', '14:30 geel', '15:00 geel', '15:30 geel']);
+});
+
+test('mail: in een vrij tijdvak ook de halve uren als begintijd', async ({ browser, url }) => {
+  const p = await nieuwePagina(browser, TELEFOON);
+  await p.goto(url); await wacht(600);
+  const uit = await p.evaluate(() => {
+    const d = new Date(2026, 10, 11);
+    const vak = { dag: d, van: 15 * 60, tot: 17 * 60 };
+    const tijden = (duur) => toetsVak([], vak, duur).tijden.map((x) => hhmm(new Date(x.t)));
+    return { uur: tijden(60), kwartier: tijden(15) };
+  });
+  assert.deepEqual(uit.uur, ['15:00', '15:30', '16:00']);
+  assert.deepEqual(uit.kwartier, ['15:00', '15:15', '15:30', '15:45', '16:00', '16:15', '16:30', '16:45'], 'bij een kwartier per kwartier');
 });
 
 test('mail: een tijd die overlapt kiezen; het antwoord noemt geen reden, inplannen toont de overlap', async ({ browser, url }) => {

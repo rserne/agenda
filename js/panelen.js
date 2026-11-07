@@ -465,14 +465,15 @@ async function afsprakenOp(dag) {
   return afsprakenTussen(a, addDays(a, 1));
 }
 
-// Begintijden in een vrij blok: aansluitend in stappen van de gekozen duur, vanaf het begin van het blok
-// (op een kwartier), plus het laatste moment waarop de afspraak nog past. Een uur in 16:00 – 18:00 geeft 16:00 en 17:00.
-function tijdenInBlok(a, b, duur) {
+// Begintijden in een vrij blok: in stappen van de gekozen duur (of van stap minuten), vanaf het begin van het blok
+// (op een kwartier), plus het laatste moment waarop de afspraak nog past. Een uur in 16:00 – 18:00 geeft 16:00 en 17:00,
+// met stappen van een half uur 16:00, 16:30 en 17:00.
+function tijdenInBlok(a, b, duur, stap = duur) {
   const ms = duur * 6e4;
   const kwartier = 15 * 6e4;
   const zet = new Set();
   const eerste = Math.ceil(a / kwartier) * kwartier;
-  for (let t = eerste; t + ms <= b; t += ms) zet.add(t);
+  for (let t = eerste; t + ms <= b; t += stap * 6e4) zet.add(t);
   const laatste = Math.floor((b - ms) / kwartier) * kwartier;
   if (laatste >= eerste) zet.add(laatste);
   return [...zet].sort((x, y) => x - y);
@@ -1047,7 +1048,8 @@ function toetsVak(lijst, o, duur) {
     .forEach(([x, y]) => { if (x > c) vrij.push([c, x]); c = Math.max(c, y); });
   if (tot > c) vrij.push([c, tot]);
   const ms = duur * 6e4;
-  const vrijeTijden = vrij.filter(([x, y]) => y - x >= ms).flatMap(([x, y]) => tijdenInBlok(x, y, duur));
+  // Vrije begintijden per half uur (bij een kwartier per kwartier)
+  const vrijeTijden = vrij.filter(([x, y]) => y - x >= ms).flatMap(([x, y]) => tijdenInBlok(x, y, duur, Math.min(duur, 30)));
   // Ook tijden die overlappen kun je kiezen: je beslist zelf of die andere afspraak voor kan gaan
   // Daarnaast het begin van het tijdvak en elk begin en einde van een overleg erin: daar kun je een overleg overslaan
   const grenzen = tot - van <= ms ? [van] // 'om 10:30': alleen dat moment

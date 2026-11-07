@@ -129,6 +129,11 @@ test('telefoon: nieuwe afspraak opent de Outlook-app met tijd, deelnemers en not
   await p.goto(url); await wacht(1000);
   await kies(p, 'nieuw');
   await p.locator('.paneel .chip').first().tap(); await wacht(300);
+  // De balk met de werkdag: overleggen, vrije tijd en de gekozen tijd; geen kader om een tijdvak
+  assert.equal(await p.locator('.paneel.nieuw .mtijdlijn').count(), 1);
+  assert.ok(await p.locator('.paneel.nieuw .mvrij').count() >= 1);
+  assert.equal(await p.locator('.paneel.nieuw .mkeus').count(), 1);
+  assert.equal(await p.locator('.paneel.nieuw .mvakband').count(), 0);
   await p.fill('.paneel [name="deelnemers"]', 'een@voorbeeld.nl; twee@voorbeeld.nl');
   await p.fill('.paneel [name="notitie"]', 'Eerste regel\nTweede regel'); await wacht(200);
   const knop = p.locator('#noutlook');

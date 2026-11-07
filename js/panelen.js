@@ -657,7 +657,7 @@ async function openNieuw({ dag = null, blok = null, start = null, duur = null, l
         <div class="frij"><span class="flabel">Duur</span><span class="fwaarde stapper">
           <button class="mini" data-stap="-15" aria-label="Korter">${I.min}</button><span id="nduur" class="num" aria-live="polite"></span><button class="mini" data-stap="15" aria-label="Langer">${I.plus}</button>
         </span></div>
-        <div class="frij kolom"><span class="flabel">Begintijd</span><div id="ntijden"></div></div>
+        <div class="frij kolom"><span class="flabel">Begintijd</span><div id="ntijdlijn"></div><div id="ntijden"></div></div>
       </div>
       <div class="formkaart">
         <label class="frij"><span class="flabel">Deelnemers</span><input name="deelnemers" type="text" inputmode="email" placeholder="${CONTACTEN.length ? 'Naam of e-mailadres' : 'E-mailadressen'}" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
@@ -693,6 +693,12 @@ async function openNieuw({ dag = null, blok = null, start = null, duur = null, l
     const ruimte = v.ruimte && v.ruimte.email ? `<div class="nruimte">${esc(v.ruimte.naam)} staat bij de deelnemers, zodat Outlook de ruimte reserveert</div>` : '';
     $('#nsamen', el).innerHTML = `<div class="${ok ? '' : 'leeg'}">${esc(tekst)}</div>${ov}${ruimte}`;
   };
+  // De balk: de werkdag, of het aangeklikte vrije blok met een uur ervoor en erna
+  const tekenLijn = () => {
+    const d0 = startOfDay(v.dag).getTime();
+    const o = blok ? { dag: v.dag, van: (+blok.start - d0) / 6e4, tot: (+blok.end - d0) / 6e4 } : { dag: v.dag, van: WORK_START * 60, tot: WORK_END * 60 };
+    $('#ntijdlijn', el).innerHTML = tijdlijn(lijst, o, v.start != null ? [v.start] : [], v.duur * 6e4, blok ? {} : { marge: 0, stap: 2 });
+  };
   const chip = (t) => `<button class="chip num${!v.eigen && t === v.start ? ' aan' : ''}" data-start="${t}">${hhmm(new Date(t))}</button>`;
   const tekenTijden = async () => {
     const d = v.dag;
@@ -725,6 +731,7 @@ async function openNieuw({ dag = null, blok = null, start = null, duur = null, l
       html += `<div class="chips${blokken.length ? '' : ' na'}">${alle.map(chip).join('')}<button class="chip${v.eigen ? ' aan' : ''}" data-actie="eigen">Andere tijd</button>${v.eigen ? `<input class="eigeninvoer" type="time" step="900" id="neigen" value="${eigenWaarde}" aria-label="Begintijd">` : ''}</div>`;
     }
     $('#ntijden', el).innerHTML = html;
+    tekenLijn();
     tekenSamen();
   };
   const zetDag = (d) => {
@@ -789,6 +796,7 @@ async function openNieuw({ dag = null, blok = null, start = null, duur = null, l
     if (ev.target.id === 'neigen' && ev.target.value) {
       const [h, m] = ev.target.value.split(':').map(Number);
       v.start = new Date(v.dag.getFullYear(), v.dag.getMonth(), v.dag.getDate(), h, m).getTime();
+      tekenLijn();
       tekenSamen();
     }
   });
@@ -1068,10 +1076,11 @@ function metOverlap(t, ms, vrij, botst) {
 }
 // Een tijdlijntje van een uur voor tot een uur na het tijdvak: elk overleg, de vrije tijd binnen het tijdvak
 // en de gekozen tijden. Zo zie je of een tijd aansluit op een overleg ervoor of erna.
-function tijdlijn(lijst, o, gekozenT, ms) {
+// marge: hoeveel minuten voor en na het tijdvak; stap: om de hoeveel uur een tijd onder de balk
+function tijdlijn(lijst, o, gekozenT, ms, { marge = 60, stap = 1 } = {}) {
   if (o.heleDag) return '';
   const d0 = new Date(o.dag); d0.setHours(0, 0, 0, 0);
-  const ws = Math.max(0, o.van - 60), we = Math.min(24 * 60, o.tot + 60);
+  const ws = Math.max(0, o.van - marge), we = Math.min(24 * 60, o.tot + marge);
   const pos = (m) => `${((Math.min(we, Math.max(ws, m)) - ws) / (we - ws)) * 100}%`;
   const breed = (a, b) => `${((Math.min(we, b) - Math.max(ws, a)) / (we - ws)) * 100}%`;
   const min = (x) => (x - d0.getTime()) / 6e4;
@@ -1091,11 +1100,15 @@ function tijdlijn(lijst, o, gekozenT, ms) {
     .forEach((e) => { html += blok(min(e.start.getTime()), min(e.end.getTime()), 'moverleg'); });
   // Het kader om het tijdvak: links en rechts net zoveel marge als boven en onder
   // (2 punten breder, want elk blokje heeft aan de zijkant al een scheidingslijn van 1 punt)
-  html += `<span class="mvakband" style="left:calc(${pos(o.van)} - 2px);width:calc(${breed(o.van, o.tot)} + 4px)"></span>`;
+  if (marge) html += `<span class="mvakband" style="left:calc(${pos(o.van)} - 2px);width:calc(${breed(o.van, o.tot)} + 4px)"></span>`;
   // De gekozen tijd: net als het kader om het tijdvak met marge links en rechts
-  gekozenT.filter((t) => min(t) >= o.van && min(t) < o.tot).forEach((t) => { html += `<span class="mkeus" style="left:calc(${pos(min(t))} - 2px);width:calc(${breed(min(t), min(t + ms))} + 4px)"></span>`; });
+  gekozenT.forEach((t) => {
+    // Aan de rand van de balk geen marge, anders valt het kader er half buiten
+    const l = min(t) > ws ? 2 : 0, r = min(t + ms) < we ? 2 : 0;
+    html += `<span class="mkeus" style="left:calc(${pos(min(t))} - ${l}px);width:calc(${breed(min(t), min(t + ms))} + ${l + r}px)"></span>`;
+  });
   html += '</div><div class="muren">';
-  for (let h = Math.ceil(ws / 60); h <= Math.floor(we / 60); h++) html += `<span style="left:${pos(h * 60)}">${h}:00</span>`;
+  for (let h = Math.ceil(ws / 60); h <= Math.floor(we / 60); h += stap) html += `<span style="left:${pos(h * 60)}">${h}:00</span>`;
   return html + '</div></div>';
 }
 // 'Overlap met A (09:00 – 17:00), B (13:00 – 14:00) en C (14:00 – 15:00)': altijd allemaal
@@ -1200,7 +1213,7 @@ function openMailTijden() {
         u.tijden.forEach((x) => { bestaand.add(x.t); tijdInfo.set(x.t, { blok: x.blok, botst: x.botst, vol: x.vol }); if (gekozen.has(x.t)) gekozen.set(x.t, { blok: x.blok, botst: x.botst, vol: x.vol }); });
         const van = `${pad(Math.floor(o.van / 60))}:${pad(o.van % 60)}`, tot = `${pad(Math.floor(o.tot / 60))}:${pad(o.tot % 60)}`;
         html += `<div class="frij kolom mvak"><span class="mkop"><span class="t1 num">${o.heleDag ? 'Hele dag' : `${van} – ${tot}`}</span>${statusTekst(u)}</span>
-          ${tijdlijn(lijsten.get(k), o, [...gekozen.keys()], ms)}
+          ${tijdlijn(lijsten.get(k), o, [...gekozen.keys()].filter((t) => t >= u.van && t < u.tot), ms)}
           ${u.tijden.length ? `<div class="chips">${u.tijden.map((x) => `<button class="chip num${gekozen.has(x.t) ? ' aan' : ''}${x.vol ? ' vol' : x.botst.length ? ' botst' : ' vrij'}" data-t="${x.t}" aria-pressed="${gekozen.has(x.t)}" aria-label="${hhmm(new Date(x.t))}, ${x.vol ? `helemaal bezet: ${esc(overlapZin(x.botst).replace(/^Overlap met /, ''))}` : x.botst.length ? esc(overlapZin(x.botst).toLowerCase()) : 'vrij'}">${hhmm(new Date(x.t))}</button>`).join('')}</div>` : ''}</div>`;
       }
       html += `</div>${waarschuwing ? `<p class="insttoelichting fout">${esc(cap(waarschuwing.waarschuwing))}. Klopt de datum?</p>` : ''}</section>`;

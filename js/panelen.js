@@ -657,7 +657,7 @@ async function openNieuw({ dag = null, blok = null, start = null, duur = null, l
         <div class="frij"><span class="flabel">Duur</span><span class="fwaarde stapper">
           <button class="mini" data-stap="-15" aria-label="Korter">${I.min}</button><span id="nduur" class="num" aria-live="polite"></span><button class="mini" data-stap="15" aria-label="Langer">${I.plus}</button>
         </span></div>
-        <div class="frij kolom"><span class="flabel">Begintijd</span><div id="ntijdlijn"></div><div id="ntijden"></div></div>
+        <div class="frij kolom"><span class="flabel">Begintijd</span><div id="ntijdlijn" role="button" tabindex="0" aria-expanded="false" aria-label="Afspraken van deze dag"></div><div id="nafspraken" hidden></div><div id="ntijden"></div></div>
       </div>
       <div class="formkaart">
         <label class="frij"><span class="flabel">Deelnemers</span><input name="deelnemers" type="text" inputmode="email" placeholder="${CONTACTEN.length ? 'Naam of e-mailadres' : 'E-mailadressen'}" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
@@ -694,11 +694,28 @@ async function openNieuw({ dag = null, blok = null, start = null, duur = null, l
     $('#nsamen', el).innerHTML = `<div class="${ok ? '' : 'leeg'}">${esc(tekst)}</div>${ov}${ruimte}`;
   };
   // De balk: de werkdag, of het aangeklikte vrije blok met een uur ervoor en erna
+  // Tik op de balk: daaronder de afspraken uit de balk, vet als ze botsen met de gekozen tijd of er direct op aansluiten
+  let lijstOpen = false;
   const tekenLijn = () => {
     const d0 = startOfDay(v.dag).getTime();
     const o = blok ? { dag: v.dag, van: (+blok.start - d0) / 6e4, tot: (+blok.end - d0) / 6e4 } : { dag: v.dag, van: WORK_START * 60, tot: WORK_END * 60 };
-    $('#ntijdlijn', el).innerHTML = tijdlijn(lijst, o, v.start != null ? [v.start] : [], v.duur * 6e4, blok ? {} : { marge: 0, stap: 2 });
+    const marge = blok ? 60 : 0;
+    const balk = $('#ntijdlijn', el), lijstEl = $('#nafspraken', el);
+    balk.innerHTML = tijdlijn(lijst, o, v.start != null ? [v.start] : [], v.duur * 6e4, blok ? {} : { marge: 0, stap: 2 });
+    balk.setAttribute('aria-expanded', String(lijstOpen));
+    lijstEl.hidden = !lijstOpen;
+    if (!lijstOpen) return;
+    const ws = d0 + (o.van - marge) * 6e4, we = d0 + (o.tot + marge) * 6e4;
+    const a = v.start, b = v.start != null ? v.start + v.duur * 6e4 : null;
+    const items = lijst.filter((e) => !e.allDay && !e.free && e.end.getTime() > ws && e.start.getTime() < we).sort((x, y) => x.start - y.start);
+    const raakt = (e) => a != null && e.start.getTime() <= b && e.end.getTime() >= a;
+    lijstEl.innerHTML = items.length
+      ? `<ul class="moverlap">${items.map((e) => `<li${raakt(e) ? ' class="raakt"' : ''}><span class="num">${hhmm(e.start)} – ${hhmm(e.end)}</span><span>${esc(e.title || 'Een afspraak')}</span></li>`).join('')}</ul>`
+      : '<p class="nleeg">Geen afspraken</p>';
   };
+  const wisselLijst = () => { lijstOpen = !lijstOpen; tekenLijn(); };
+  $('#ntijdlijn', el).addEventListener('click', wisselLijst);
+  $('#ntijdlijn', el).addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); wisselLijst(); } });
   const chip = (t) => `<button class="chip num${!v.eigen && t === v.start ? ' aan' : ''}" data-start="${t}">${hhmm(new Date(t))}</button>`;
   const tekenTijden = async () => {
     const d = v.dag;

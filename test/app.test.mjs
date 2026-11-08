@@ -145,6 +145,13 @@ test('telefoon: nieuwe afspraak opent de Outlook-app met tijd, deelnemers en not
   assert.ok(await p.locator('.paneel.nieuw .mvrij').count() >= 1);
   assert.equal(await p.locator('.paneel.nieuw .mkeus').count(), 1);
   assert.equal(await p.locator('.paneel.nieuw .mvakband').count(), 0);
+  // Tik op de balk: de afspraken uit de balk eronder; nog een tik klapt de lijst dicht
+  assert.equal(await p.locator('#nafspraken').isVisible(), false);
+  await p.locator('#ntijdlijn').tap(); await wacht(300);
+  assert.equal(await p.locator('#ntijdlijn').getAttribute('aria-expanded'), 'true');
+  assert.ok(await p.locator('#nafspraken li').count() >= 1, 'afspraken in de lijst');
+  await p.locator('#ntijdlijn').tap(); await wacht(300);
+  assert.equal(await p.locator('#nafspraken').isVisible(), false);
   await p.fill('.paneel [name="deelnemers"]', 'een@voorbeeld.nl; twee@voorbeeld.nl');
   await p.fill('.paneel [name="notitie"]', 'Eerste regel\nTweede regel'); await wacht(200);
   const knop = p.locator('#noutlook');

@@ -800,6 +800,10 @@ label.frij:focus-within .flabel { color: var(--accent); }
 .mbalk .mvrij { top: 3px; bottom: 3px; background: var(--tlVrij); } /* even hoog als de overleggen */
 .mvakband { box-shadow: inset 0 0 0 1px var(--freeTileBorder); } /* rechte hoeken, net als de blokjes */
 .mkeus { box-shadow: inset 0 0 0 2px var(--label); } /* rechte hoeken, net als de blokjes */
+#ntijdlijn { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+#nafspraken { margin-bottom: 8px; } /* wat meer lucht tussen de lijst en de tijden eronder */
+#nafspraken .moverlap li.raakt span { color: var(--label); font-weight: 600; }
+.nleeg { margin: 0; font-size: 14px; color: var(--secondary); }
 .muren { position: relative; height: 16px; margin-top: 4px; }
 .muren span { position: absolute; transform: translateX(-50%); font-size: 11px; line-height: 16px; color: var(--secondary); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .muren span:first-child { transform: none; }

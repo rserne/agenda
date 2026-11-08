@@ -92,7 +92,8 @@ test('telefoon: in de Vooruitblik gaat doortrekken naar de volgende zeven dagen'
 test('telefoon: het weergaveknopje wisselt tussen Week en Vooruitblik, en Agenda onthoudt de keuze', async ({ browser, url }) => {
   const p = await nieuwePagina(browser, TELEFOON);
   await p.goto(url); await wacht(1000);
-  assert.deepEqual(await p.locator('#tabbalk [data-tab]').allInnerTexts(), ['Agenda', 'Notities', 'Instellingen']);
+  assert.deepEqual(await p.locator('#tabbalk .pil [data-tab]').allInnerTexts(), ['Agenda', 'Notities']);
+  assert.equal(await p.locator('#tabbalk .tabtandwiel').getAttribute('aria-label'), 'Instellingen');
   assert.equal(await p.locator('#capsule [data-nav="0"]').isVisible(), false, 'op de iPhone alleen ‹ ›');
   await p.locator('#weergaveknop').tap(); await wacht(300);
   assert.deepEqual(await p.locator('.weergavemenu [role="menuitemradio"]').allInnerTexts(), ['Week', 'Vooruitblik']);

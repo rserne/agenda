@@ -584,6 +584,10 @@ button.drij:active { opacity: 0.6; }
 /* Telefoon en tablet: de plusknop staat naast de tabbalk; op de desktop de knop Nieuw in de werkbalk */
 .nieuwknop { display: none; }
 .zijbalkknop { display: none; }
+.tabbalk .tabtandwiel { flex: 0 0 var(--barH); padding: 0; width: var(--barH); height: var(--barH); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--label); font-weight: 400; pointer-events: auto; }
+.tabbalk .tabtandwiel .icoon { width: 22px; height: 22px; }
+.tabbalk .tabtandwiel.aan { background: var(--selBg); color: var(--selText); }
+.tabbalk.menuopen .tabtandwiel { opacity: 0.35; pointer-events: none; transition: opacity 0.22s ease; }
 .tabbalk .plusknop { flex: 0 0 var(--barH); padding: 0; width: var(--barH); height: var(--barH); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--accent); pointer-events: auto; }
 .tabbalk .plusknop .icoon { width: 22px; height: 22px; }
 .tabbalk .plusknop:active { background: var(--fill); }

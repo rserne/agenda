@@ -96,6 +96,7 @@ function koppel() {
   $('#capsule').innerHTML = capsuleHtml('Week terug', 'Week verder');
   $('#titelknop').addEventListener('click', () => { if (ST.tab !== 'notities') openWeekkiezer(); });
   $('#weergaveknop').addEventListener('click', (ev) => wisselWeergavemenu(ev.currentTarget));
+  $('#tabbalk .tabtandwiel').innerHTML = I.instellingen;
   $('#icsinvoer').addEventListener('change', (ev) => { openBestand(ev.target.files[0]).catch((e) => alert('Dit bestand kan de app niet lezen. Kies een agenda-bestand (.ics) uit Outlook.')); ev.target.value = ''; });
   $('#contactinvoer').addEventListener('change', (ev) => {
     const f = ev.target.files[0];

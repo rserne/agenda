@@ -7,16 +7,19 @@
 /*  Bediening                                                          */
 /* ------------------------------------------------------------------ */
 
-// Telefoon, weekweergave: onderaan de lijst verder omhoog trekken en loslaten gaat naar de volgende week
-// (het omgekeerde van 'trek om te verversen'). De lijst schuift mee met weerstand; onderin verschijnt een pijl
+// Telefoon, Week en Vooruitblik: onderaan de lijst verder omhoog trekken en loslaten gaat naar de volgende week,
+// of naar de volgende zeven dagen, net als de pijl › (het omgekeerde van 'trek om te verversen'). De lijst schuift mee met weerstand; onderin verschijnt een pijl
 // met tekst, en zodra je ver genoeg bent, kleurt de pijl blauw en staat er dat je kunt loslaten.
 const TREK_DREMPEL = 70;
 function koppelDoortrekken() {
   let y0 = null, trek = 0;
   const ind = $('#doortrek'), tekst = $('#doortrek .dttekst');
-  const kan = () => ST.tab === 'week' && !isDesktop() && !panelen.length;
+  const kan = () => (ST.tab === 'week' || ST.tab === 'forecast') && !isDesktop() && !panelen.length;
   const onderaan = () => window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 4;
-  const volgende = () => isoWeek(addDays(periode().start, 7));
+  const volgende = () => {
+    const s = addDays(periode().start, 7);
+    return ST.tab === 'week' ? `week ${isoWeek(s)}` : rangeLong(s, addDays(s, 6));
+  };
   const zet = (px) => {
     trek = px;
     $('#inhoud').style.transform = px ? `translateY(${-px}px)` : '';
@@ -24,7 +27,7 @@ function koppelDoortrekken() {
     ind.style.opacity = String(Math.min(1, px / 35));
     ind.style.transform = `translate(-50%, ${Math.round(18 * (1 - Math.min(1, px / TREK_DREMPEL)))}px)`;
     ind.classList.toggle('klaar', klaar);
-    if (px) tekst.textContent = klaar ? `Loslaten voor week ${volgende()}` : `Trek verder voor week ${volgende()}`;
+    if (px) tekst.textContent = klaar ? `Loslaten voor ${volgende()}` : `Trek verder voor ${volgende()}`;
   };
   window.addEventListener('touchstart', (e) => {
     y0 = e.touches.length === 1 && kan() && onderaan() ? e.touches[0].clientY : null;
@@ -47,7 +50,7 @@ function koppelDoortrekken() {
     const main = $('#inhoud');
     main.classList.remove('trekt');
     if (trek < TREK_DREMPEL) { zet(0); return; }
-    // De lijst schuift omhoog weg, de volgende week komt van onderen binnen
+    // De lijst schuift omhoog weg, de volgende week of zeven dagen komen van onderen binnen
     const weg = main.animate([{ transform: `translateY(${-trek}px)`, opacity: 1 }, { transform: 'translateY(-160px)', opacity: 0 }], { duration: 160, easing: 'ease-in' });
     weg.onfinish = () => {
       zet(0);

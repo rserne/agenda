@@ -77,6 +77,17 @@ test('telefoon: onderaan doortrekken gaat naar de volgende week', async ({ brows
   assert.equal(await p.locator('#titel').innerText(), 'Week 46', 'een lange trek gaat door');
 });
 
+test('telefoon: in de Vooruitblik gaat doortrekken naar de volgende zeven dagen', async ({ browser, url }) => {
+  const p = await nieuwePagina(browser, TELEFOON);
+  await p.goto(url); await wacht(1200);
+  await p.locator('#tabbalk [data-tab="forecast"]').tap(); await wacht(800);
+  assert.equal(await p.locator('#datumregel').innerText(), '4–10 november');
+  await p.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight)); await wacht(300);
+  await veeg(p, 200, 650, 300);
+  assert.equal(await p.locator('#titel').innerText(), 'Vooruitblik');
+  assert.equal(await p.locator('#datumregel').innerText(), '11–17 november');
+});
+
 test('telefoon: detail opent, en omlaag vegen midden op het paneel sluit het', async ({ browser, url }) => {
   const p = await nieuwePagina(browser, TELEFOON);
   await p.goto(url); await wacht(1000);

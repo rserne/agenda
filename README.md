@@ -11,7 +11,7 @@ Je week in één oogopslag, als web-app (PWA) voor iPhone, iPad en laptop. De ap
 Zonder bouwstap: alle bestanden draaien zoals ze zijn op GitHub Pages. Licht en donker volgen de instelling van het toestel.
 
 **Formaten**
-- **Telefoon:** tabbalk onderin met Agenda, Notities en Instellingen, en de plusknop. In de agenda een kop met titel, het weergaveknopje (Week of Vooruitblik, met een menu zoals in Outlook) en ‹ ›; staat er een andere week in beeld, dan brengt 'Vandaag' achter de datum je terug. Daaronder de schakelaar; in de tab Notities staat daar het zoekveld. Panelen komen van onderen. Agenda opent de weergave die je het laatst koos.
+- **Telefoon:** tabbalk onderin met Agenda, Notities en Instellingen, en de plusknop. In de agenda een kop met titel, het weergaveknopje (Week of Vooruitblik, met een menu zoals in Outlook) en ‹ ›; nog een tik op de tab Agenda brengt je naar vandaag, zoals in Outlook. Daaronder de schakelaar; in de tab Notities staat daar het zoekveld. Panelen komen van onderen. Agenda opent de weergave die je het laatst koos.
 - **Tablet (vanaf 768 punten):** dezelfde opbouw in een kolom van 760 punten, Vooruitblik met vier tegels naast elkaar.
 - **Desktop (vanaf 1200 punten):** in de stijl van Agenda op de Mac. Een zijbalk met de maandkalender (heatmap), de kopjes Agenda (Week, Vooruitblik) en Notities, en onderaan Instellingen; een werkbalk met Opvallend, Alles of Vrij en ‹ Vandaag › (bij Notities het zoekveld), en de werkdagen als kolommen naast elkaar met een gekleurd streepje per afspraak. Het detailscherm opent als dialoog midden in beeld. Op de iPad liggend staan Agenda, Notities en Instellingen als tabbalk onderin, en het weergaveknopje in de werkbalk.
 

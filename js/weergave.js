@@ -229,11 +229,7 @@ function renderKop() {
   const { start } = periode();
   const agenda = ST.tab === 'week' || ST.tab === 'forecast';
   $('#titel').textContent = ST.tab === 'week' ? `Week ${isoWeek(start)}` : { forecast: 'Vooruitblik', notities: 'Notities', instellingen: 'Instellingen' }[ST.tab];
-  // Kijk je naar een andere week of periode, dan staat achter de datum 'Vandaag': een tik brengt je terug
-  const t = vandaag();
-  const huidig = ST.tab === 'week' ? startOfWeek(ST.anker).getTime() === startOfWeek(defaultWeekAnchor(t)).getTime() : sameDay(ST.fcStart, t);
-  $('#datumregel').innerHTML = `${rangeLong(start, addDays(start, 6))}${agenda && !huidig ? ' · <span class="vandaaglink">Vandaag</span>' : ''}`;
-  $('#datumregel').setAttribute('aria-label', `${rangeLong(start, addDays(start, 6))}, naar vandaag`);
+  $('#datumregel').textContent = rangeLong(start, addDays(start, 6));
   document.body.classList.toggle('vooruitblik', ST.tab === 'forecast');
   document.body.classList.toggle('agendatab', agenda);
   document.body.classList.toggle('notitietab', ST.tab === 'notities'); // geen weekkeuze, schakelaar en pijlen; wel zoeken

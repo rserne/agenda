@@ -86,7 +86,7 @@ test('telefoon: in de Vooruitblik gaat doortrekken naar de volgende zeven dagen'
   await p.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight)); await wacht(300);
   await veeg(p, 200, 650, 300);
   assert.equal(await p.locator('#titel').innerText(), 'Vooruitblik');
-  assert.equal(await p.locator('#datumregel').innerText(), '11–17 november · Vandaag', 'terug naar vandaag via de datumregel');
+  assert.equal(await p.locator('#datumregel').innerText(), '11–17 november');
 });
 
 test('telefoon: het weergaveknopje wisselt tussen Week en Vooruitblik, en Agenda onthoudt de keuze', async ({ browser, url }) => {
@@ -103,12 +103,12 @@ test('telefoon: het weergaveknopje wisselt tussen Week en Vooruitblik, en Agenda
   assert.equal(await p.locator('#weergaveknop').isVisible(), false, 'alleen in de agenda');
   await p.locator('#tabbalk [data-tab="agenda"]').tap(); await wacht(700);
   assert.equal(await p.locator('#titel').innerText(), 'Vooruitblik', 'terug naar de laatst gekozen weergave');
-  // Een week verder: 'Vandaag' in de datumregel brengt je terug
+  // Een week verder: nog een tik op de tab Agenda brengt je naar vandaag
   await p.locator('#weergaveknop').tap(); await wacht(300);
   await p.locator('.weergavemenu [data-weergave="week"]').tap(); await wacht(700);
   await p.locator('#capsule [data-nav="1"]').tap(); await wacht(700);
   assert.equal(await p.locator('#titel').innerText(), 'Week 46');
-  await p.locator('#datumregel').tap(); await wacht(700);
+  await p.locator('#tabbalk [data-tab="agenda"]').tap(); await wacht(700);
   assert.equal(await p.locator('#titel').innerText(), 'Week 45');
   assert.equal(await p.locator('#datumregel').innerText(), '2–8 november');
   assert.deepEqual(p.fouten, []);

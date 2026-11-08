@@ -63,7 +63,9 @@ function koppelDoortrekken() {
 }
 
 // Een tab kiezen. Agenda opent de weergave die je het laatst gebruikte: Week of Vooruitblik.
+// Tik je op Agenda terwijl je al in de agenda bent, dan ga je naar vandaag (zoals in Outlook).
 function kiesTab(t) {
+  if (t === 'agenda' && (ST.tab === 'week' || ST.tab === 'forecast')) { verschuif(0); return; }
   if (t === 'agenda') t = LS.get('ag_weergave') || 'week';
   if (t === 'week' || t === 'forecast') LS.set('ag_weergave', t);
   if (t === ST.tab) return;

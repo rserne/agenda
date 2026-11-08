@@ -1166,10 +1166,8 @@ body.agendatab .weergaveknop { display: flex; }
 body.desktop .weergaveknop { display: none; }
 .weergaveknop .icoon { width: 19px; height: 19px; }
 .weergaveknop.open { background: var(--fill); }
-/* iPhone: in de capsule alleen ‹ ›; terug naar vandaag gaat via de datumregel */
+/* iPhone: in de capsule alleen ‹ ›; naar vandaag ga je met nog een tik op de tab Agenda */
 body:not(.desktop) #capsule button[data-nav="0"] { display: none; }
-.vandaaglink { color: var(--accent); }
-body.desktop .vandaaglink { display: none; }
 /* Het menu zelf: zoals een menu van iOS, met een vinkje voor de huidige weergave */
 .keuzemenu.weergavemenu { min-width: 230px; padding: 6px; border-radius: 16px; background: var(--popBg, var(--card)); }
 .keuzemenu.weergavemenu button { height: 46px; padding: 0 14px 0 8px; border-radius: 10px; font-size: 17px; font-weight: 500; gap: 10px; }

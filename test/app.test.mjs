@@ -6,6 +6,8 @@ import assert from 'assert/strict';
 import ICAL from 'ical.js';
 import { maakOmzetter } from '../js/ical.js';
 import { startServer, laadPlaywright, nieuwePagina, wacht, TELEFOON, MAC, MAP } from './hulp.mjs';
+import worker from '../cloudflare/worker.js';
+import { nepD1 } from './d1.mjs';
 
 const ICS = path.join(MAP, 'test', 'voorbeeld.ics');
 const LINK = 'https://agenda.voorbeeld.workers.dev/?sleutel=test';
@@ -706,6 +708,82 @@ test('notities: de tab zoekt op tekst, filtert op label, en een losse notitie ka
   await p.locator('#tabbalk .plusknop').tap(); await wacht(400);
   assert.deepEqual(await p.locator('.keuzemenu [role="menuitem"]').allInnerTexts(), ['Tijden uit een mail', 'Nieuwe afspraak', 'Notitie']);
   assert.deepEqual(p.fouten, []);
+});
+
+/* -------------------------------------------------------------- synchroniseren */
+
+test('worker: notities bewaren, de laatste wijziging wint, en zonder database of sleutel niets', async () => {
+  const roep = (env, pad, opties = {}) => worker.fetch(new Request(`https://agenda.voorbeeld.workers.dev${pad}`, { ...opties, headers: { Origin: 'https://rserne.github.io' } }), env);
+  const stuur = (env, notities) => roep(env, '/notities?sleutel=test', { method: 'POST', body: JSON.stringify({ notities }) });
+  const haal = async (env, sinds) => (await roep(env, `/notities?sleutel=test&sinds=${sinds}`)).json();
+  assert.equal((await roep({ SLEUTEL: 'test' }, '/notities?sleutel=test')).status, 501, 'zonder database');
+  const env = { SLEUTEL: 'test', DB: nepD1() };
+  assert.equal((await roep(env, '/notities?sleutel=fout')).status, 403);
+  assert.equal((await roep(env, '/notities?sleutel=test', { method: 'PUT', body: '{}' })).status, 405);
+  const opties = await roep(env, '/notities', { method: 'OPTIONS' });
+  assert.equal(opties.headers.get('Access-Control-Allow-Methods'), 'GET, POST');
+  assert.equal(opties.headers.get('Access-Control-Allow-Origin'), 'https://rserne.github.io');
+  assert.deepEqual(await (await stuur(env, [{ id: 'a', tekst: 'Eerste', gewijzigd: 100 }, { id: 'b', tekst: 'Tweede', gewijzigd: 200 }])).json(), { ontvangen: 2 });
+  let h = await haal(env, 0);
+  assert.deepEqual(h.notities.map((n) => n.tekst), ['Eerste', 'Tweede']);
+  assert.equal(h.versie, 2);
+  await stuur(env, [{ id: 'a', tekst: 'Ouder', gewijzigd: 50 }]);
+  assert.deepEqual((await haal(env, 2)).notities, [], 'een oudere wijziging verandert niets');
+  await stuur(env, [{ id: 'a', tekst: 'Nieuwer', gewijzigd: 300 }]);
+  h = await haal(env, 2);
+  assert.deepEqual(h.notities.map((n) => n.tekst), ['Nieuwer']);
+  assert.equal(h.versie, 3);
+  assert.equal((await roep(env, '/notities?sleutel=test', { method: 'POST', body: 'geen json' })).status, 400);
+  assert.equal((await roep({ SLEUTEL: 'test' }, '/?sleutel=test')).status, 500, 'de agenda mist ICS_URL');
+});
+
+test('synchroniseren: een notitie van de iPhone staat even later op de Mac; wijzigen en verwijderen gaan mee', async ({ browser, url }) => {
+  const env = { SLEUTEL: 'test', DB: nepD1() };
+  const ics = fs.readFileSync(ICS, 'utf8');
+  const koppel = (p) => p.context().route('https://agenda.voorbeeld.workers.dev/**', async (r) => {
+    const v = r.request();
+    const cors = { 'Access-Control-Allow-Origin': '*' };
+    if (new URL(v.url()).pathname !== '/notities') return r.fulfill({ status: 200, contentType: 'text/calendar', headers: cors, body: ics });
+    const a = await worker.fetch(new Request(v.url(), { method: v.method(), body: v.method() === 'POST' ? v.postData() : undefined }), env);
+    r.fulfill({ status: a.status, contentType: a.headers.get('Content-Type') || 'text/plain', headers: cors, body: await a.text() });
+  });
+  const iphone = await nieuwePagina(browser, TELEFOON);
+  const mac = await nieuwePagina(browser, MAC);
+  for (const p of [iphone, mac]) { await koppel(p); await p.goto(url); await wacht(800); await p.evaluate((l) => gebruikLink(l), LINK); }
+  await wacht(4000);
+  const sync = (p) => p.evaluate(async () => { while (SYNC.bezig) await new Promise((r) => setTimeout(r, 100)); await synchroniseer(); return levendeNotities().map((n) => n.tekst); });
+  // Op de iPhone een notitie maken: kort daarna gaat hij vanzelf naar de Worker
+  await iphone.evaluate(async () => { await laadNotities(); const n = maakNotitie(); wijzigNotitie(n, { tekst: 'Gedeelde notitie', labels: ['Pilot'] }); });
+  await wacht(3500);
+  assert.deepEqual(await sync(mac), ['Gedeelde notitie'], 'de Mac haalt hem op');
+  await mac.locator('#zijbalk [data-tab="notities"]').click(); await wacht(500);
+  assert.deepEqual(await mac.locator('#notlijst .notitierij .t1').allInnerTexts(), ['Gedeelde notitie']);
+  // Op de Mac wijzigen
+  await mac.evaluate(() => wijzigNotitie(levendeNotities()[0], { tekst: 'Bijgewerkt op de Mac' }));
+  await sync(mac);
+  assert.deepEqual(await sync(iphone), ['Bijgewerkt op de Mac']);
+  // Op de iPhone verwijderen
+  await iphone.evaluate(() => verwijderNotitie(levendeNotities()[0]));
+  await sync(iphone);
+  assert.deepEqual(await sync(mac), [], 'ook op de Mac verdwenen');
+  assert.equal(await mac.locator('#notlijst').innerText(), 'Nog geen notities');
+  // Instellingen laat zien hoe het ervoor staat, ook als de Worker nog geen database heeft
+  await iphone.locator('#tabbalk [data-tab="instellingen"]').tap(); await wacht(600);
+  assert.match(await iphone.locator('#isync').innerText(), /Gesynchroniseerd/);
+  const db = env.DB; delete env.DB;
+  await iphone.locator('#isync [data-actie="sync-nu"]').tap(); await wacht(800);
+  assert.match(await iphone.locator('#isync').innerText(), /Je Worker heeft nog geen database/);
+  env.DB = db;
+  // Een Worker van vóór de notities (geeft op elk adres de agenda terug): melden, en niet meer vanzelf proberen
+  await iphone.context().unroute('https://agenda.voorbeeld.workers.dev/**');
+  let vragen = 0;
+  await iphone.context().route('https://agenda.voorbeeld.workers.dev/**', (r) => { vragen++; r.fulfill({ status: r.request().method() === 'POST' ? 405 : 200, contentType: 'text/calendar', headers: { 'Access-Control-Allow-Origin': '*' }, body: ics }); });
+  await iphone.locator('#isync [data-actie="sync-nu"]').tap(); await wacht(800);
+  assert.match(await iphone.locator('#isync').innerText(), /Je Worker is nog niet bijgewerkt/);
+  const na = vragen;
+  await iphone.evaluate(() => synchroniseer({ vanzelf: true })); await wacht(300);
+  assert.equal(vragen, na, 'geen automatische pogingen meer');
+  assert.deepEqual([...iphone.fouten, ...mac.fouten], []);
 });
 
 /* -------------------------------------------------------------- desktop */

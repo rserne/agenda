@@ -1,7 +1,7 @@
 // Agenda, notities
 // Eigen notities: bij een afspraak of los, met labels. Ze staan op het toestel in IndexedDB ('notities').
 // Elke notitie draagt een eigen id, een tijdstip van wijzigen en bij verwijderen een markering (weg), zodat ze
-// later via de Worker tussen toestellen kunnen worden gesynchroniseerd: per notitie wint de laatste wijziging.
+// via de Worker tussen toestellen worden gesynchroniseerd (js/synchroniseren.js): per notitie wint de laatste wijziging.
 // Gewoon script (geen module): het gebruikt openPaneel, esc en de iconen uit de andere bestanden.
 'use strict';
 
@@ -25,6 +25,7 @@ function bewaarNotities({ meteen = false } = {}) {
   clearTimeout(_notitieTimer);
   const doe = () => IDB.set('notities', NOTITIES).catch(() => { /* privévenster: alleen voor deze sessie */ });
   if (meteen) doe(); else _notitieTimer = setTimeout(doe, 400);
+  synchroniseerStraks(); // kort daarna naar de Worker
 }
 const nieuwId = () => (crypto.randomUUID ? crypto.randomUUID() : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`);
 const levendeNotities = () => NOTITIES.filter((n) => !n.weg);
@@ -39,12 +40,18 @@ function maakNotitie(e = null) {
     gemaakt: nu, gewijzigd: nu, weg: false,
   };
 }
-// Een nieuwe notitie komt pas in de lijst als er iets in staat; een lege notitie verdwijnt weer
+// Een nieuwe notitie komt pas in de lijst als er iets in staat; een lege notitie verdwijnt weer. Stond hij al in de
+// Worker, dan wordt hij gemarkeerd als verwijderd, zodat hij ook op de andere toestellen verdwijnt.
 function wijzigNotitie(n, velden) {
   Object.assign(n, velden, { gewijzigd: Date.now() });
   const i = NOTITIES.indexOf(n);
-  if (notitieLeeg(n)) { if (i >= 0) NOTITIES.splice(i, 1); }
-  else if (i < 0) NOTITIES.push(n);
+  if (notitieLeeg(n)) {
+    if (i >= 0 && n.gesynct) n.weg = true;
+    else if (i >= 0) NOTITIES.splice(i, 1);
+  } else {
+    n.weg = false;
+    if (i < 0) NOTITIES.push(n);
+  }
   bewaarNotities();
 }
 function verwijderNotitie(n) {

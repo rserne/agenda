@@ -74,7 +74,7 @@ Een eigen notitie maak je bij een afspraak met het knopje naast de titel in het 
 
 **Notities zoeken.** In de tab Notities (op de Mac in de zijbalk) zoek je bovenin op tekst, label en de titel van de afspraak, en filter je met een tik op één label. De nieuwste afspraak staat bovenaan. In deze tab staat Notitie in het plusmenu het dichtst bij je duim, op de Mac bovenaan.
 
-**Opslag.** De notities staan voorlopig alleen op het toestel, in IndexedDB (`notities`). Elke notitie heeft een eigen id en een tijdstip van wijzigen, en een verwijderde notitie houdt een markering (`weg`). Zo kunnen ze straks via de Cloudflare Worker tussen iPhone, iPad en Mac worden gesynchroniseerd, waarbij per notitie de laatste wijziging wint. Zet nooit echte notities in de repository; de tests gebruiken verzonnen tekst.
+**Opslag.** De notities staan op het toestel in IndexedDB (`notities`) en, als je Worker een database heeft, ook in Cloudflare (zie Cloudflare Worker, Notities synchroniseren). Elke notitie heeft een eigen id en een tijdstip van wijzigen, en een verwijderde notitie houdt een markering (`weg`). Zet nooit echte notities in de repository; de tests gebruiken verzonnen tekst.
 
 ## Ruimtes en plaatsen
 
@@ -116,7 +116,7 @@ Repository, Settings, Pages: Deploy from a branch, `main`, map `/ (root)`. De ap
 
 ### 3. Cloudflare Worker
 
-`cloudflare/worker.js` haalt de agenda op en geeft hem door aan de app. Hij bewaart niets. Gratis, zonder betaalkaart.
+`cloudflare/worker.js` haalt de agenda op en geeft hem door aan de app; de agenda bewaart hij niet. Op `/notities` bewaart hij je notities in een D1-database, zodat iPhone, iPad en Mac dezelfde notities hebben. Gratis, zonder betaalkaart.
 
 1. cloudflare.com, gratis account, **Workers & Pages**, **Create**, **Worker** (Start with Hello World).
 2. **Edit code**: vervang de code door `cloudflare/worker.js` en kies **Deploy**.
@@ -125,7 +125,16 @@ Repository, Settings, Pages: Deploy from a branch, `main`, map `/ (root)`. De ap
 
 Koppel je de Worker liever aan GitHub (Import a repository), dan gebruikt Cloudflare `wrangler.jsonc` en plaatst het alleen de Worker. De naam in dat bestand (`agenda`) moet gelijk zijn aan de naam van de Worker in Cloudflare.
 
-De Worker-link is net zo geheim als de Outlook-link: wie hem heeft, ziet je agenda. Stel je een nieuwe sleutel in, dan werkt de oude link niet meer.
+De Worker-link is net zo geheim als de Outlook-link: wie hem heeft, ziet je agenda en je notities. Stel je een nieuwe sleutel in, dan werkt de oude link niet meer.
+
+**Notities synchroniseren (D1).** Eenmalig, in het dashboard van Cloudflare:
+
+1. **Storage & databases**, **D1 SQL Database**, **Create Database**. Naam `agenda-notities`. Kies bij **Data location** voor **Specify jurisdiction** en dan **European Union**. Dat kan alleen nu: achteraf de regio veranderen kan niet.
+2. Bij de Worker: **Settings**, **Bindings**, **Add**, **D1 database**. Variabele `DB`, database `agenda-notities`. Kies **Deploy**.
+3. Zet de nieuwe `cloudflare/worker.js` in de Worker (**Edit code**, plakken, **Deploy**). Is de Worker aan GitHub gekoppeld, dan moet de koppeling met de database ook in `wrangler.jsonc` staan, anders haalt een nieuwe deploy hem weg (zie de opmerking in dat bestand).
+4. In de app: **Instellingen**, **Notities**, **Nu synchroniseren**. Daar staat daarna 'Gesynchroniseerd'. De tabel maakt de Worker zelf aan.
+
+Hoe het werkt: de app gebruikt je agenda-link met `/notities` erachter. Kort na elke wijziging, bij het openen en elke vijf minuten stuurt hij wat op het toestel is veranderd, en haalt hij op wat elders is veranderd. Per notitie wint de laatste wijziging; een verwijderde notitie gaat als markering mee. Zonder database, of met een Worker van vóór de notities, blijven de notities op het toestel en meldt Instellingen waarom.
 
 ### 4. Op je iPhone en iPad
 
@@ -145,11 +154,12 @@ Open de app in Safari, tik op Delen, Zet op beginscherm. Geef daarna onder Inste
 | `js/weergave.js` | Week, Vooruitblik, de kop en het tekenen van het scherm. |
 | `js/panelen.js` | Weekkiezer, zijbalk, detailscherm, nieuwe afspraak (met aanvullen), de agendakeuze en Instellingen. |
 | `js/notities.js` | Eigen notities: opslag, labels, het notitiescherm en het overzicht met zoeken. |
+| `js/synchroniseren.js` | Notities gelijk houden via de Cloudflare Worker, en de regel onder Instellingen. |
 | `js/bediening.js` | Tikken, vegen en doortrekken, het opstarten, de versiecontrole en de service worker. |
 | `js/ical.js`, `js/verrijk.js`, `js/ics-werker.js` | Het inlezen van een .ics-bestand (ook in de Web Worker). |
 | `voorbeeld.js` | Verzonnen voorbeeldafspraken. |
 | `sw.js` | De service worker: de app werkt ook zonder verbinding. |
-| `cloudflare/worker.js`, `wrangler.jsonc` | De Cloudflare Worker. |
+| `cloudflare/worker.js`, `wrangler.jsonc` | De Cloudflare Worker: de agenda doorgeven en de notities bewaren. |
 
 De bestanden in `js/` zijn gewone scripts (geen modules) en laden in een vaste volgorde, die in `index.html` staat. Ze delen dezelfde variabelen, dus een functie in `panelen.js` kan `render()` uit `weergave.js` aanroepen.
 
@@ -170,7 +180,7 @@ npm run schermen -- na basis      # nieuwe afbeeldingen in na/ en vergelijken me
 python3 -m http.server 8080       # en open http://localhost:8080/
 ```
 
-`npm test` start de app met een vaste klok (woensdag 4 november 2026, 9:00) en de voorbeeldgegevens. De tests controleren onder meer het opstarten, wisselen van filter, doortrekken naar de volgende week en de volgende zeven dagen, het detailscherm, de weekkiezer, een nieuwe afspraak, het inladen van een .ics-bestand (met en zonder Web Worker), de agenda-link, de contacten, ruimtes en plaatsen (Google nagebootst), Instellingen, tijden uit een mail, notities en de desktop. Zet je een deel van een naam erachter, dan draaien alleen die tests, bijvoorbeeld `npm test -- desktop`.
+`npm test` start de app met een vaste klok (woensdag 4 november 2026, 9:00) en de voorbeeldgegevens. De tests controleren onder meer het opstarten, wisselen van filter, doortrekken naar de volgende week en de volgende zeven dagen, het detailscherm, de weekkiezer, een nieuwe afspraak, het inladen van een .ics-bestand (met en zonder Web Worker), de agenda-link, de contacten, ruimtes en plaatsen (Google nagebootst), Instellingen, tijden uit een mail, notities, het synchroniseren (met de echte Worker-code op een nagebootste D1-database, `test/d1.mjs`) en de desktop. Zet je een deel van een naam erachter, dan draaien alleen die tests, bijvoorbeeld `npm test -- desktop`.
 
 `npm run schermen` maakt 76 schermafbeeldingen: telefoon, telefoon met .ics, iPad liggend en staand, en Mac, elk in licht en donker. Maak voor een grote wijziging eerst een basis en vergelijk daarna; zo zie je meteen of er iets verschuift.
 

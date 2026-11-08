@@ -274,6 +274,7 @@ async function gebruikLink(link) {
     LINK_BEZIG = false;
     await laad();
     toonStatus('Je agenda is ingeladen.', { soort: 'klaar', duur: 2500 });
+    synchroniseerStraks(500); // met de link kunnen ook de notities mee
   } catch (e) {
     toonStatus(e.message, { soort: 'fout', actie: ['Link aanpassen', () => openLinkPaneel(link)] });
   } finally {

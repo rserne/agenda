@@ -1004,6 +1004,7 @@ function openInstellingen({ doel = null } = {}) {
     <div class="detailinhoud">
       ${doel ? '' : '<div class="dkop"><h2 class="dtitel">Instellingen</h2></div>'}
       <section class="instsectie"><h3>Agenda</h3><div class="formkaart" id="iagenda">${agendaHtml()}</div></section>
+      <section class="instsectie"><h3>Notities</h3><div class="formkaart" id="isync">${syncStatusHtml()}</div></section>
       <section class="instsectie"><h3>Contacten</h3><div class="formkaart" id="icontacten">${contactHtml()}</div>
         <p class="insttoelichting">Een csv uit NK2Edit of Outlook, of een vCard (.vcf).</p></section>
       <section class="instsectie"><h3>Ruimtes</h3><div class="formkaart" id="iruimtes">${ruimtesHtml()}</div></section>
@@ -1062,6 +1063,7 @@ function openInstellingen({ doel = null } = {}) {
     if (actie === 'ruimte-erbij') { const l = leesRuimtes(); l.push({ naam: '', email: '' }); zetRuimteLijst(l); tekenRuimtes(l.length - 1); return; }
     if (actie === 'ruimte-weg') { const l = leesRuimtes(); l.splice(Number(a.closest('.ruimterij').dataset.i), 1); zetRuimteLijst(l); tekenRuimtes(); return; }
     if (actie === 'ics-nu') { Promise.resolve(nuBijwerken()).finally(tekenAgenda); tekenAgenda(); return; }
+    if (actie === 'sync-nu') { synchroniseer(); return; }
     if (actie === 'contacten-wis') {
       if (confirm('Contacten van dit toestel verwijderen? Je bestand zelf blijft bestaan.')) { await vergeetContacten(); tekenContacten(); render(); renderZijbalk(); }
       return;

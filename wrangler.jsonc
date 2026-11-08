@@ -1,4 +1,4 @@
-// Cloudflare Worker voor de agenda-link (zie cloudflare/worker.js en README.md, 'Tussenstap: Cloudflare Worker').
+// Cloudflare Worker voor de agenda-link en de notities (zie cloudflare/worker.js en README.md, '3. Cloudflare Worker').
 // Dit bestand zorgt dat Cloudflare bij een koppeling met GitHub alleen de Worker plaatst, niet de hele app.
 // De geheimen ICS_URL en SLEUTEL staan bij de Worker in Cloudflare (Settings, Variables and Secrets), niet hier.
 {
@@ -7,4 +7,7 @@
   "compatibility_date": "2026-10-01",
   "workers_dev": true,
   "keep_vars": true
+  // Notities: de database koppel je in Cloudflare (Settings, Bindings, D1 database, variabele DB).
+  // Plaatst Cloudflare de Worker via GitHub, zet de koppeling dan hier, met het id uit het dashboard:
+  //   "d1_databases": [{ "binding": "DB", "database_name": "agenda-notities", "database_id": "<id>" }]
 }

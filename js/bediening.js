@@ -101,6 +101,7 @@ function koppel() {
     const nav = ev.target.closest('[data-nav]');
     if (nav) { verschuif(Number(nav.dataset.nav)); return; }
     if (ev.target.closest('[data-actie="instellingen"]')) { openInstellingen(); return; }
+    if (ev.target.closest('[data-actie="notitielijst"]')) { openNotitielijst(); return; }
     const actie = ev.target.closest('[data-actie^="ics-"]');
     if (actie) {
       if (actie.dataset.actie === 'ics-openen') $('#icsinvoer').click();
@@ -191,6 +192,7 @@ function koppel() {
     vv.addEventListener('scroll', meet);
   }
   laadContacten().then(() => { if (CONTACTEN_INFO && isDesktop()) renderZijbalk(); });
+  laadNotities().then(() => { if (isDesktop()) renderZijbalk(); });
   // Een eerder geopend .ics-bestand of je agenda-link gaat voor (behalve met ?demo)
   renderKop(); // de titel en knoppen staan er meteen, ook voordat de afspraken uit de opslag komen
   Promise.all([IDB.get('ics').catch(() => null), IDB.get('icsweken').catch(() => null)]).then(async ([b, kopie]) => {

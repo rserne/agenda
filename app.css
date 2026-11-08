@@ -450,7 +450,7 @@ main.kolom.trekt { transition: none; }
 .paneel.detail .detailinhoud { flex: 1 1 auto; }
 .paneel.detail .dvoet { margin-top: auto; }
 /* Alleen een sluitknop, rechts naast de eerste regel: de rij zelf neemt geen hoogte in */
-.detailnav { display: flex; justify-content: flex-end; align-items: flex-start; height: 0; overflow: visible; padding: 6px 16px 0; flex-shrink: 0; position: relative; z-index: 2; touch-action: none; }
+.detailnav { display: flex; justify-content: flex-end; gap: 10px; align-items: flex-start; height: 0; overflow: visible; padding: 6px 16px 0; flex-shrink: 0; position: relative; z-index: 2; touch-action: none; }
 .detail .dkop { padding-top: 0; padding-right: 52px; }
 /* Als paneel van onderen geen sluitknop: omlaag vegen of naast het paneel tikken sluit het. Het venster op desktop en iPad liggend houdt de knop. */
 .paneel.detail:not(.dialoog) .detailnav { display: none; }
@@ -996,10 +996,11 @@ label.frij:focus-within .flabel { color: var(--accent); }
   }
   .paneel.detail.dialoog.open { transform: translate(-50%, -50%) scale(1); opacity: 1; }
   .paneel.mailtijden.dialoog { height: min(86vh, 900px); }
+  .paneel.notitie.dialoog { height: min(86vh, 900px); width: min(760px, calc(100% - 64px)); } /* notitie: een groot venster om in te schrijven */
   /* iPad liggend met het toetsenbord open: het venster gaat naar boven en eindigt net boven het toetsenbord */
   .toetsenbord .paneel.detail.dialoog { top: calc(env(safe-area-inset-top, 0px) + 16px); transform: translate(-50%, 0); max-height: calc(100% - var(--tb, 0px) - env(safe-area-inset-top, 0px) - 32px); min-height: 0; }
   .toetsenbord .paneel.detail.dialoog.open { transform: translate(-50%, 0); }
-  .toetsenbord .paneel.mailtijden.dialoog { height: calc(100% - var(--tb, 0px) - env(safe-area-inset-top, 0px) - 32px); }
+  .toetsenbord .paneel.mailtijden.dialoog, .toetsenbord .paneel.notitie.dialoog { height: calc(100% - var(--tb, 0px) - env(safe-area-inset-top, 0px) - 32px); }
   .paneel.detail.dialoog .greep { display: none; }
   .paneel.detail.dialoog .detailnav { padding-top: 14px; }
   .paneel.detail.dialoog .dkop { padding-top: 0; }
@@ -1119,3 +1120,31 @@ label.frij:focus-within .flabel { color: var(--accent); }
 
 /* Korte panelen (agenda kiezen, agenda-link): zo hoog als de inhoud, zonder de minimale hoogte van het detailscherm */
 .paneel.detail.bronpaneel, .paneel.detail.linkpaneel, .paneel.detail.dialoog.bronpaneel, .paneel.detail.dialoog.linkpaneel { min-height: 0; }
+
+/* ------------------------------------------------------------------ */
+/*  Notities                                                           */
+/* ------------------------------------------------------------------ */
+.notitie .dkop, .notitielijst .dkop { padding-left: 4px; }
+.paneel.notitie:not(.dialoog) { height: calc(100% - env(safe-area-inset-top, 0px) - 12px); } /* schermvullend: ruimte om te schrijven */
+.notitie .tekstkaart { flex: 1 0 auto; display: flex; min-height: 240px; }
+.notitie .tekstkaart .frij { flex: 1; align-items: stretch; padding-bottom: 14px; }
+.notitie .tekstkaart textarea { height: auto; min-height: 0; }
+.notitierij { cursor: pointer; }
+.notitierij > .icoon { width: 14px; height: 14px; color: var(--secondary); flex-shrink: 0; }
+.nkort { font-size: 15px; line-height: 21px; color: var(--label); white-space: pre-wrap; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.nlabels { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
+.nlabel { background: var(--fill); color: var(--label); border-radius: 7px; padding: 2px 8px; font-size: 12px; font-weight: 600; }
+/* Labels kiezen: gekozen gevuld met een kruisje, voorstellen met een doorgetrokken rand en een plus */
+.chip.label { gap: 6px; padding: 0 12px; }
+.chip.label .icoon { width: 13px; height: 13px; }
+.chip.label.voorstel { background: transparent; box-shadow: inset 0 0 0 1.5px var(--fill); color: var(--secondary); }
+.nfilter { margin: 2px 4px 0; }
+.nfilter:empty { display: none; }
+.nlijstleeg { padding: 8px 4px; }
+.groteknop.rood { color: var(--statusNo); }
+.rond.glas.aan, .kopknop.aan { color: var(--accent); } /* het overleg heeft een notitie */
+/* Knopje in de kop (telefoon); in een venster op iPad en Mac staat het naast het kruisje */
+.kopknop { flex-shrink: 0; margin-left: auto; background: var(--fill); }
+.paneel.dialoog .kopknop { display: none; }
+.paneel.detail:not(.dialoog) .detailnav .rond:not([data-actie="sluit"]) { display: none; }
+.notitielijst .dkop { align-items: center; }

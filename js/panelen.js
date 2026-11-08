@@ -15,7 +15,7 @@ function tekenNaBijwerken() {
   if (panelen.length) tekenNaSluiten = true;
   else behoudDag(render);
 }
-function openPaneel(el, { greepSelector, boven = false } = {}) {
+function openPaneel(el, { greepSelector, boven = false, naSluiten = null } = {}) {
   const achter = document.createElement('div');
   achter.className = 'achtergrond' + (boven ? ' boven' : '');
   const lagen = $('#lagen');
@@ -27,11 +27,13 @@ function openPaneel(el, { greepSelector, boven = false } = {}) {
     const weg = () => { el.remove(); achter.remove(); };
     setTimeout(weg, 340);
     const i = panelen.indexOf(p);
-    if (i >= 0) panelen.splice(i, 1);
+    if (i < 0) return; // al dicht
+    panelen.splice(i, 1);
     if (!panelen.length) {
       document.body.style.overflow = '';
       if (tekenNaSluiten) { tekenNaSluiten = false; behoudDag(render); }
     }
+    if (naSluiten) naSluiten();
   };
   achter.addEventListener('click', p.sluit);
   panelen.push(p);
@@ -226,6 +228,7 @@ function openWeekkiezer() {
     const rij = ev.target.closest('.weekrij');
     if (rij) { p.sluit(); kiesWeek(new Date(Number(rij.dataset.ma))); return; }
     if (ev.target.closest('[data-actie="instellingen"]')) { p.sluit(); setTimeout(openInstellingen, 250); }
+    if (ev.target.closest('[data-actie="notitielijst"]')) { p.sluit(); setTimeout(openNotitielijst, 250); }
   });
 }
 // Tinten bijwerken zodra de gegevens binnen zijn, zonder het raster te laten verspringen
@@ -271,7 +274,8 @@ function instellingenRijHtml() {
     const d = new Date(BESTAND.gecontroleerd || BESTAND.datum);
     kort = `Outlook-agenda · ${LINK_BEZIG ? 'bijwerken…' : BESTAND.linkFout ? 'bijwerken lukte niet' : sameDay(d, vandaag()) ? `bijgewerkt om ${hhmm(d)}` : `bijgewerkt ${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}`}`;
   } else if (BESTAND) kort = esc(BESTAND.naam);
-  return `<nav class="zblijst zbagenda zbinstellingen" aria-label="Instellingen">
+  return `<nav class="zblijst zbagenda zbinstellingen" aria-label="Notities en instellingen">
+    ${notitiesRijHtml()}
     <button class="instrij" data-actie="instellingen">${I.instellingen}<span class="tekst"><span class="t1">Instellingen</span><span class="t2">${kort}</span></span>${I.verder}</button>
   </nav>`;
 }
@@ -419,7 +423,7 @@ function openDetail(e) {
 
     const lang = notes.split('\n').length > 6 || notes.length > 280;
     el.innerHTML = `<div class="detailgreep"><div class="greep"></div>
-      <div class="detailnav"><button class="rond glas" data-actie="sluit" aria-label="Sluiten">${I.kruis}</button></div></div>
+      <div class="detailnav"><button class="rond glas${notitieBij(e.id) ? ' aan' : ''}" data-actie="eigennotitie" aria-label="Notitie">${I.notitie}</button><button class="rond glas" data-actie="sluit" aria-label="Sluiten">${I.kruis}</button></div></div>
       <div class="detailinhoud">
         <div class="dkop">
           <span class="stip ${e.kind}" role="img" aria-label="${kindLabel}" title="${kindLabel}"></span>
@@ -433,7 +437,9 @@ function openDetail(e) {
           </div>
           ${e.external ? `<div class="dbadges">${e.orgs.map((o) => `<span>${esc(o)}</span>`).join('')}</div>` : ''}
           </div>
+          <button class="rond kopknop${notitieBij(e.id) ? ' aan' : ''}" data-actie="eigennotitie" aria-label="Notitie">${I.notitie}</button>
         </div>
+        ${notitieSectieHtml(e)}
         ${plekken.length ? `<section class="sectie"><h3>Locatie</h3><div class="kaart">${plekken.join('')}</div></section>` : ''}
         ${orgHtml}
         ${deelnHtml}
@@ -454,6 +460,7 @@ function openDetail(e) {
       if (a.dataset.actie === 'sluit') p.sluit();
       if (a.dataset.actie === 'allen') { allen = !allen; teken(); maakVeegbaar(el, el.querySelector('.detailgreep'), p.sluit); }
       if (a.dataset.actie === 'notities') { meerNotities = !meerNotities; teken(); maakVeegbaar(el, el.querySelector('.detailgreep'), p.sluit); }
+      if (a.dataset.actie === 'eigennotitie') openNotitie({ e, klaar: () => { teken(); maakVeegbaar(el, el.querySelector('.detailgreep'), p.sluit); } });
       return;
     }
     const pers = ev.target.closest('[data-persoon]');
@@ -1314,7 +1321,7 @@ function openMailTijden() {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Keuzemenu onder de plusknop: nieuwe afspraak of tijden uit een mail */
+/*  Keuzemenu onder de plusknop: nieuwe afspraak, tijden uit een mail of een notitie */
 /* ------------------------------------------------------------------ */
 
 // Op telefoon en tablet klapt het menu boven de plusknop open (zoals een zwevende knop); op de desktop onder Nieuw.
@@ -1337,9 +1344,13 @@ function wisselKeuzemenu(knop) {
   const menu = document.createElement('div');
   menu.className = `keuzemenu${fab ? ' fab' : ''}`;
   menu.setAttribute('role', 'menu');
-  menu.innerHTML = `<button role="menuitem" data-keuze="mail">${I.mail}<span>Tijden uit een mail</span></button>
+  menu.innerHTML = `<button role="menuitem" data-keuze="notitie">${I.notitie}<span>Notitie</span></button>
+    <button role="menuitem" data-keuze="mail">${I.mail}<span>Tijden uit een mail</span></button>
     <button role="menuitem" data-keuze="nieuw">${I.kalender}<span>Nieuwe afspraak</span></button>`;
-  if (!fab) menu.insertBefore(menu.lastElementChild, menu.firstElementChild); // onder Nieuw: nieuwe afspraak bovenaan
+  if (!fab) { // onder Nieuw: nieuwe afspraak bovenaan, notitie onderaan
+    menu.insertBefore(menu.lastElementChild, menu.firstElementChild);
+    menu.append(menu.querySelector('[data-keuze="notitie"]'));
+  }
   document.body.append(laag, menu);
   const r = knop.getBoundingClientRect();
   if (fab) { menu.style.right = `${Math.max(8, innerWidth - r.right)}px`; menu.style.bottom = `${innerHeight - r.top + 12}px`; }
@@ -1355,7 +1366,7 @@ function wisselKeuzemenu(knop) {
     const k = ev.target.closest('[data-keuze]');
     if (!k) return;
     sluitKeuzemenu();
-    if (k.dataset.keuze === 'nieuw') openNieuw(); else openMailTijden();
+    if (k.dataset.keuze === 'nieuw') openNieuw(); else if (k.dataset.keuze === 'notitie') openNotitie(); else openMailTijden();
   });
   menu.addEventListener('keydown', (ev) => {
     const knoppen = [...menu.querySelectorAll('button')];

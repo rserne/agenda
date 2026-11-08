@@ -5,7 +5,8 @@ Je week in één oogopslag, als web-app (PWA) voor iPhone, iPad en laptop. De ap
 - **Week:** per dag een lijst, met Opvallend, Alles en Vrij. De dagkop blijft bovenaan staan tijdens het scrollen. Op de telefoon trek je onderaan door naar de volgende week.
 - **Vooruitblik:** zeven dagen vanaf vandaag in tegels. Van vandaag staan alleen de afspraken die nog komen of nu bezig zijn; wat al voorbij is, verdwijnt vanzelf. Op de telefoon trek je onderaan door naar de volgende zeven dagen.
 - **Weekkiezer:** tik op de titel. Elke werkdag kleurt mee met hoe vol hij is (een heatmap): grijs bij een rustige dag, geel vanaf drie uur en rood vanaf zes uur aan afspraken (`MID_HOURS`, `FULL_HOURS`).
-- **Detailscherm:** locatie, Teams-link, organisator en deelnemers per organisatie, notities, en mailen naar één of alle deelnemers.
+- **Detailscherm:** locatie, Teams-link, organisator en deelnemers per organisatie, notities uit de uitnodiging, je eigen notitie, en mailen naar één of alle deelnemers.
+- **Notities:** een eigen notitie bij een afspraak of een losse notitie, met labels. Zoeken en filteren doe je onder Notities, boven Instellingen.
 
 Zonder bouwstap: alle bestanden draaien zoals ze zijn op GitHub Pages. Licht en donker volgen de instelling van het toestel.
 
@@ -64,6 +65,16 @@ De app leest drie soorten bestanden:
 - **Een vCard** (.vcf), bijvoorbeeld uit Contacten op de iPhone of de Mac.
 
 De lijst blijft alleen op het toestel, in IndexedDB, net als je agenda. Laad hem op elk toestel apart in. Zet nooit een echt contactenbestand in de repository: `test/contacten.csv` bevat alleen verzonnen namen.
+
+## Notities
+
+Een eigen notitie maak je bij een afspraak met het knopje naast de titel in het detailscherm, of los met de plusknop (Notitie). Er is geen knop Bewaren: de app bewaart tijdens het typen. Een notitie bij een afspraak staat daarna in het detailscherm onder Mijn notitie; het knopje kleurt dan blauw.
+
+**Labels.** Typ je een label, dan stelt de app eerst labels voor die je al gebruikt, ook als je ze met andere hoofdletters of zonder accenten typt; het bestaande label houdt zijn schrijfwijze. Bestaat het nog niet, dan maak je het met Enter of een tik op Nieuw label. Onder het veld staan voorstellen: bij een externe afspraak eerst de organisatie, daarna de labels die je het vaakst gebruikt. Een tik op een gekozen label haalt het weg.
+
+**Notities zoeken.** Onder de kalender (in de weekkiezer en de zijbalk) staat Notities, boven Instellingen. Daar zoek je op tekst, label en de titel van de afspraak, en filter je op één label. De nieuwste afspraak staat bovenaan.
+
+**Opslag.** De notities staan voorlopig alleen op het toestel, in IndexedDB (`notities`). Elke notitie heeft een eigen id en een tijdstip van wijzigen, en een verwijderde notitie houdt een markering (`weg`). Zo kunnen ze straks via de Cloudflare Worker tussen iPhone, iPad en Mac worden gesynchroniseerd, waarbij per notitie de laatste wijziging wint. Zet nooit echte notities in de repository; de tests gebruiken verzonnen tekst.
 
 ## Ruimtes en plaatsen
 
@@ -133,6 +144,7 @@ Open de app in Safari, tik op Delen, Zet op beginscherm. Geef daarna onder Inste
 | `js/indeling.js` | Extern of intern, vast of ad hoc, overlap, vrije blokken en hoe vol een dag is. |
 | `js/weergave.js` | Week, Vooruitblik, de kop en het tekenen van het scherm. |
 | `js/panelen.js` | Weekkiezer, zijbalk, detailscherm, nieuwe afspraak (met aanvullen), de agendakeuze en Instellingen. |
+| `js/notities.js` | Eigen notities: opslag, labels, het notitiescherm en het overzicht met zoeken. |
 | `js/bediening.js` | Tikken, vegen en doortrekken, het opstarten, de versiecontrole en de service worker. |
 | `js/ical.js`, `js/verrijk.js`, `js/ics-werker.js` | Het inlezen van een .ics-bestand (ook in de Web Worker). |
 | `voorbeeld.js` | Verzonnen voorbeeldafspraken. |
@@ -158,7 +170,7 @@ npm run schermen -- na basis      # nieuwe afbeeldingen in na/ en vergelijken me
 python3 -m http.server 8080       # en open http://localhost:8080/
 ```
 
-`npm test` start de app met een vaste klok (woensdag 4 november 2026, 9:00) en de voorbeeldgegevens. De tests controleren onder meer het opstarten, wisselen van filter, doortrekken naar de volgende week en de volgende zeven dagen, het detailscherm, de weekkiezer, een nieuwe afspraak, het inladen van een .ics-bestand (met en zonder Web Worker), de agenda-link, de contacten, ruimtes en plaatsen (Google nagebootst), Instellingen, tijden uit een mail en de desktop. Zet je een deel van een naam erachter, dan draaien alleen die tests, bijvoorbeeld `npm test -- desktop`.
+`npm test` start de app met een vaste klok (woensdag 4 november 2026, 9:00) en de voorbeeldgegevens. De tests controleren onder meer het opstarten, wisselen van filter, doortrekken naar de volgende week en de volgende zeven dagen, het detailscherm, de weekkiezer, een nieuwe afspraak, het inladen van een .ics-bestand (met en zonder Web Worker), de agenda-link, de contacten, ruimtes en plaatsen (Google nagebootst), Instellingen, tijden uit een mail, notities en de desktop. Zet je een deel van een naam erachter, dan draaien alleen die tests, bijvoorbeeld `npm test -- desktop`.
 
 `npm run schermen` maakt 76 schermafbeeldingen: telefoon, telefoon met .ics, iPad liggend en staand, en Mac, elk in licht en donker. Maak voor een grote wijziging eerst een basis en vergelijk daarna; zo zie je meteen of er iets verschuift.
 

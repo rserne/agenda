@@ -27,7 +27,10 @@ async function reeks(naam, apparaat, thema, { bestand = false } = {}) {
   await p.locator('#inhoud [data-id]').nth(1).click(); await foto('3-detail');
   await p.keyboard.press('Escape'); await wacht(400);
   if (telefoon) { await p.click('#titelknop'); await foto('4-kiezer'); await p.keyboard.press('Escape'); await wacht(400); }
-  await p.locator('[data-tab="forecast"]:visible').first().click(); await p.evaluate(() => window.scrollTo(0, 0)); await foto('5-vooruitblik');
+  // Vooruitblik: via het weergaveknopje (iPhone en iPad) of de zijbalk (Mac)
+  if (await p.locator('#weergaveknop').isVisible()) { await p.locator('#weergaveknop').click(); await wacht(300); await p.locator('.weergavemenu [data-weergave="forecast"]').click(); }
+  else await p.locator('[data-tab="forecast"]:visible').first().click();
+  await p.evaluate(() => window.scrollTo(0, 0)); await foto('5-vooruitblik');
   await p.locator('[data-nieuw]:visible').first().click(); await wacht(400); await foto('7-keuze');
   await p.locator('.keuzemenu [data-keuze="nieuw"]').click(); await foto('6-nieuw');
   fouten.push(...p.fouten.map((f) => `${naam}-${thema}: ${f}`));

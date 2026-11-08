@@ -227,18 +227,28 @@ function capsuleHtml(vorigeLabel, volgendeLabel) {
 
 function renderKop() {
   const { start } = periode();
-  $('#titel').textContent = ST.tab === 'week' ? `Week ${isoWeek(start)}` : ST.tab === 'forecast' ? 'Vooruitblik' : 'Notities';
-  $('#datumregel').textContent = rangeLong(start, addDays(start, 6));
+  const agenda = ST.tab === 'week' || ST.tab === 'forecast';
+  $('#titel').textContent = ST.tab === 'week' ? `Week ${isoWeek(start)}` : { forecast: 'Vooruitblik', notities: 'Notities', instellingen: 'Instellingen' }[ST.tab];
+  // Kijk je naar een andere week of periode, dan staat achter de datum 'Vandaag': een tik brengt je terug
+  const t = vandaag();
+  const huidig = ST.tab === 'week' ? startOfWeek(ST.anker).getTime() === startOfWeek(defaultWeekAnchor(t)).getTime() : sameDay(ST.fcStart, t);
+  $('#datumregel').innerHTML = `${rangeLong(start, addDays(start, 6))}${agenda && !huidig ? ' · <span class="vandaaglink">Vandaag</span>' : ''}`;
+  $('#datumregel').setAttribute('aria-label', `${rangeLong(start, addDays(start, 6))}, naar vandaag`);
   document.body.classList.toggle('vooruitblik', ST.tab === 'forecast');
+  document.body.classList.toggle('agendatab', agenda);
   document.body.classList.toggle('notitietab', ST.tab === 'notities'); // geen weekkeuze, schakelaar en pijlen; wel zoeken
-  $('#titelknop').setAttribute('aria-label', ST.tab === 'notities' ? 'Notities' : 'Kies een week');
+  document.body.classList.toggle('insttab', ST.tab === 'instellingen');
+  $('#titelknop').setAttribute('aria-label', agenda ? 'Kies een week' : $('#titel').textContent);
+  const wk = $('#weergaveknop');
+  wk.innerHTML = ST.tab === 'forecast' ? I.vooruit : I.week;
+  wk.setAttribute('aria-label', `Weergave: ${ST.tab === 'forecast' ? 'Vooruitblik' : 'Week'}`);
   document.querySelectorAll('#schakelaar button').forEach((b) => {
     const aan = b.dataset.filter === ST.filter;
     b.classList.toggle('aan', aan);
     b.setAttribute('aria-selected', aan);
   });
-  document.querySelectorAll('#tabbalk button').forEach((b) => {
-    const aan = b.dataset.tab === ST.tab;
+  document.querySelectorAll('#tabbalk [data-tab]').forEach((b) => {
+    const aan = b.dataset.tab === 'agenda' ? agenda : b.dataset.tab === ST.tab;
     b.classList.toggle('aan', aan);
     b.setAttribute('aria-selected', aan);
   });
@@ -250,6 +260,14 @@ function render() {
   renderZijbalk();
   const main = $('#inhoud');
   if (ST.tab === 'notities') { main.innerHTML = notitiesHtml(); ST.naarVandaag = false; return; }
+  if (ST.tab === 'instellingen') {
+    // Staat Instellingen al in beeld, dan alleen de agendaregel bijwerken: zo raak je niets kwijt terwijl je typt
+    const scherm = $('#instscherm');
+    if (scherm && scherm.tekenAgenda) scherm.tekenAgenda();
+    else { main.innerHTML = '<div class="instellingen instscherm" id="instscherm"></div>'; openInstellingen({ doel: $('#instscherm') }); }
+    ST.naarVandaag = false;
+    return;
+  }
   const { start, eind } = periode();
   const events = afsprakenTussen(start, eind);
   zichtbaar.clear();

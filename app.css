@@ -1089,6 +1089,7 @@ label.frij:focus-within .flabel { color: var(--accent); }
   body.zbdicht .shell { grid-template-columns: 0 minmax(0, 1fr); }
   body.zbdicht .zijbalk { visibility: hidden; border-right: 0; }
   .zbweergave { display: none; }
+  .zijbalk .zbinstellingen { display: none; } /* Instellingen is hier een tab */
   .zbagenda { border-top: 0.5px solid var(--separator); padding-top: 18px; margin: 0 6px; }
   .zbagenda h3 { padding: 0 4px; }
   .zbagenda button { margin: 0 -6px; }
@@ -1108,8 +1109,9 @@ label.frij:focus-within .flabel { color: var(--accent); }
   #capsule .vandaagtekst { display: none; }
   #capsule .icoon { width: 19px; height: 19px; }
   .nieuwknop { display: none; }
-  /* Instellingen: ook hier het tandwieltje in de werkbalk, want de zijbalk staat vaak dicht */
-  body.desktop .kop .tandwiel { display: flex; order: 5; width: 42px; height: 42px; border-radius: 21px; background: var(--glass); border: 0.5px solid var(--glassBorder); box-shadow: var(--glassShadow); -webkit-backdrop-filter: var(--glassBlur); backdrop-filter: var(--glassBlur); }
+  /* Weergave (Week of Vooruitblik) als knopje in de werkbalk, want de zijbalk toont hier geen Weergave */
+  body.desktop.agendatab .kop .weergaveknop { display: flex; order: 3; margin-left: auto; width: 42px; height: 42px; border-radius: 21px; background: var(--glass); border: 0.5px solid var(--glassBorder); box-shadow: var(--glassShadow); -webkit-backdrop-filter: var(--glassBlur); backdrop-filter: var(--glassBlur); }
+  body.desktop.agendatab .kop #schakelaar { margin-left: 0; }
   body.desktop .kop .zoekbalk { height: 42px; border-radius: 21px; width: 320px; padding: 0 14px; }
   body.desktop .kop .zoekbalk .icoon { width: 17px; height: 17px; }
   body.desktop .kop .zoekbalk input { font-size: 16px; }
@@ -1154,12 +1156,27 @@ label.frij:focus-within .flabel { color: var(--accent); }
 .paneel.detail:not(.dialoog) .detailnav .rond:not([data-actie="sluit"]) { display: none; }
 
 /* ------------------------------------------------------------------ */
-/*  Navigatie: tandwieltje in de kop, tab Notities                     */
+/*  Navigatie: tabs Agenda, Notities en Instellingen                   */
 /* ------------------------------------------------------------------ */
-.tandwiel { flex-shrink: 0; width: 36px; height: 36px; border-radius: 18px; display: flex; align-items: center; justify-content: center; color: var(--label); }
-.tandwiel .icoon { width: 19px; height: 19px; }
-.tandwiel:active { background: var(--fill); }
-body.desktop .tandwiel { display: none; } /* op de desktop staat Instellingen onderaan de zijbalk */
+.balkregel { display: flex; gap: 10px; }
+.balkregel .schakelaar, .balkregel .zoekbalk { flex: 1; min-width: 0; }
+/* Weergaveknop: het icoon van Week of Vooruitblik; alleen in de agenda, en niet op de Mac (daar staat het in de zijbalk) */
+.weergaveknop { display: none; flex-shrink: 0; width: 36px; height: 36px; border-radius: 18px; align-items: center; justify-content: center; color: var(--label); }
+body.agendatab .weergaveknop { display: flex; }
+body.desktop .weergaveknop { display: none; }
+.weergaveknop .icoon { width: 19px; height: 19px; }
+.weergaveknop.open { background: var(--fill); }
+/* iPhone: in de capsule alleen ‹ ›; terug naar vandaag gaat via de datumregel */
+body:not(.desktop) #capsule button[data-nav="0"] { display: none; }
+.vandaaglink { color: var(--accent); }
+body.desktop .vandaaglink { display: none; }
+/* Het menu zelf: zoals een menu van iOS, met een vinkje voor de huidige weergave */
+.keuzemenu.weergavemenu { min-width: 230px; padding: 6px; border-radius: 16px; background: var(--popBg, var(--card)); }
+.keuzemenu.weergavemenu button { height: 46px; padding: 0 14px 0 8px; border-radius: 10px; font-size: 17px; font-weight: 500; gap: 10px; }
+.keuzemenu.weergavemenu button .icoon { width: 20px; height: 20px; }
+.keuzemenu.weergavemenu .wvink { width: 18px; display: flex; color: var(--label); }
+.keuzemenu.weergavemenu .wvink .icoon { width: 16px; height: 16px; color: var(--label); }
+.keuzemenu.weergavemenu button:hover .wvink .icoon, .keuzemenu.weergavemenu button:focus-visible .wvink .icoon { color: var(--onAccent); }
 .zoekbalk { display: none; align-items: center; gap: 8px; height: var(--barH); border-radius: calc(var(--barH) / 2); padding: 0 16px; color: var(--secondary); }
 .zoekbalk .icoon { width: 18px; height: 18px; flex-shrink: 0; }
 .zoekbalk input { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--label); font: inherit; font-size: 16px; outline: none; -webkit-appearance: none; appearance: none; }
@@ -1167,7 +1184,10 @@ body.desktop .tandwiel { display: none; } /* op de desktop staat Instellingen on
 .zoekbalk input::-webkit-search-decoration { -webkit-appearance: none; }
 body.notitietab .zoekbalk { display: flex; }
 body.notitietab #schakelaar, body.notitietab #capsule, body.notitietab #datumregel, body.notitietab .titelknop .icoon { display: none; }
-body.notitietab .titelknop { cursor: default; }
+body.insttab .balkregel, body.insttab #capsule, body.insttab #datumregel, body.insttab .titelknop .icoon, body.insttab .kop #schakelaar { display: none; }
+body.notitietab .titelknop, body.insttab .titelknop { cursor: default; }
+.instscherm { padding-bottom: calc(var(--barH) + 40px); }
+.instscherm .detailinhoud { overflow: visible; padding: 4px 0 0; gap: 22px; }
 .notitab { display: flex; flex-direction: column; gap: 14px; padding: 4px 0 calc(var(--barH) + 40px); }
 .notitab .nfilter { margin: 0 4px; }
 @media (min-width: 1200px) {
@@ -1175,6 +1195,9 @@ body.notitietab .titelknop { cursor: default; }
   .kop .zoekbalk .icoon { width: 14px; height: 14px; }
   .kop .zoekbalk input { font-size: 13px; }
   .notitab { max-width: 760px; padding: 20px 0 40px; }
+  .instscherm { max-width: 760px; padding-top: 16px; }
   .zbnotities { border-top: 0; padding-top: 6px; }
   .zbinstellingen { margin-top: auto; } /* Instellingen onderaan de zijbalk */
+  .balkregel { display: contents; } /* in de werkbalk staan de knoppen los naast elkaar */
+  .balkregel .schakelaar, .balkregel .zoekbalk { flex: none; }
 }

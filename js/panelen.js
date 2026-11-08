@@ -190,6 +190,7 @@ function kiesWeek(ma) {
   ST.anker = ma;
   ST.tab = 'week';
   LS.set('ag_tab', ST.tab);
+  LS.set('ag_weergave', ST.tab);
   window.scrollTo(0, 0);
   ST.naarVandaag = true;
   laad();
@@ -956,11 +957,14 @@ function openBronPaneel() {
 /* ------------------------------------------------------------------ */
 
 // Alles wat alleen op dit toestel staat: je agenda, je contacten, je ruimtes en de Google-sleutel
-function openInstellingen() {
-  const el = document.createElement('div');
-  el.className = 'paneel detail nieuw instellingen' + (isDesktop() ? ' dialoog' : '');
-  el.setAttribute('role', 'dialog');
-  el.setAttribute('aria-label', 'Instellingen');
+// Instellingen: op de Mac als venster (vanuit de zijbalk), op iPhone en iPad als tab (doel: het scherm om in te tekenen)
+function openInstellingen({ doel = null } = {}) {
+  const el = doel || document.createElement('div');
+  if (!doel) {
+    el.className = 'paneel detail nieuw instellingen' + (isDesktop() ? ' dialoog' : '');
+    el.setAttribute('role', 'dialog');
+    el.setAttribute('aria-label', 'Instellingen');
+  }
   const knop = (actie, icoon, tekst, uit = false, gevaar = false) => `<button class="frij instknop${gevaar ? ' gevaar' : ''}" data-actie="${actie}"${uit ? ' disabled' : ''}>${icoon}<span>${tekst}</span></button>`;
   const status = (icoon, t1, t2) => `<div class="frij inststatus">${icoon}<span class="tekst"><span class="t1">${t1}</span><span class="t2">${t2}</span></span></div>`;
   const agendaHtml = () => {
@@ -995,10 +999,10 @@ function openInstellingen() {
       + knop('google-wijzig', I.plus, 'Sleutel opgeven');
   };
   const ruimtesHtml = () => ruimteLijst().map(ruimteRij).join('') + `<button class="frij instknop" data-actie="ruimte-erbij">${I.plus}<span>Ruimte toevoegen</span></button>`;
-  el.innerHTML = `<div class="detailgreep"><div class="greep"></div>
-      <div class="detailnav"><button class="rond glas" data-actie="sluit" aria-label="Sluiten">${I.kruis}</button></div></div>
+  el.innerHTML = `${doel ? '' : `<div class="detailgreep"><div class="greep"></div>
+      <div class="detailnav"><button class="rond glas" data-actie="sluit" aria-label="Sluiten">${I.kruis}</button></div></div>`}
     <div class="detailinhoud">
-      <div class="dkop"><h2 class="dtitel">Instellingen</h2></div>
+      ${doel ? '' : '<div class="dkop"><h2 class="dtitel">Instellingen</h2></div>'}
       <section class="instsectie"><h3>Agenda</h3><div class="formkaart" id="iagenda">${agendaHtml()}</div></section>
       <section class="instsectie"><h3>Contacten</h3><div class="formkaart" id="icontacten">${contactHtml()}</div>
         <p class="insttoelichting">Een csv uit NK2Edit of Outlook, of een vCard (.vcf).</p></section>
@@ -1006,8 +1010,9 @@ function openInstellingen() {
       <section class="instsectie"><h3>Plaatsen via Google</h3><div class="formkaart" id="igooglekaart">${googleHtml()}</div><p class="insttoelichting" id="igoogleuitslag" aria-live="polite"></p></section>
       <p class="voetnoot">Alles op dit scherm staat alleen op dit toestel. In Outlook verandert er niets.<br>Versie ${esc(APP_VERSIE)}</p>
     </div>`;
-  const p = openPaneel(el, { greepSelector: '.detailgreep' });
+  const p = doel ? { sluit: () => {} } : openPaneel(el, { greepSelector: '.detailgreep' });
   const tekenAgenda = () => { const a = $('#iagenda', el); if (a) a.innerHTML = agendaHtml(); };
+  el.tekenAgenda = tekenAgenda; // als tab: bijwerken zonder het scherm opnieuw op te bouwen
   const tekenContacten = () => { const a = $('#icontacten', el); if (a) a.innerHTML = contactHtml(); };
   const uitslag = (tekst, fout = false) => { const u = $('#igoogleuitslag', el); u.textContent = tekst; u.classList.toggle('fout', fout); };
   const tekenGoogle = (bewerk = false) => {
@@ -1366,6 +1371,44 @@ function wisselKeuzemenu(knop) {
     if (!k) return;
     sluitKeuzemenu();
     if (k.dataset.keuze === 'nieuw') openNieuw(); else if (k.dataset.keuze === 'notitie') openNotitie(); else openMailTijden();
+  });
+  menu.addEventListener('keydown', (ev) => {
+    const knoppen = [...menu.querySelectorAll('button')];
+    const i = knoppen.indexOf(document.activeElement);
+    if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); sluitKeuzemenu(); knop.focus(); }
+    else if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') { ev.preventDefault(); knoppen[(i + (ev.key === 'ArrowDown' ? 1 : -1) + knoppen.length) % knoppen.length].focus(); }
+  });
+}
+
+/* ------------------------------------------------------------------ */
+/*  Weergavemenu in de kop: Week of Vooruitblik                        */
+/* ------------------------------------------------------------------ */
+
+// Zoals in Outlook: het knopje toont de huidige weergave, het menu klapt eronder open met een vinkje bij de keuze
+function wisselWeergavemenu(knop) {
+  if (KEUZEMENU) { sluitKeuzemenu(); return; }
+  const laag = document.createElement('div');
+  laag.className = 'keuzelaag';
+  const menu = document.createElement('div');
+  menu.className = 'keuzemenu weergavemenu';
+  menu.setAttribute('role', 'menu');
+  const item = (t, icoon, tekst) => `<button role="menuitemradio" aria-checked="${ST.tab === t}" data-weergave="${t}"><span class="wvink">${ST.tab === t ? I.vink : ''}</span>${icoon}<span>${tekst}</span></button>`;
+  menu.innerHTML = item('week', I.week, 'Week') + item('forecast', I.vooruit, 'Vooruitblik');
+  document.body.append(laag, menu);
+  const r = knop.getBoundingClientRect();
+  menu.style.right = `${Math.max(8, innerWidth - r.right)}px`;
+  menu.style.top = `${r.bottom + 8}px`;
+  KEUZEMENU = { laag, menu, knop };
+  knop.classList.add('open');
+  knop.setAttribute('aria-expanded', 'true');
+  requestAnimationFrame(() => { menu.classList.add('open'); laag.classList.add('open'); });
+  if (!IOS) menu.querySelector('[aria-checked="true"]').focus({ preventScroll: true });
+  laag.addEventListener('click', sluitKeuzemenu);
+  menu.addEventListener('click', (ev) => {
+    const k = ev.target.closest('[data-weergave]');
+    if (!k) return;
+    sluitKeuzemenu();
+    kiesTab(k.dataset.weergave);
   });
   menu.addEventListener('keydown', (ev) => {
     const knoppen = [...menu.querySelectorAll('button')];

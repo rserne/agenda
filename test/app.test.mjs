@@ -80,12 +80,38 @@ test('telefoon: onderaan doortrekken gaat naar de volgende week', async ({ brows
 test('telefoon: in de Vooruitblik gaat doortrekken naar de volgende zeven dagen', async ({ browser, url }) => {
   const p = await nieuwePagina(browser, TELEFOON);
   await p.goto(url); await wacht(1200);
-  await p.locator('#tabbalk [data-tab="forecast"]').tap(); await wacht(800);
+  await p.locator('#weergaveknop').tap(); await wacht(300);
+  await p.locator('.weergavemenu [data-weergave="forecast"]').tap(); await wacht(800);
   assert.equal(await p.locator('#datumregel').innerText(), '4–10 november');
   await p.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight)); await wacht(300);
   await veeg(p, 200, 650, 300);
   assert.equal(await p.locator('#titel').innerText(), 'Vooruitblik');
-  assert.equal(await p.locator('#datumregel').innerText(), '11–17 november');
+  assert.equal(await p.locator('#datumregel').innerText(), '11–17 november · Vandaag', 'terug naar vandaag via de datumregel');
+});
+
+test('telefoon: het weergaveknopje wisselt tussen Week en Vooruitblik, en Agenda onthoudt de keuze', async ({ browser, url }) => {
+  const p = await nieuwePagina(browser, TELEFOON);
+  await p.goto(url); await wacht(1000);
+  assert.deepEqual(await p.locator('#tabbalk [data-tab]').allInnerTexts(), ['Agenda', 'Notities', 'Instellingen']);
+  assert.equal(await p.locator('#capsule [data-nav="0"]').isVisible(), false, 'op de iPhone alleen ‹ ›');
+  await p.locator('#weergaveknop').tap(); await wacht(300);
+  assert.deepEqual(await p.locator('.weergavemenu [role="menuitemradio"]').allInnerTexts(), ['Week', 'Vooruitblik']);
+  assert.equal(await p.locator('.weergavemenu [data-weergave="week"]').getAttribute('aria-checked'), 'true');
+  await p.locator('.weergavemenu [data-weergave="forecast"]').tap(); await wacht(700);
+  assert.equal(await p.locator('#titel').innerText(), 'Vooruitblik');
+  await p.locator('#tabbalk [data-tab="notities"]').tap(); await wacht(500);
+  assert.equal(await p.locator('#weergaveknop').isVisible(), false, 'alleen in de agenda');
+  await p.locator('#tabbalk [data-tab="agenda"]').tap(); await wacht(700);
+  assert.equal(await p.locator('#titel').innerText(), 'Vooruitblik', 'terug naar de laatst gekozen weergave');
+  // Een week verder: 'Vandaag' in de datumregel brengt je terug
+  await p.locator('#weergaveknop').tap(); await wacht(300);
+  await p.locator('.weergavemenu [data-weergave="week"]').tap(); await wacht(700);
+  await p.locator('#capsule [data-nav="1"]').tap(); await wacht(700);
+  assert.equal(await p.locator('#titel').innerText(), 'Week 46');
+  await p.locator('#datumregel').tap(); await wacht(700);
+  assert.equal(await p.locator('#titel').innerText(), 'Week 45');
+  assert.equal(await p.locator('#datumregel').innerText(), '2–8 november');
+  assert.deepEqual(p.fouten, []);
 });
 
 test('telefoon: detail opent, en omlaag vegen midden op het paneel sluit het', async ({ browser, url }) => {
@@ -197,8 +223,8 @@ test('agenda-link: ophalen op de achtergrond, en een duidelijke melding bij een 
     r.fulfill({ status: 200, contentType: 'text/calendar', headers: { 'Access-Control-Allow-Origin': '*' }, body: fs.readFileSync(ICS, 'utf8') });
   });
   await p.goto(url); await wacht(800);
-  await p.locator('#tandwiel').tap(); await wacht(900);
-  await p.locator('.paneel [data-actie="ics-kies"]').tap(); await wacht(800);
+  await p.locator('#tabbalk [data-tab="instellingen"]').tap(); await wacht(900);
+  await p.locator('[data-actie="ics-kies"]').tap(); await wacht(800);
   await p.locator('[data-bron="link"]').tap(); await wacht(800);
   await p.fill('#linkinvoer', 'webcal://outlook.office365.com/owa/calendar/x/y/calendar.ics');
   await p.locator('#linkknop').tap(); await wacht(300);
@@ -224,11 +250,10 @@ test('agenda-link: na Nu bijwerken in Instellingen toont de agenda de nieuwe afs
   // In Outlook krijgt een zichtbare afspraak een andere naam
   const titel = await p.evaluate(() => DATA.ruw.get(document.querySelector('#inhoud [data-id]').dataset.id).title);
   ics = ics.split(`SUMMARY:${titel}`).join('SUMMARY:Bijgewerkt overleg');
-  await p.locator('#tandwiel').tap(); await wacht(900);
-  await p.locator('.paneel [data-actie="ics-nu"]').tap(); await wacht(3000);
+  await p.locator('#tabbalk [data-tab="instellingen"]').tap(); await wacht(900);
+  await p.locator('#instscherm [data-actie="ics-nu"]').tap(); await wacht(3000);
   assert.equal(await p.locator('#statustekst').innerText(), 'Je agenda is bijgewerkt.');
-  while (await p.evaluate(() => panelen.length)) { await p.keyboard.press('Escape'); await wacht(400); }
-  await wacht(400);
+  await p.locator('#tabbalk [data-tab="agenda"]').tap(); await wacht(800);
   assert.match(await p.locator('#inhoud').innerText(), /Bijgewerkt overleg/);
   assert.deepEqual(p.fouten, []);
 });
@@ -290,9 +315,9 @@ test('contacten: wissen, en zonder contacten geen suggesties', async ({ browser,
   await p.goto(url); await wacht(800);
   await p.setInputFiles('#contactinvoer', CONTACTEN_CSV); await wacht(600);
   p.on('dialog', (d) => d.accept());
-  await p.locator('#tandwiel').tap(); await wacht(900);
+  await p.locator('#tabbalk [data-tab="instellingen"]').tap(); await wacht(900);
   assert.match(await p.locator('#icontacten').innerText(), /6 contacten/);
-  await p.locator('.paneel [data-actie="contacten-wis"]').tap(); await wacht(600);
+  await p.locator('[data-actie="contacten-wis"]').tap(); await wacht(600);
   assert.match(await p.locator('#icontacten').innerText(), /Geen contacten/);
   await p.keyboard.press('Escape'); await wacht(500);
   await kies(p, 'nieuw');
@@ -300,17 +325,18 @@ test('contacten: wissen, en zonder contacten geen suggesties', async ({ browser,
   assert.equal(await p.locator('.aanvuloptie').count(), 0);
 });
 
-test('instellingen: de weekkiezer past op een kleine iPhone, en Instellingen scrolt tot onderaan', async ({ browser, url }) => {
+test('instellingen: de weekkiezer past op een kleine iPhone, en Instellingen scrolt tot boven de tabbalk', async ({ browser, url }) => {
   const p = await nieuwePagina(browser, { ...TELEFOON, viewport: { width: 375, height: 667 } });
   await p.goto(url); await wacht(800);
   await p.click('#titelknop'); await wacht(800);
   assert.equal(await p.locator('.paneel.kiezer').evaluate((e) => e.scrollHeight <= e.clientHeight + 1), true, 'de weekkiezer hoeft niet te scrollen');
   assert.equal(await p.locator('.paneel.kiezer .instrij').count(), 0, 'de weekkiezer is alleen de kalender');
   await p.keyboard.press('Escape'); await wacht(500);
-  await p.locator('#tandwiel').tap(); await wacht(900);
-  await p.locator('.paneel.instellingen .detailinhoud').evaluate((e) => { e.scrollTop = 1e5; }); await wacht(200);
-  const v = await p.locator('.paneel.instellingen .voetnoot').boundingBox();
-  assert.ok(v.y + v.height <= 667 - 16, `voetnoot eindigt op ${Math.round(v.y + v.height)} van 667`);
+  await p.locator('#tabbalk [data-tab="instellingen"]').tap(); await wacht(900);
+  await p.evaluate(() => window.scrollTo(0, 1e5)); await wacht(300);
+  const v = await p.locator('#instscherm .voetnoot').boundingBox();
+  const tb = await p.locator('#tabbalk .pil').boundingBox();
+  assert.ok(v.y + v.height <= tb.y, `voetnoot eindigt op ${Math.round(v.y + v.height)}, de tabbalk begint op ${Math.round(tb.y)}`);
 });
 
 test('telefoon: alle invoervelden hebben minstens 16 punten, anders zoomt iOS in', async ({ browser, url }) => {
@@ -318,7 +344,7 @@ test('telefoon: alle invoervelden hebben minstens 16 punten, anders zoomt iOS in
   await p.goto(url); await wacht(800);
   const klein = () => p.evaluate(() => [...document.querySelectorAll('input:not([type=file]), textarea, select')]
     .filter((e) => parseFloat(getComputedStyle(e).fontSize) < 16).map((e) => e.id || e.name || e.className));
-  await p.locator('#tandwiel').tap(); await wacht(900);
+  await p.locator('#tabbalk [data-tab="instellingen"]').tap(); await wacht(900);
   await p.locator('[data-actie="ruimte-erbij"]').tap(); await wacht(200);
   assert.deepEqual(await klein(), [], 'instellingen');
   await p.locator('[data-actie="ics-kies"]').tap(); await wacht(800);
@@ -339,7 +365,7 @@ const ANTWOORD_GOOGLE = { suggestions: [
 test('ruimtes: opgeven in Instellingen, bij Locatie kiezen, en de ruimte gaat mee als deelnemer', async ({ browser, url }) => {
   const p = await nieuwePagina(browser, TELEFOON);
   await p.goto(url); await wacht(800);
-  await p.locator('#tandwiel').tap(); await wacht(900);
+  await p.locator('#tabbalk [data-tab="instellingen"]').tap(); await wacht(900);
   for (const [naam, email] of [['Zonnezaal', 'zonnezaal@voorbeeld.nl'], ['Coupé', 'coupe@voorbeeld.nl'], ['Groot Overleg', 'grootoverleg@voorbeeld.nl'], ['Weg', ''], ['Kelder', 'kelder@']]) {
     await p.locator('[data-actie="ruimte-erbij"]').tap(); await wacht(150);
     await p.keyboard.type(naam); // de naam van de nieuwe ruimte heeft meteen de focus
@@ -393,7 +419,7 @@ test('plaatsen: met een Google-sleutel vult Locatie ook adressen aan, en de sleu
     r.fulfill({ status: 200, contentType: 'application/json', headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify(ANTWOORD_GOOGLE) });
   });
   await p.goto(url); await wacht(800);
-  await p.locator('#tandwiel').tap(); await wacht(900);
+  await p.locator('#tabbalk [data-tab="instellingen"]').tap(); await wacht(900);
   const kaart = p.locator('#igooglekaart');
   assert.match(await kaart.innerText(), /Geen sleutel/);
   await p.locator('[data-actie="google-wijzig"]').tap(); await wacht(200);
@@ -410,7 +436,7 @@ test('plaatsen: met een Google-sleutel vult Locatie ook adressen aan, en de sleu
   assert.match(await p.locator('#igoogleuitslag').innerText(), /^De sleutel werkt\.$/);
   assert.match(await kaart.innerText(), /Sleutel ingesteld/);
   assert.deepEqual(await kaart.locator('.instknop').allInnerTexts(), ['Sleutel wijzigen', 'Sleutel verwijderen'], 'geen aparte testknop');
-  assert.equal(await p.locator('.paneel.instellingen').evaluate((e) => e.innerHTML.includes('proefsleutel')), false, 'de sleutel staat nergens in beeld');
+  assert.equal(await p.locator('#instscherm').evaluate((e) => e.innerHTML.includes('proefsleutel')), false, 'de sleutel staat nergens in beeld');
   // Wijzigen begint met een leeg veld; annuleren laat de sleutel staan
   await p.locator('[data-actie="google-wijzig"]').tap(); await wacht(200);
   assert.equal(await p.locator('#igoogle').inputValue(), '');

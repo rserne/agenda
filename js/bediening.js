@@ -62,8 +62,20 @@ function koppelDoortrekken() {
   window.addEventListener('touchcancel', los, { passive: true });
 }
 
+// Een tab kiezen. Agenda opent de weergave die je het laatst gebruikte: Week of Vooruitblik.
+function kiesTab(t) {
+  if (t === 'agenda') t = LS.get('ag_weergave') || 'week';
+  if (t === 'week' || t === 'forecast') LS.set('ag_weergave', t);
+  if (t === ST.tab) return;
+  ST.tab = t;
+  LS.set('ag_tab', t);
+  window.scrollTo(0, 0);
+  ST.naarVandaag = true;
+  laad();
+}
+
 function verschuif(n, tab) {
-  if (tab) { ST.tab = tab; LS.set('ag_tab', tab); }
+  if (tab) { ST.tab = tab; LS.set('ag_tab', tab); LS.set('ag_weergave', tab); }
   if (n === 0) {
     const t = vandaag();
     ST.anker = defaultWeekAnchor(t);
@@ -81,7 +93,7 @@ function verschuif(n, tab) {
 function koppel() {
   $('#capsule').innerHTML = capsuleHtml('Week terug', 'Week verder');
   $('#titelknop').addEventListener('click', () => { if (ST.tab !== 'notities') openWeekkiezer(); });
-  $('#tandwiel').innerHTML = I.instellingen;
+  $('#weergaveknop').addEventListener('click', (ev) => wisselWeergavemenu(ev.currentTarget));
   $('#icsinvoer').addEventListener('change', (ev) => { openBestand(ev.target.files[0]).catch((e) => alert('Dit bestand kan de app niet lezen. Kies een agenda-bestand (.ics) uit Outlook.')); ev.target.value = ''; });
   $('#contactinvoer').addEventListener('change', (ev) => {
     const f = ev.target.files[0];
@@ -98,7 +110,7 @@ function koppel() {
 
   // Eén luisteraar voor alle knoppen in kop, zijbalk, tabbalk en inhoud
   document.addEventListener('click', (ev) => {
-    if (ev.target.closest('#lagen')) return; // panelen regelen hun eigen knoppen
+    if (ev.target.closest('#lagen, #instscherm')) return; // panelen en het scherm Instellingen regelen hun eigen knoppen
     const nav = ev.target.closest('[data-nav]');
     if (nav) { verschuif(Number(nav.dataset.nav)); return; }
     if (ev.target.closest('[data-actie="instellingen"]')) { openInstellingen(); return; }
@@ -115,10 +127,7 @@ function koppel() {
       return;
     }
     const tab = ev.target.closest('[data-tab]');
-    if (tab) {
-      if (tab.dataset.tab !== ST.tab) { ST.tab = tab.dataset.tab; LS.set('ag_tab', ST.tab); window.scrollTo(0, 0); ST.naarVandaag = true; laad(); }
-      return;
-    }
+    if (tab) { kiesTab(tab.dataset.tab); return; }
     const maand = ev.target.closest('#zijbalk [data-maand]');
     if (maand) {
       const n = Number(maand.dataset.maand);
@@ -177,7 +186,7 @@ function koppel() {
   const f = LS.get('ag_filter');
   if (['notable', 'all', 'free'].includes(f)) ST.filter = f;
   const t = LS.get('ag_tab');
-  if (['week', 'forecast', 'notities'].includes(t)) ST.tab = t;
+  if (['week', 'forecast', 'notities', 'instellingen'].includes(t)) ST.tab = t;
   koppel();
   // Toetsenbord op iOS: het schuift over de pagina heen. Meet hoeveel, zodat je in een paneel tot onderaan kunt scrollen.
   if (window.visualViewport) {

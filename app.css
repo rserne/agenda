@@ -223,7 +223,7 @@ body.vooruitblik .kop { background: var(--fcBg); }
   bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
   pointer-events: none;
 }
-.tabbalk .kolom { display: flex; gap: 10px; }
+.tabbalk .kolom { display: flex; gap: 10px; padding: 0 26px; } /* iets smaller dan de lijst, zodat de balk zweeft */
 .tabbalk .pil { flex: 1; display: flex; height: var(--barH); border-radius: calc(var(--barH) / 2); padding: 4px; pointer-events: auto; }
 
 /* Ruimte onderin, zodat de onderste regel (zoals Eigen .ics openen) boven de tabbalk uit te scrollen is */

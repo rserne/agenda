@@ -8,6 +8,13 @@
 /* ------------------------------------------------------------------ */
 
 const panelen = [];
+// Nieuwe gegevens terwijl er een scherm open is (bijvoorbeeld Instellingen > Nu bijwerken): dan tekenen we de agenda
+// zodra het laatste scherm dicht is, anders zie je bij terugkomst nog de oude afspraken
+let tekenNaSluiten = false;
+function tekenNaBijwerken() {
+  if (panelen.length) tekenNaSluiten = true;
+  else behoudDag(render);
+}
 function openPaneel(el, { greepSelector, boven = false } = {}) {
   const achter = document.createElement('div');
   achter.className = 'achtergrond' + (boven ? ' boven' : '');
@@ -21,7 +28,10 @@ function openPaneel(el, { greepSelector, boven = false } = {}) {
     setTimeout(weg, 340);
     const i = panelen.indexOf(p);
     if (i >= 0) panelen.splice(i, 1);
-    if (!panelen.length) document.body.style.overflow = '';
+    if (!panelen.length) {
+      document.body.style.overflow = '';
+      if (tekenNaSluiten) { tekenNaSluiten = false; behoudDag(render); }
+    }
   };
   achter.addEventListener('click', p.sluit);
   panelen.push(p);

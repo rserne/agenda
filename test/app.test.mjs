@@ -216,6 +216,25 @@ test('agenda-link: ophalen op de achtergrond, en een duidelijke melding bij een 
   assert.deepEqual(p.fouten, []);
 });
 
+test('agenda-link: na Nu bijwerken in Instellingen toont de agenda de nieuwe afspraken zodra je terugkeert', async ({ browser, url }) => {
+  const p = await nieuwePagina(browser, TELEFOON);
+  let ics = fs.readFileSync(ICS, 'utf8');
+  await p.context().route('https://agenda.voorbeeld.workers.dev/**', (r) => r.fulfill({ status: 200, contentType: 'text/calendar', headers: { 'Access-Control-Allow-Origin': '*' }, body: ics }));
+  await p.goto(url); await wacht(800);
+  await p.evaluate((l) => gebruikLink(l), LINK); await wacht(4000);
+  // In Outlook krijgt een zichtbare afspraak een andere naam
+  const titel = await p.evaluate(() => DATA.ruw.get(document.querySelector('#inhoud [data-id]').dataset.id).title);
+  ics = ics.split(`SUMMARY:${titel}`).join('SUMMARY:Bijgewerkt overleg');
+  await p.click('#titelknop'); await wacht(700);
+  await p.locator('.paneel [data-actie="instellingen"]').tap(); await wacht(900);
+  await p.locator('.paneel [data-actie="ics-nu"]').tap(); await wacht(3000);
+  assert.equal(await p.locator('#statustekst').innerText(), 'Je agenda is bijgewerkt.');
+  while (await p.evaluate(() => panelen.length)) { await p.keyboard.press('Escape'); await wacht(400); }
+  await wacht(400);
+  assert.match(await p.locator('#inhoud').innerText(), /Bijgewerkt overleg/);
+  assert.deepEqual(p.fouten, []);
+});
+
 test('bestand: zonder Web Worker leest de app het bestand zelf in', async ({ browser, url }) => {
   const p = await nieuwePagina(browser, TELEFOON);
   await p.context().addInitScript(() => { window.Worker = function () { throw new Error('geen worker'); }; });

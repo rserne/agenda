@@ -156,7 +156,7 @@ function startUitBewaard(b, kopie) {
     weken.forEach((w) => (uit[w] || []).forEach((e) => DATA.ruw.set(e.id, e)));
     DATA.ownDomains = doel.eigenDomeinen;
     bewaarWeken({ meteen: true });
-    if (!panelen.length) behoudDag(render);
+    tekenNaBijwerken();
   }).catch(() => {});
 }
 let _bewaarTimer = null;
@@ -315,7 +315,7 @@ async function vernieuwLink({ ookAlsVers = false } = {}) {
     weken.forEach((w) => (uit[w] || []).forEach((e) => DATA.ruw.set(e.id, e)));
     DATA.ownDomains = nieuw.eigenDomeinen;
     bewaarWeken({ meteen: true }); // meteen: sluit je de app direct daarna, dan past de kopie toch bij het bestand
-    if (!panelen.length) behoudDag(render);
+    tekenNaBijwerken();
   } catch (e) {
     oudBestand.linkFout = e.message;
   } finally {

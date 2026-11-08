@@ -710,6 +710,38 @@ test('notities: de tab zoekt op tekst, filtert op label, en een losse notitie ka
   assert.deepEqual(p.fouten, []);
 });
 
+test('notities op de Mac: lijst en notitie naast elkaar; typen loopt mee in de lijst, ook als er intussen iets binnenkomt', async ({ browser, url }) => {
+  const p = await nieuwePagina(browser, MAC);
+  await p.goto(url); await wacht(1000);
+  await p.evaluate(async () => {
+    await laadNotities();
+    const a = maakNotitie(); wijzigNotitie(a, { tekst: 'Eerste notitie', labels: ['Pilot'] });
+    const b = maakNotitie(); wijzigNotitie(b, { tekst: 'Tweede notitie', labels: ['Klant A'] });
+  });
+  await p.locator('#zijbalk [data-tab="notities"]').click(); await wacht(700);
+  assert.equal(await p.locator('#notlijst .notitierij.aan').count(), 1, 'de bovenste staat meteen rechts');
+  assert.equal(await p.locator('#notipaneel #nottekst').inputValue(), await p.evaluate(() => zichtbareNotities()[0].tekst));
+  await p.locator('#notlijst .notitierij', { hasText: 'Eerste notitie' }).click(); await wacht(400);
+  assert.equal(await p.locator('#notipaneel #nottekst').inputValue(), 'Eerste notitie');
+  await p.locator('#notipaneel #nottekst').click(); await p.keyboard.press('End');
+  await p.keyboard.type(' en meer'); await wacht(200);
+  assert.equal(await p.locator('#notlijst .notitierij.aan .t1').innerText(), 'Eerste notitie en meer', 'de lijst loopt mee');
+  // Komt er intussen iets binnen (synchroniseren), dan blijft de notitie staan en kun je verder typen
+  await p.evaluate(() => tekenNotities()); await wacht(100);
+  await p.keyboard.type('!'); await wacht(200);
+  assert.equal(await p.locator('#notipaneel #nottekst').inputValue(), 'Eerste notitie en meer!');
+  // Nieuw, Notitie: een lege notitie rechts, met de cursor erin; pas na typen staat hij in de lijst
+  await p.locator('#nieuwknop').click(); await wacht(300);
+  assert.equal(await p.locator('.keuzemenu [role="menuitem"]').first().innerText(), 'Notitie', 'in Notities bovenaan');
+  await p.locator('.keuzemenu [data-keuze="notitie"]').click(); await wacht(400);
+  assert.equal(await p.locator('#notipaneel #nottekst').inputValue(), '');
+  assert.equal(await p.locator('#notlijst .notitierij').count(), 2);
+  await p.keyboard.type('Derde notitie'); await wacht(300);
+  assert.equal(await p.locator('#notlijst .notitierij').count(), 3);
+  assert.equal(await p.locator('#notlijst .notitierij.aan .t1').innerText(), 'Derde notitie');
+  assert.deepEqual(p.fouten, []);
+});
+
 /* -------------------------------------------------------------- synchroniseren */
 
 test('worker: notities bewaren, de laatste wijziging wint, en zonder database of sleutel niets', async () => {

@@ -255,7 +255,7 @@ function render() {
   renderKop();
   renderZijbalk();
   const main = $('#inhoud');
-  if (ST.tab === 'notities') { main.innerHTML = notitiesHtml(); ST.naarVandaag = false; return; }
+  if (ST.tab === 'notities') { tekenNotities(true); ST.naarVandaag = false; return; }
   if (ST.tab === 'instellingen') {
     // Staat Instellingen al in beeld, dan alleen de agendaregel bijwerken: zo raak je niets kwijt terwijl je typt
     const scherm = $('#instscherm');

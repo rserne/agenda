@@ -1126,6 +1126,7 @@ label.frij:focus-within .flabel { color: var(--accent); }
   .tabbalk .kolom { max-width: 480px; margin: 0 auto; padding: 0 16px; }
   .tabbalk .pil button { font-size: 15px; }
   body.desktop main.kolom { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--barH) + 28px); }
+  main .notisplit { --onder: calc(env(safe-area-inset-bottom, 0px) + var(--barH) + 36px); } /* boven de tabbalk */
   body.desktop main.kolom > .legenda { position: static; background: none; padding: 28px 2px 0; }
 }
 
@@ -1196,8 +1197,25 @@ body.notitietab .titelknop, body.insttab .titelknop { cursor: default; }
   .kop .zoekbalk { order: 3; margin-left: auto; width: 280px; height: 32px; padding: 0 12px; border-radius: 16px; gap: 6px; background: var(--glass); border: 0.5px solid var(--glassBorder); box-shadow: var(--glassShadow); -webkit-backdrop-filter: var(--glassBlur); backdrop-filter: var(--glassBlur); }
   .kop .zoekbalk .icoon { width: 14px; height: 14px; }
   .kop .zoekbalk input { font-size: 13px; }
-  .notitab { max-width: 760px; padding: 20px 0 40px; }
-  .instscherm { max-width: 760px; padding-top: 16px; }
+  /* Instellingen: een kolom in het midden, met lucht onder de werkbalk */
+  .instscherm { width: 100%; max-width: 760px; margin: 0 auto; padding-top: 28px; }
+  /* Notities: links de lijst, rechts de notitie, zoals in Notities van Apple. De lijst scrolt met het venster mee,
+     de notitie blijft staan en vult de hoogte (op de iPad tot boven de tabbalk). */
+  .notisplit { --onder: 24px; display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 28px; align-items: start; width: 100%; max-width: 1240px; margin: 0 auto; padding: 24px 0 40px; }
+  .notilinks { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+  .notisplit .nfilter { margin: 0; }
+  .notisplit .notitierij > .icoon { display: none; }
+  .notisplit .notitierij { border-radius: 12px; margin: 2px -10px; padding: 10px; width: calc(100% + 20px); }
+  .notisplit .drij.notitierij + .drij.notitierij { border-top: 0; }
+  .notisplit .notitierij:hover:not(.aan) { background: var(--fill); }
+  .notisplit .notitierij.aan { background: var(--selBg); }
+  .notisplit .notitierij.aan .t1 { color: var(--selText); font-weight: 600; }
+  .notipaneel { position: sticky; top: calc(var(--kopH, 52px) + 24px); height: calc(100vh - var(--kopH, 52px) - 24px - var(--onder)); display: flex; flex-direction: column; min-width: 0; }
+  .notipaneel .detailinhoud { flex: 1; min-height: 0; overflow-y: auto; padding: 0 0 4px; gap: 16px; }
+  .notipaneel .dkop { padding-left: 4px; }
+  .notipaneel .tekstkaart { flex: 1 0 auto; display: flex; min-height: 240px; }
+  .notipaneel .tekstkaart .frij { flex: 1; align-items: stretch; padding-bottom: 14px; }
+  .notipaneel .tekstkaart textarea { height: auto; min-height: 0; }
   .zbnotities { border-top: 0; padding-top: 6px; }
   .zbinstellingen { margin-top: auto; } /* Instellingen onderaan de zijbalk */
   .balkregel { display: contents; } /* in de werkbalk staan de knoppen los naast elkaar */

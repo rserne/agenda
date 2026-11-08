@@ -100,22 +100,26 @@ const labelChips = (labels) => (labels.length ? `<span class="nlabels">${labels.
 /* ------------------------------------------------------------------ */
 
 // e: de afspraak (bij een nieuwe notitie bij een afspraak). klaar: wordt aangeroepen als het scherm dichtgaat.
-async function openNotitie({ notitie = null, e = null, klaar = null } = {}) {
+// doel: op iPad en Mac staat de notitie in de tab Notities naast de lijst, in dit vak, zonder paneel.
+// bijWijziging: wordt aangeroepen bij elke wijziging, zodat de lijst ernaast meeloopt.
+async function openNotitie({ notitie = null, e = null, klaar = null, doel = null, bijWijziging = null } = {}) {
   await laadNotities();
   const n = notitie || (e && notitieBij(e.id)) || maakNotitie(e);
   const voorstelOrgs = e && e.external ? e.orgs || [] : [];
 
-  const el = document.createElement('div');
-  el.className = 'paneel detail nieuw notitie' + (isDesktop() ? ' dialoog' : '');
-  el.setAttribute('role', 'dialog');
-  el.setAttribute('aria-label', 'Notitie');
+  const el = doel || document.createElement('div');
+  if (!doel) {
+    el.className = 'paneel detail nieuw notitie' + (isDesktop() ? ' dialoog' : '');
+    el.setAttribute('role', 'dialog');
+    el.setAttribute('aria-label', 'Notitie');
+  }
   const kop = n.afspraak
     ? `<div class="dmeta"><div>${esc(n.afspraak.titel || 'Zonder titel')}</div><div class="num">${notitieDatum(n)}</div></div>`
     : '';
-  el.innerHTML = `<div class="detailgreep"><div class="greep"></div>
-      <div class="detailnav"><button class="rond glas" data-actie="sluit" aria-label="Sluiten">${I.kruis}</button></div></div>
+  el.innerHTML = `${doel ? '' : `<div class="detailgreep"><div class="greep"></div>
+      <div class="detailnav"><button class="rond glas" data-actie="sluit" aria-label="Sluiten">${I.kruis}</button></div></div>`}
     <div class="detailinhoud">
-      <div class="dkop"><div class="dkopinhoud"><h2 class="dtitel">Notitie</h2>${kop}</div></div>
+      <div class="dkop"><div class="dkopinhoud"><h2 class="dtitel">${doel && n.afspraak ? esc(n.afspraak.titel || 'Zonder titel') : 'Notitie'}</h2>${doel && n.afspraak ? `<div class="dmeta"><div class="num">${notitieDatum(n)}</div></div>` : kop}</div></div>
       <div class="formkaart tekstkaart">
         <label class="frij boven"><textarea id="nottekst" rows="8" placeholder="Notitie" aria-label="Notitie"></textarea></label>
       </div>
@@ -143,6 +147,7 @@ async function openNotitie({ notitie = null, e = null, klaar = null } = {}) {
     if (!label || n.labels.some((x) => labelSleutel(x) === labelSleutel(label))) return;
     wijzigNotitie(n, { labels: [...n.labels, label] });
     tekenLabels();
+    if (bijWijziging) bijWijziging();
   };
   tekenLabels();
 
@@ -174,20 +179,21 @@ async function openNotitie({ notitie = null, e = null, klaar = null } = {}) {
     const was = NOTITIES.includes(n);
     wijzigNotitie(n, { tekst: tekst.value });
     if (was !== NOTITIES.includes(n)) tekenLabels(); // de knop Verwijderen verschijnt of verdwijnt
+    if (bijWijziging) bijWijziging();
   });
 
-  const p = openPaneel(el, { greepSelector: '.detailgreep', naSluiten: () => { bewaarNotities({ meteen: true }); tekenNotities(); if (klaar) klaar(); } });
+  const p = doel ? null : openPaneel(el, { greepSelector: '.detailgreep', naSluiten: () => { bewaarNotities({ meteen: true }); tekenNotities(); if (klaar) klaar(); } });
   el.addEventListener('click', (ev) => {
     const t = ev.target;
-    if (t.closest('[data-actie="sluit"]')) { p.sluit(); return; }
+    if (t.closest('[data-actie="sluit"]') && p) { p.sluit(); return; }
     if (t.closest('[data-actie="verwijder"]')) {
       if (!confirm('Deze notitie verwijderen?')) return;
       verwijderNotitie(n);
-      p.sluit();
+      if (p) p.sluit(); else if (klaar) klaar();
       return;
     }
     const weg = t.closest('[data-weg]');
-    if (weg) { wijzigNotitie(n, { labels: n.labels.filter((_, i) => i !== Number(weg.dataset.weg)) }); tekenLabels(); return; }
+    if (weg) { wijzigNotitie(n, { labels: n.labels.filter((_, i) => i !== Number(weg.dataset.weg)) }); tekenLabels(); if (bijWijziging) bijWijziging(); return; }
     const voeg = t.closest('[data-voeg]');
     if (voeg) voegLabel(voeg.dataset.voeg);
   });
@@ -212,18 +218,14 @@ function notitieSectieHtml(e) {
 
 let notZoek = '';
 let notLabel = null;
+let notGekozen = null; // iPad en Mac: de notitie rechts naast de lijst
+let notNieuw = null; // een nieuwe notitie rechts die nog leeg is (en dus nog niet in de lijst staat)
 const isLabel = (a, b) => !!a && !!b && labelSleutel(a) === labelSleutel(b);
-function notitiesHtml() {
-  const labels = alleLabels();
-  if (notLabel && !labels.some((l) => isLabel(l, notLabel))) notLabel = null;
-  return `<div class="notitab">
-    <div class="chips nfilter" id="notfilter">${labels.map((l) => `<button type="button" class="chip label${isLabel(l, notLabel) ? ' aan' : ''}" data-label="${esc(l)}" aria-pressed="${isLabel(l, notLabel)}">${esc(l)}</button>`).join('')}</div>
-    <div id="notlijst">${notitieLijstHtml()}</div>
-  </div>`;
-}
-function notitieLijstHtml() {
+const naastElkaar = () => isDesktop();
+
+function zichtbareNotities() {
   const woorden = labelSleutel(notZoek).split(/\s+/).filter(Boolean);
-  const lijst = levendeNotities()
+  return levendeNotities()
     .filter((n) => !notLabel || n.labels.some((l) => isLabel(l, notLabel)))
     .filter((n) => {
       if (!woorden.length) return true;
@@ -231,14 +233,75 @@ function notitieLijstHtml() {
       return woorden.every((w) => hooi.includes(w));
     })
     .sort((a, b) => (b.afspraak ? b.afspraak.start : b.gemaakt) - (a.afspraak ? a.afspraak.start : a.gemaakt));
+}
+// De notitie rechts: een nieuwe, de gekozen, of anders de bovenste uit de lijst
+function gekozenNotitie() {
+  if (notNieuw && NOTITIES.includes(notNieuw) && !notNieuw.weg) { notGekozen = notNieuw.id; notNieuw = null; }
+  if (notNieuw) return notNieuw;
+  const lijst = zichtbareNotities();
+  const n = lijst.find((x) => x.id === notGekozen) || lijst[0] || null;
+  notGekozen = n ? n.id : null;
+  return n;
+}
+function filterHtml() {
+  const labels = alleLabels();
+  if (notLabel && !labels.some((l) => isLabel(l, notLabel))) notLabel = null;
+  return labels.map((l) => `<button type="button" class="chip label${isLabel(l, notLabel) ? ' aan' : ''}" data-label="${esc(l)}" aria-pressed="${isLabel(l, notLabel)}">${esc(l)}</button>`).join('');
+}
+function notitiesHtml() {
+  const filter = `<div class="chips nfilter" id="notfilter">${filterHtml()}</div>`;
+  if (!naastElkaar()) return `<div class="notitab">${filter}<div id="notlijst">${notitieLijstHtml()}</div></div>`;
+  return `<div class="notitab notisplit"><div class="notilinks">${filter}<div id="notlijst">${notitieLijstHtml()}</div></div><div class="notipaneel" id="notipaneel"></div></div>`;
+}
+function notitieLijstHtml() {
+  const lijst = zichtbareNotities();
+  const gekozen = naastElkaar() ? gekozenNotitie() : null;
   if (!lijst.length) return `<p class="nleeg nlijstleeg">${levendeNotities().length ? 'Niets gevonden' : 'Nog geen notities'}</p>`;
-  return `<div class="kaart">${lijst.map((n) => `<button class="drij notitierij" data-notitie="${n.id}">
+  return `<div class="kaart">${lijst.map((n) => `<button class="drij notitierij${gekozen && gekozen.id === n.id ? ' aan' : ''}" data-notitie="${n.id}"${naastElkaar() ? ` aria-pressed="${!!gekozen && gekozen.id === n.id}"` : ''}>
       <span class="tekst"><div class="t1">${esc(eersteRegel(n.tekst) || 'Zonder tekst')}</div>
       <div class="t2 num">${esc(notitieDatum(n))}${n.afspraak ? ` · ${esc(n.afspraak.titel || 'Zonder titel')}` : ''}</div>${labelChips(n.labels)}</span>${I.verder}</button>`).join('')}</div>`;
 }
-// Opnieuw tekenen als de tab Notities in beeld is (na het bewerken van een notitie)
-function tekenNotities() {
-  if (ST.tab === 'notities') $('#inhoud').innerHTML = notitiesHtml();
+// Het vak rechts opnieuw vullen (een nieuw element, zodat er geen oude luisteraars blijven hangen)
+function vulNotitiepaneel() {
+  const oud = $('#notipaneel');
+  if (!oud) return;
+  const vak = oud.cloneNode(false);
+  oud.replaceWith(vak);
+  const n = gekozenNotitie();
+  vak.dataset.id = n ? n.id : '';
+  if (!n) { vak.innerHTML = `<p class="nleeg nlijstleeg">${levendeNotities().length ? 'Niets gevonden' : 'Nog geen notities'}</p>`; return; }
+  openNotitie({ notitie: n, doel: vak, bijWijziging: () => tekenNotities(), klaar: () => { notGekozen = null; notNieuw = null; tekenNotities(); } });
+}
+// Opnieuw tekenen als de tab Notities in beeld is. Staat de lijst er al, dan alleen de lijst en de labels: zo blijft
+// de notitie rechts staan terwijl je typt (ook als er intussen iets via de Worker binnenkomt).
+function tekenNotities(volledig = false) {
+  if (ST.tab !== 'notities') return;
+  const main = $('#inhoud');
+  if (volledig || !$('#notlijst', main) || !!$('#notipaneel', main) !== naastElkaar()) {
+    main.innerHTML = notitiesHtml();
+    if (naastElkaar()) vulNotitiepaneel();
+    return;
+  }
+  $('#notfilter', main).innerHTML = filterHtml();
+  $('#notlijst', main).innerHTML = notitieLijstHtml();
+  if (!naastElkaar()) return;
+  const vak = $('#notipaneel', main);
+  const n = gekozenNotitie();
+  const bezig = vak.contains(document.activeElement);
+  const tekst = $('#nottekst', vak);
+  if (vak.dataset.id !== (n ? n.id : '') || (n && !bezig && tekst && tekst.value !== n.tekst)) vulNotitiepaneel();
+}
+// Een nieuwe notitie: op iPad en Mac in de tab Notities meteen rechts, anders als paneel
+function nieuweNotitie() {
+  if (ST.tab === 'notities' && naastElkaar()) {
+    bewaarNotities({ meteen: true });
+    notNieuw = maakNotitie();
+    tekenNotities();
+    const t = $('#notipaneel #nottekst');
+    if (t) t.focus();
+    return;
+  }
+  openNotitie();
 }
 $('#notzoek').addEventListener('input', (ev) => {
   notZoek = ev.target.value;
@@ -246,9 +309,11 @@ $('#notzoek').addEventListener('input', (ev) => {
   if (l) l.innerHTML = notitieLijstHtml();
 });
 document.addEventListener('click', (ev) => {
-  if (!ev.target.closest('#inhoud .notitab')) return;
+  if (!ev.target.closest('#inhoud .notitab') || ev.target.closest('#notipaneel')) return;
   const f = ev.target.closest('[data-label]');
   if (f) { notLabel = isLabel(notLabel, f.dataset.label) ? null : f.dataset.label; tekenNotities(); return; }
   const r = ev.target.closest('[data-notitie]');
-  if (r) openNotitie({ notitie: NOTITIES.find((n) => n.id === r.dataset.notitie) });
+  if (!r) return;
+  if (naastElkaar()) { bewaarNotities({ meteen: true }); notGekozen = r.dataset.notitie; notNieuw = null; tekenNotities(); }
+  else openNotitie({ notitie: NOTITIES.find((n) => n.id === r.dataset.notitie) });
 });

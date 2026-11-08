@@ -1372,7 +1372,7 @@ function wisselKeuzemenu(knop) {
     const k = ev.target.closest('[data-keuze]');
     if (!k) return;
     sluitKeuzemenu();
-    if (k.dataset.keuze === 'nieuw') openNieuw(); else if (k.dataset.keuze === 'notitie') openNotitie(); else openMailTijden();
+    if (k.dataset.keuze === 'nieuw') openNieuw(); else if (k.dataset.keuze === 'notitie') nieuweNotitie(); else openMailTijden();
   });
   menu.addEventListener('keydown', (ev) => {
     const knoppen = [...menu.querySelectorAll('button')];

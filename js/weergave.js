@@ -227,9 +227,11 @@ function capsuleHtml(vorigeLabel, volgendeLabel) {
 
 function renderKop() {
   const { start } = periode();
-  $('#titel').textContent = ST.tab === 'week' ? `Week ${isoWeek(start)}` : 'Vooruitblik';
+  $('#titel').textContent = ST.tab === 'week' ? `Week ${isoWeek(start)}` : ST.tab === 'forecast' ? 'Vooruitblik' : 'Notities';
   $('#datumregel').textContent = rangeLong(start, addDays(start, 6));
   document.body.classList.toggle('vooruitblik', ST.tab === 'forecast');
+  document.body.classList.toggle('notitietab', ST.tab === 'notities'); // geen weekkeuze, schakelaar en pijlen; wel zoeken
+  $('#titelknop').setAttribute('aria-label', ST.tab === 'notities' ? 'Notities' : 'Kies een week');
   document.querySelectorAll('#schakelaar button').forEach((b) => {
     const aan = b.dataset.filter === ST.filter;
     b.classList.toggle('aan', aan);
@@ -247,6 +249,7 @@ function render() {
   renderKop();
   renderZijbalk();
   const main = $('#inhoud');
+  if (ST.tab === 'notities') { main.innerHTML = notitiesHtml(); ST.naarVandaag = false; return; }
   const { start, eind } = periode();
   const events = afsprakenTussen(start, eind);
   zichtbaar.clear();

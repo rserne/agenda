@@ -80,7 +80,8 @@ function verschuif(n, tab) {
 
 function koppel() {
   $('#capsule').innerHTML = capsuleHtml('Week terug', 'Week verder');
-  $('#titelknop').addEventListener('click', openWeekkiezer);
+  $('#titelknop').addEventListener('click', () => { if (ST.tab !== 'notities') openWeekkiezer(); });
+  $('#tandwiel').innerHTML = I.instellingen;
   $('#icsinvoer').addEventListener('change', (ev) => { openBestand(ev.target.files[0]).catch((e) => alert('Dit bestand kan de app niet lezen. Kies een agenda-bestand (.ics) uit Outlook.')); ev.target.value = ''; });
   $('#contactinvoer').addEventListener('change', (ev) => {
     const f = ev.target.files[0];
@@ -101,7 +102,6 @@ function koppel() {
     const nav = ev.target.closest('[data-nav]');
     if (nav) { verschuif(Number(nav.dataset.nav)); return; }
     if (ev.target.closest('[data-actie="instellingen"]')) { openInstellingen(); return; }
-    if (ev.target.closest('[data-actie="notitielijst"]')) { openNotitielijst(); return; }
     const actie = ev.target.closest('[data-actie^="ics-"]');
     if (actie) {
       if (actie.dataset.actie === 'ics-openen') $('#icsinvoer').click();
@@ -177,7 +177,7 @@ function koppel() {
   const f = LS.get('ag_filter');
   if (['notable', 'all', 'free'].includes(f)) ST.filter = f;
   const t = LS.get('ag_tab');
-  if (['week', 'forecast'].includes(t)) ST.tab = t;
+  if (['week', 'forecast', 'notities'].includes(t)) ST.tab = t;
   koppel();
   // Toetsenbord op iOS: het schuift over de pagina heen. Meet hoeveel, zodat je in een paneel tot onderaan kunt scrollen.
   if (window.visualViewport) {
@@ -192,7 +192,7 @@ function koppel() {
     vv.addEventListener('scroll', meet);
   }
   laadContacten().then(() => { if (CONTACTEN_INFO && isDesktop()) renderZijbalk(); });
-  laadNotities().then(() => { if (isDesktop()) renderZijbalk(); });
+  laadNotities().then(() => { if (ST.tab === 'notities') render(); });
   // Een eerder geopend .ics-bestand of je agenda-link gaat voor (behalve met ?demo)
   renderKop(); // de titel en knoppen staan er meteen, ook voordat de afspraken uit de opslag komen
   Promise.all([IDB.get('ics').catch(() => null), IDB.get('icsweken').catch(() => null)]).then(async ([b, kopie]) => {

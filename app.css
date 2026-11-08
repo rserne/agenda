@@ -1108,6 +1108,11 @@ label.frij:focus-within .flabel { color: var(--accent); }
   #capsule .vandaagtekst { display: none; }
   #capsule .icoon { width: 19px; height: 19px; }
   .nieuwknop { display: none; }
+  /* Instellingen: ook hier het tandwieltje in de werkbalk, want de zijbalk staat vaak dicht */
+  body.desktop .kop .tandwiel { display: flex; order: 5; width: 42px; height: 42px; border-radius: 21px; background: var(--glass); border: 0.5px solid var(--glassBorder); box-shadow: var(--glassShadow); -webkit-backdrop-filter: var(--glassBlur); backdrop-filter: var(--glassBlur); }
+  body.desktop .kop .zoekbalk { height: 42px; border-radius: 21px; width: 320px; padding: 0 14px; }
+  body.desktop .kop .zoekbalk .icoon { width: 17px; height: 17px; }
+  body.desktop .kop .zoekbalk input { font-size: 16px; }
 
   /* Tabbalk onderin, gecentreerd onder de afspraken */
   .tabbalk { display: block; left: var(--zbW); transition: left 0.25s ease; }
@@ -1124,7 +1129,7 @@ label.frij:focus-within .flabel { color: var(--accent); }
 /* ------------------------------------------------------------------ */
 /*  Notities                                                           */
 /* ------------------------------------------------------------------ */
-.notitie .dkop, .notitielijst .dkop { padding-left: 4px; }
+.notitie .dkop { padding-left: 4px; }
 .paneel.notitie:not(.dialoog) { height: calc(100% - env(safe-area-inset-top, 0px) - 12px); } /* schermvullend: ruimte om te schrijven */
 .notitie .tekstkaart { flex: 1 0 auto; display: flex; min-height: 240px; }
 .notitie .tekstkaart .frij { flex: 1; align-items: stretch; padding-bottom: 14px; }
@@ -1147,4 +1152,29 @@ label.frij:focus-within .flabel { color: var(--accent); }
 .kopknop { flex-shrink: 0; margin-left: auto; background: var(--fill); }
 .paneel.dialoog .kopknop { display: none; }
 .paneel.detail:not(.dialoog) .detailnav .rond:not([data-actie="sluit"]) { display: none; }
-.notitielijst .dkop { align-items: center; }
+
+/* ------------------------------------------------------------------ */
+/*  Navigatie: tandwieltje in de kop, tab Notities                     */
+/* ------------------------------------------------------------------ */
+.tandwiel { flex-shrink: 0; width: 36px; height: 36px; border-radius: 18px; display: flex; align-items: center; justify-content: center; color: var(--label); }
+.tandwiel .icoon { width: 19px; height: 19px; }
+.tandwiel:active { background: var(--fill); }
+body.desktop .tandwiel { display: none; } /* op de desktop staat Instellingen onderaan de zijbalk */
+.zoekbalk { display: none; align-items: center; gap: 8px; height: var(--barH); border-radius: calc(var(--barH) / 2); padding: 0 16px; color: var(--secondary); }
+.zoekbalk .icoon { width: 18px; height: 18px; flex-shrink: 0; }
+.zoekbalk input { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--label); font: inherit; font-size: 16px; outline: none; -webkit-appearance: none; appearance: none; }
+.zoekbalk input::placeholder { color: var(--secondary); opacity: 0.8; }
+.zoekbalk input::-webkit-search-decoration { -webkit-appearance: none; }
+body.notitietab .zoekbalk { display: flex; }
+body.notitietab #schakelaar, body.notitietab #capsule, body.notitietab #datumregel, body.notitietab .titelknop .icoon { display: none; }
+body.notitietab .titelknop { cursor: default; }
+.notitab { display: flex; flex-direction: column; gap: 14px; padding: 4px 0 calc(var(--barH) + 40px); }
+.notitab .nfilter { margin: 0 4px; }
+@media (min-width: 1200px) {
+  .kop .zoekbalk { order: 3; margin-left: auto; width: 280px; height: 32px; padding: 0 12px; border-radius: 16px; gap: 6px; background: var(--glass); border: 0.5px solid var(--glassBorder); box-shadow: var(--glassShadow); -webkit-backdrop-filter: var(--glassBlur); backdrop-filter: var(--glassBlur); }
+  .kop .zoekbalk .icoon { width: 14px; height: 14px; }
+  .kop .zoekbalk input { font-size: 13px; }
+  .notitab { max-width: 760px; padding: 20px 0 40px; }
+  .zbnotities { border-top: 0; padding-top: 6px; }
+  .zbinstellingen { margin-top: auto; } /* Instellingen onderaan de zijbalk */
+}

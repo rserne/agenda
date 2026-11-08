@@ -6,14 +6,14 @@ Je week in één oogopslag, als web-app (PWA) voor iPhone, iPad en laptop. De ap
 - **Vooruitblik:** zeven dagen vanaf vandaag in tegels. Van vandaag staan alleen de afspraken die nog komen of nu bezig zijn; wat al voorbij is, verdwijnt vanzelf. Op de telefoon trek je onderaan door naar de volgende zeven dagen.
 - **Weekkiezer:** tik op de titel. Elke werkdag kleurt mee met hoe vol hij is (een heatmap): grijs bij een rustige dag, geel vanaf drie uur en rood vanaf zes uur aan afspraken (`MID_HOURS`, `FULL_HOURS`).
 - **Detailscherm:** locatie, Teams-link, organisator en deelnemers per organisatie, notities uit de uitnodiging, je eigen notitie, en mailen naar één of alle deelnemers.
-- **Notities:** een eigen notitie bij een afspraak of een losse notitie, met labels. Zoeken en filteren doe je onder Notities, boven Instellingen.
+- **Notities:** een eigen tab met je notities, bij een afspraak of los, met labels. Bovenin zoek je, daaronder filter je op label.
 
 Zonder bouwstap: alle bestanden draaien zoals ze zijn op GitHub Pages. Licht en donker volgen de instelling van het toestel.
 
 **Formaten**
-- **Telefoon:** kop met titel en capsule, schakelaar bovenin, tabbalk onderin, panelen van onderen.
+- **Telefoon:** kop met titel, tandwieltje (Instellingen) en capsule, schakelaar bovenin, tabbalk onderin (Week, Vooruitblik, Notities), panelen van onderen. In de tab Notities staat het zoekveld op de plek van de schakelaar.
 - **Tablet (vanaf 768 punten):** dezelfde opbouw in een kolom van 760 punten, Vooruitblik met vier tegels naast elkaar.
-- **Desktop (vanaf 1200 punten):** in de stijl van Agenda op de Mac. Een zijbalk met de maandkalender (heatmap) en Week of Vooruitblik, een werkbalk met Opvallend, Alles of Vrij en ‹ Vandaag ›, en de werkdagen als kolommen naast elkaar met een gekleurd streepje per afspraak. Het detailscherm opent als dialoog midden in beeld.
+- **Desktop (vanaf 1200 punten):** in de stijl van Agenda op de Mac. Een zijbalk met de maandkalender (heatmap), de kopjes Agenda (Week, Vooruitblik) en Notities, en onderaan Instellingen; een werkbalk met Opvallend, Alles of Vrij en ‹ Vandaag › (bij Notities het zoekveld), en de werkdagen als kolommen naast elkaar met een gekleurd streepje per afspraak. Het detailscherm opent als dialoog midden in beeld.
 
 **Nieuwe afspraak.** Tik op de plusknop naast de tabbalk (op de desktop **Nieuw** in de werkbalk) en kies **Nieuwe afspraak**: je kiest de dag en de duur (standaard een uur, in stappen van een kwartier) en de app stelt begintijden voor die in je vrije blokken passen, tussen 8:00 en 18:00. Kies je zelf een andere tijd die botst, dan zie je meteen met welke afspraak. Een balk toont de werkdag: elk overleg in grijs, de vrije tijd in lichtblauw en de tijd die je kiest. Tik je op de balk, dan zie je eronder welke afspraken het zijn; vet zijn de afspraken die botsen met de gekozen tijd of er direct op aansluiten. Tik je op een vrij blok, dan blijft alles binnen dat blok. Omdat de app je agenda alleen leest, opent **Afmaken in Outlook** Outlook met alles ingevuld: titel, tijd, locatie, deelnemers en notitie. Daar sla je de afspraak op en verstuur je de uitnodiging. Op iPhone en iPad gaat dat naar de Outlook-app (`ms-outlook://events/new`), elders naar Outlook op het web. **Openen in Outlook** in het detailscherm opent de app op de dag van de afspraak (`ms-outlook://events?date=…`); naar de afspraak zelf springen kan niet, want de gepubliceerde agenda bevat het id van Outlook niet. Een .ics-bestand downloaden kan ook, voor andere agenda's.
 
@@ -23,7 +23,7 @@ De lezer (`js/mailtijden.js`) werkt met vaste regels en draait op het toestel; e
 
 ## Waar de afspraken vandaan komen
 
-Alles wat alleen op jouw toestel staat, geef je op onder **Instellingen**: onderaan de weekkiezer (tik op de titel), op de desktop onderaan de zijbalk. Daar staan Agenda, Contacten, Ruimtes en Plaatsen via Google.
+Alles wat alleen op jouw toestel staat, geef je op onder **Instellingen**: het tandwieltje in de kop, op de Mac onderaan de zijbalk. Op de iPad liggend staat het tandwieltje rechts in de werkbalk, omdat de zijbalk daar meestal dicht is. Daar staan Agenda, Contacten, Ruimtes en Plaatsen via Google.
 
 Onder **Agenda** kies je de bron:
 
@@ -72,7 +72,7 @@ Een eigen notitie maak je bij een afspraak met het knopje naast de titel in het 
 
 **Labels.** Typ je een label, dan stelt de app eerst labels voor die je al gebruikt, ook als je ze met andere hoofdletters of zonder accenten typt; het bestaande label houdt zijn schrijfwijze. Bestaat het nog niet, dan maak je het met Enter of een tik op Nieuw label. Onder het veld staan voorstellen: bij een externe afspraak eerst de organisatie, daarna de labels die je het vaakst gebruikt. Een tik op een gekozen label haalt het weg.
 
-**Notities zoeken.** Onder de kalender (in de weekkiezer en de zijbalk) staat Notities, boven Instellingen. Daar zoek je op tekst, label en de titel van de afspraak, en filter je op één label. De nieuwste afspraak staat bovenaan.
+**Notities zoeken.** In de tab Notities (op de Mac in de zijbalk) zoek je bovenin op tekst, label en de titel van de afspraak, en filter je met een tik op één label. De nieuwste afspraak staat bovenaan. In deze tab staat Notitie in het plusmenu het dichtst bij je duim, op de Mac bovenaan.
 
 **Opslag.** De notities staan voorlopig alleen op het toestel, in IndexedDB (`notities`). Elke notitie heeft een eigen id en een tijdstip van wijzigen, en een verwijderde notitie houdt een markering (`weg`). Zo kunnen ze straks via de Cloudflare Worker tussen iPhone, iPad en Mac worden gesynchroniseerd, waarbij per notitie de laatste wijziging wint. Zet nooit echte notities in de repository; de tests gebruiken verzonnen tekst.
 

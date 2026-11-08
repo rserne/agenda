@@ -208,8 +208,6 @@ function openWeekkiezer() {
     // Verplaats raster en legenda uit de greep, zodat alleen de kop veegbaar is
     const greep = el.querySelector('.kiezergreep');
     [...greep.children].slice(2).forEach((n) => el.appendChild(n));
-    // Onder de kalender: naar Instellingen (agenda, contacten, ruimtes), zoals in de zijbalk op de desktop
-    el.insertAdjacentHTML('beforeend', instellingenRijHtml());
     maakVeegbaar(el, greep, p.sluit);
     const rasterStart = startOfWeek(maand);
     const ditMaand = maand;
@@ -227,8 +225,6 @@ function openWeekkiezer() {
     }
     const rij = ev.target.closest('.weekrij');
     if (rij) { p.sluit(); kiesWeek(new Date(Number(rij.dataset.ma))); return; }
-    if (ev.target.closest('[data-actie="instellingen"]')) { p.sluit(); setTimeout(openInstellingen, 250); }
-    if (ev.target.closest('[data-actie="notitielijst"]')) { p.sluit(); setTimeout(openNotitielijst, 250); }
   });
 }
 // Tinten bijwerken zodra de gegevens binnen zijn, zonder het raster te laten verspringen
@@ -266,7 +262,7 @@ function agendaBron() {
   }
   return ['Voorbeeldgegevens', 'Verzonnen afspraken en namen'];
 }
-// Onder de kalender (weekkiezer en zijbalk): één regel naar Instellingen, met welke agenda je ziet
+// Onderaan de zijbalk (desktop): één regel naar Instellingen, met welke agenda je ziet
 function instellingenRijHtml() {
   // Kort: welke agenda je ziet, en bij de agenda-link wanneer die is bijgewerkt
   let kort = 'Voorbeeldgegevens';
@@ -274,8 +270,7 @@ function instellingenRijHtml() {
     const d = new Date(BESTAND.gecontroleerd || BESTAND.datum);
     kort = `Outlook-agenda · ${LINK_BEZIG ? 'bijwerken…' : BESTAND.linkFout ? 'bijwerken lukte niet' : sameDay(d, vandaag()) ? `bijgewerkt om ${hhmm(d)}` : `bijgewerkt ${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}`}`;
   } else if (BESTAND) kort = esc(BESTAND.naam);
-  return `<nav class="zblijst zbagenda zbinstellingen" aria-label="Notities en instellingen">
-    ${notitiesRijHtml()}
+  return `<nav class="zblijst zbagenda zbinstellingen" aria-label="Instellingen">
     <button class="instrij" data-actie="instellingen">${I.instellingen}<span class="tekst"><span class="t1">Instellingen</span><span class="t2">${kort}</span></span>${I.verder}</button>
   </nav>`;
 }
@@ -286,7 +281,8 @@ function renderZijbalk() {
   const item = (tab, icoon, tekst) => `<button data-tab="${tab}" class="${ST.tab === tab ? 'aan' : ''}" aria-selected="${ST.tab === tab}">${icoon}<span>${tekst}</span></button>`;
   z.innerHTML = `<div class="zbbinnen">
     <div class="minikal">${maandRasterHtml(zijMaand, gekozenMaandag(), 'zijbalk')}</div>
-    <nav class="zblijst zbweergave" aria-label="Weergave"><h3>Weergave</h3>${item('week', I.week, 'Week')}${item('forecast', I.vooruit, 'Vooruitblik')}</nav>
+    <nav class="zblijst zbweergave" aria-label="Agenda"><h3>Agenda</h3>${item('week', I.week, 'Week')}${item('forecast', I.vooruit, 'Vooruitblik')}</nav>
+    <nav class="zblijst zbweergave zbnotities" aria-label="Notities"><h3>Notities</h3>${item('notities', I.notitie, 'Notities')}</nav>
     ${instellingenRijHtml()}
   </div>`;
   const rasterStart = startOfWeek(zijMaand);
@@ -1347,10 +1343,13 @@ function wisselKeuzemenu(knop) {
   menu.innerHTML = `<button role="menuitem" data-keuze="notitie">${I.notitie}<span>Notitie</span></button>
     <button role="menuitem" data-keuze="mail">${I.mail}<span>Tijden uit een mail</span></button>
     <button role="menuitem" data-keuze="nieuw">${I.kalender}<span>Nieuwe afspraak</span></button>`;
+  const notitieKeuze = menu.querySelector('[data-keuze="notitie"]');
   if (!fab) { // onder Nieuw: nieuwe afspraak bovenaan, notitie onderaan
     menu.insertBefore(menu.lastElementChild, menu.firstElementChild);
-    menu.append(menu.querySelector('[data-keuze="notitie"]'));
+    menu.append(notitieKeuze);
   }
+  // In de tab Notities: Notitie het dichtst bij de duim, of op de desktop bovenaan
+  if (ST.tab === 'notities') { if (fab) menu.append(notitieKeuze); else menu.prepend(notitieKeuze); }
   document.body.append(laag, menu);
   const r = knop.getBoundingClientRect();
   if (fab) { menu.style.right = `${Math.max(8, innerWidth - r.right)}px`; menu.style.bottom = `${innerHeight - r.top + 12}px`; }

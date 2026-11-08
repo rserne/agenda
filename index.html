@@ -21,7 +21,7 @@
 <body>
 
 <div class="shell">
-<!-- Zijbalk: alleen op de desktop (maandkalender, weergave en filter) -->
+<!-- Zijbalk: alleen op de desktop (maandkalender, Agenda, Notities en Instellingen) -->
 <aside class="zijbalk" id="zijbalk" aria-label="Navigatie"></aside>
 <div class="hoofd">
 <header class="kop" id="kop">
@@ -34,6 +34,8 @@
           <span class="titel" id="titel">Week</span>
           <svg class="icoon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
         </button>
+        <!-- Telefoon en tablet: Instellingen. Op de desktop staat Instellingen onderaan de zijbalk -->
+        <button class="tandwiel glas" id="tandwiel" data-actie="instellingen" aria-label="Instellingen"></button>
         <div class="capsule glas" id="capsule"></div>
         <button class="nieuwknop glas" id="nieuwknop" data-nieuw aria-label="Nieuw" aria-haspopup="menu" aria-expanded="false"><svg class="icoon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Nieuw</span></button>
       </div>
@@ -44,6 +46,8 @@
       <button data-filter="all" role="tab">Alles</button>
       <button data-filter="free" role="tab">Vrij</button>
     </div>
+    <!-- Tab Notities: zoeken op de plek van de schakelaar -->
+    <label class="zoekbalk glas" id="zoekbalk"><svg class="icoon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg><input type="search" id="notzoek" placeholder="Zoeken" aria-label="Zoeken in notities" autocomplete="off" enterkeyhint="search"></label>
   </div>
 </header>
 
@@ -56,6 +60,7 @@
     <div class="pil glas" role="tablist">
       <button data-tab="week" role="tab">Week</button>
       <button data-tab="forecast" role="tab">Vooruitblik</button>
+      <button data-tab="notities" role="tab">Notities</button>
     </div>
     <!-- Nieuw: op telefoon en tablet naast de tabbalk, binnen bereik van de duim. Opent een keuze: nieuwe afspraak of tijden uit een mail -->
     <button class="plusknop glas" data-nieuw aria-label="Nieuw" aria-haspopup="menu" aria-expanded="false"><svg class="icoon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>

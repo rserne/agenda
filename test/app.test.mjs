@@ -197,8 +197,7 @@ test('agenda-link: ophalen op de achtergrond, en een duidelijke melding bij een 
     r.fulfill({ status: 200, contentType: 'text/calendar', headers: { 'Access-Control-Allow-Origin': '*' }, body: fs.readFileSync(ICS, 'utf8') });
   });
   await p.goto(url); await wacht(800);
-  await p.click('#titelknop'); await wacht(700);
-  await p.locator('.paneel [data-actie="instellingen"]').tap(); await wacht(900);
+  await p.locator('#tandwiel').tap(); await wacht(900);
   await p.locator('.paneel [data-actie="ics-kies"]').tap(); await wacht(800);
   await p.locator('[data-bron="link"]').tap(); await wacht(800);
   await p.fill('#linkinvoer', 'webcal://outlook.office365.com/owa/calendar/x/y/calendar.ics');
@@ -225,8 +224,7 @@ test('agenda-link: na Nu bijwerken in Instellingen toont de agenda de nieuwe afs
   // In Outlook krijgt een zichtbare afspraak een andere naam
   const titel = await p.evaluate(() => DATA.ruw.get(document.querySelector('#inhoud [data-id]').dataset.id).title);
   ics = ics.split(`SUMMARY:${titel}`).join('SUMMARY:Bijgewerkt overleg');
-  await p.click('#titelknop'); await wacht(700);
-  await p.locator('.paneel [data-actie="instellingen"]').tap(); await wacht(900);
+  await p.locator('#tandwiel').tap(); await wacht(900);
   await p.locator('.paneel [data-actie="ics-nu"]').tap(); await wacht(3000);
   assert.equal(await p.locator('#statustekst').innerText(), 'Je agenda is bijgewerkt.');
   while (await p.evaluate(() => panelen.length)) { await p.keyboard.press('Escape'); await wacht(400); }
@@ -292,8 +290,7 @@ test('contacten: wissen, en zonder contacten geen suggesties', async ({ browser,
   await p.goto(url); await wacht(800);
   await p.setInputFiles('#contactinvoer', CONTACTEN_CSV); await wacht(600);
   p.on('dialog', (d) => d.accept());
-  await p.click('#titelknop'); await wacht(800);
-  await p.locator('.paneel [data-actie="instellingen"]').tap(); await wacht(900);
+  await p.locator('#tandwiel').tap(); await wacht(900);
   assert.match(await p.locator('#icontacten').innerText(), /6 contacten/);
   await p.locator('.paneel [data-actie="contacten-wis"]').tap(); await wacht(600);
   assert.match(await p.locator('#icontacten').innerText(), /Geen contacten/);
@@ -308,8 +305,9 @@ test('instellingen: de weekkiezer past op een kleine iPhone, en Instellingen scr
   await p.goto(url); await wacht(800);
   await p.click('#titelknop'); await wacht(800);
   assert.equal(await p.locator('.paneel.kiezer').evaluate((e) => e.scrollHeight <= e.clientHeight + 1), true, 'de weekkiezer hoeft niet te scrollen');
-  assert.equal(await p.locator('.paneel .instrij[data-actie="instellingen"] .t2').innerText(), 'Voorbeeldgegevens');
-  await p.locator('.paneel [data-actie="instellingen"]').tap(); await wacht(900);
+  assert.equal(await p.locator('.paneel.kiezer .instrij').count(), 0, 'de weekkiezer is alleen de kalender');
+  await p.keyboard.press('Escape'); await wacht(500);
+  await p.locator('#tandwiel').tap(); await wacht(900);
   await p.locator('.paneel.instellingen .detailinhoud').evaluate((e) => { e.scrollTop = 1e5; }); await wacht(200);
   const v = await p.locator('.paneel.instellingen .voetnoot').boundingBox();
   assert.ok(v.y + v.height <= 667 - 16, `voetnoot eindigt op ${Math.round(v.y + v.height)} van 667`);
@@ -320,8 +318,7 @@ test('telefoon: alle invoervelden hebben minstens 16 punten, anders zoomt iOS in
   await p.goto(url); await wacht(800);
   const klein = () => p.evaluate(() => [...document.querySelectorAll('input:not([type=file]), textarea, select')]
     .filter((e) => parseFloat(getComputedStyle(e).fontSize) < 16).map((e) => e.id || e.name || e.className));
-  await p.click('#titelknop'); await wacht(700);
-  await p.locator('.paneel [data-actie="instellingen"]').tap(); await wacht(900);
+  await p.locator('#tandwiel').tap(); await wacht(900);
   await p.locator('[data-actie="ruimte-erbij"]').tap(); await wacht(200);
   assert.deepEqual(await klein(), [], 'instellingen');
   await p.locator('[data-actie="ics-kies"]').tap(); await wacht(800);
@@ -342,8 +339,7 @@ const ANTWOORD_GOOGLE = { suggestions: [
 test('ruimtes: opgeven in Instellingen, bij Locatie kiezen, en de ruimte gaat mee als deelnemer', async ({ browser, url }) => {
   const p = await nieuwePagina(browser, TELEFOON);
   await p.goto(url); await wacht(800);
-  await p.click('#titelknop'); await wacht(700);
-  await p.locator('.paneel [data-actie="instellingen"]').tap(); await wacht(900);
+  await p.locator('#tandwiel').tap(); await wacht(900);
   for (const [naam, email] of [['Zonnezaal', 'zonnezaal@voorbeeld.nl'], ['Coupé', 'coupe@voorbeeld.nl'], ['Groot Overleg', 'grootoverleg@voorbeeld.nl'], ['Weg', ''], ['Kelder', 'kelder@']]) {
     await p.locator('[data-actie="ruimte-erbij"]').tap(); await wacht(150);
     await p.keyboard.type(naam); // de naam van de nieuwe ruimte heeft meteen de focus
@@ -397,8 +393,7 @@ test('plaatsen: met een Google-sleutel vult Locatie ook adressen aan, en de sleu
     r.fulfill({ status: 200, contentType: 'application/json', headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify(ANTWOORD_GOOGLE) });
   });
   await p.goto(url); await wacht(800);
-  await p.click('#titelknop'); await wacht(700);
-  await p.locator('.paneel [data-actie="instellingen"]').tap(); await wacht(900);
+  await p.locator('#tandwiel').tap(); await wacht(900);
   const kaart = p.locator('#igooglekaart');
   assert.match(await kaart.innerText(), /Geen sleutel/);
   await p.locator('[data-actie="google-wijzig"]').tap(); await wacht(200);
@@ -646,7 +641,7 @@ test('notities: labels die al bestaan gaan voor, ook met andere hoofdletters', a
   assert.deepEqual(p.fouten, []);
 });
 
-test('notities: het overzicht zoekt op tekst, filtert op label, en een losse notitie kan via de plusknop', async ({ browser, url }) => {
+test('notities: de tab zoekt op tekst, filtert op label, en een losse notitie kan via de plusknop', async ({ browser, url }) => {
   const p = await nieuwePagina(browser, TELEFOON);
   p.on('dialog', (d) => d.accept());
   await p.goto(url); await wacht(1000);
@@ -660,10 +655,11 @@ test('notities: het overzicht zoekt op tekst, filtert op label, en een losse not
   await p.locator('.keuzemenu [data-keuze="notitie"]').tap(); await wacht(800);
   await p.fill('#nottekst', 'Idee voor de nieuwsbrief');
   await p.keyboard.press('Escape'); await wacht(600);
-  // Het overzicht via de weekkiezer
-  await p.click('#titelknop'); await wacht(700);
-  assert.equal(await p.locator('.paneel .instrij[data-actie="notitielijst"] .t2').innerText(), '3 notities');
-  await p.locator('.paneel [data-actie="notitielijst"]').tap(); await wacht(900);
+  // De tab Notities: zoeken in de kop, geen weekkeuze en pijlen
+  await p.locator('#tabbalk [data-tab="notities"]').tap(); await wacht(700);
+  assert.equal(await p.locator('#titel').innerText(), 'Notities');
+  assert.equal(await p.locator('#capsule').isVisible(), false);
+  assert.equal(await p.locator('#schakelaar').isVisible(), false);
   assert.equal(await p.locator('#notlijst .notitierij').count(), 3);
   assert.ok(await p.locator('#notzoek').evaluate((x) => parseFloat(getComputedStyle(x).fontSize)) >= 16);
   await p.fill('#notzoek', 'pilot'); await wacht(200);
@@ -671,14 +667,17 @@ test('notities: het overzicht zoekt op tekst, filtert op label, en een losse not
   await p.fill('#notzoek', 'niets hierover'); await wacht(200);
   assert.equal(await p.locator('#notlijst').innerText(), 'Niets gevonden');
   await p.fill('#notzoek', ''); await wacht(200);
-  await p.locator('#notfilter [data-filter="Klant A"]').tap(); await wacht(200);
+  await p.locator('#notfilter [data-label="Klant A"]').tap(); await wacht(200);
   assert.deepEqual(await p.locator('#notlijst .notitierij .t1').allInnerTexts(), ['Begroting voor volgend jaar']);
   // Verwijderen vanuit het overzicht
   await p.locator('#notlijst .notitierij').first().tap(); await wacht(800);
   await p.locator('.paneel.notitie [data-actie="verwijder"]').tap(); await wacht(700);
-  assert.equal(await p.locator('#notfilter [data-filter="Klant A"]').count(), 0, 'het label verdwijnt als niets het meer gebruikt');
+  assert.equal(await p.locator('#notfilter [data-label="Klant A"]').count(), 0, 'het label verdwijnt als niets het meer gebruikt');
   assert.equal(await p.locator('#notlijst .notitierij').count(), 2);
   assert.equal(await p.evaluate(() => NOTITIES.filter((n) => n.weg).length), 1, 'verwijderd, maar gemarkeerd voor de andere toestellen');
+  // In de tab Notities staat Notitie onderaan het plusmenu, het dichtst bij de duim
+  await p.locator('#tabbalk .plusknop').tap(); await wacht(400);
+  assert.deepEqual(await p.locator('.keuzemenu [role="menuitem"]').allInnerTexts(), ['Tijden uit een mail', 'Nieuwe afspraak', 'Notitie']);
   assert.deepEqual(p.fouten, []);
 });
 

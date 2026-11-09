@@ -93,6 +93,23 @@ function notitieDatum(n) {
   const dag = `${DAYS_SHORT[d.getDay()]} ${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}${d.getFullYear() !== vandaag().getFullYear() ? ` ${d.getFullYear()}` : ''}`;
   return n.afspraak ? `${dag}, ${hhmm(d)}` : dag;
 }
+// iPad en Mac: de lijst zoals in Notities van Apple, in groepen naar de laatste wijziging
+const dagenGeleden = (ms) => Math.round((vandaag() - startOfDay(new Date(ms))) / 864e5);
+function wijzigGroep(ms) {
+  const dagen = dagenGeleden(ms), d = new Date(ms);
+  if (dagen <= 0) return 'Vandaag';
+  if (dagen === 1) return 'Gisteren';
+  if (dagen < 7) return 'Afgelopen 7 dagen';
+  if (dagen < 30) return 'Afgelopen 30 dagen';
+  return d.getFullYear() === vandaag().getFullYear() ? cap(MONTHS_LONG[d.getMonth()]) : String(d.getFullYear());
+}
+function wijzigDatum(ms) {
+  const dagen = dagenGeleden(ms), d = new Date(ms);
+  if (dagen <= 0) return hhmm(d);
+  if (dagen === 1) return 'Gisteren';
+  if (dagen < 7) return cap(DAYS_LONG[d.getDay()]);
+  return `${d.getDate()}-${d.getMonth() + 1}-${d.getFullYear()}`;
+}
 const labelChips = (labels) => (labels.length ? `<span class="nlabels">${labels.map((l) => `<span class="nlabel">${esc(l)}</span>`).join('')}</span>` : '');
 
 /* ------------------------------------------------------------------ */
@@ -116,7 +133,18 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
   const kop = n.afspraak
     ? `<div class="dmeta"><div>${esc(n.afspraak.titel || 'Zonder titel')}</div><div class="num">${notitieDatum(n)}</div></div>`
     : '';
-  el.innerHTML = `${doel ? '' : `<div class="detailgreep"><div class="greep"></div>
+  const meta = n.afspraak
+    ? `${esc(n.afspraak.titel || 'Zonder titel')} · ${notitieDatum(n)}`
+    : (() => { const d = new Date(n.gewijzigd || n.gemaakt); return `${d.getDate()} ${MONTHS_LONG[d.getMonth()]} ${d.getFullYear()} om ${hhmm(d)}`; })();
+  if (doel) el.innerHTML = `<div class="notblad">
+      <div class="notbovenbalk"><span></span><div class="notmeta num">${meta}</div><div id="notvoet"></div></div>
+      <div class="notlabelvak">
+        <div class="chips" id="notlabelrij"><span id="notlabels"></span><label class="frij"><input id="notlabel" placeholder="Label toevoegen" aria-label="Label toevoegen" autocomplete="off" autocapitalize="sentences" enterkeyhint="done"></label></div>
+        <div class="aanvullijst" id="notaanvul" hidden></div>
+      </div>
+      <textarea id="nottekst" placeholder="Notitie" aria-label="Notitie"></textarea>
+    </div>`;
+  else el.innerHTML = `${doel ? '' : `<div class="detailgreep"><div class="greep"></div>
       <div class="detailnav"><button class="rond glas" data-actie="sluit" aria-label="Sluiten">${I.kruis}</button></div></div>`}
     <div class="detailinhoud">
       <div class="dkop"><div class="dkopinhoud"><h2 class="dtitel">${doel && n.afspraak ? esc(n.afspraak.titel || 'Zonder titel') : 'Notitie'}</h2>${doel && n.afspraak ? `<div class="dmeta"><div class="num">${notitieDatum(n)}</div></div>` : kop}</div></div>
@@ -139,6 +167,10 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
     const voorstel = [...voorstelOrgs, ...alleLabels()].filter((l, i, a) => !gekozen.has(labelSleutel(l)) && a.findIndex((x) => labelSleutel(x) === labelSleutel(l)) === i).slice(0, 6);
     $('#notlabels', el).innerHTML = n.labels.map((l, i) => `<button type="button" class="chip label aan" data-weg="${i}" aria-label="Label ${esc(l)} weghalen">${esc(l)}${I.kruis}</button>`).join('')
       + voorstel.map((l) => `<button type="button" class="chip label voorstel" data-voeg="${esc(l)}" aria-label="Label ${esc(l)} toevoegen">${I.plus}${esc(l)}</button>`).join('');
+    if (doel) {
+      $('#notvoet', el).innerHTML = NOTITIES.includes(n) ? `<button class="notweg" data-actie="verwijder" aria-label="Notitie verwijderen">${I.wissen}</button>` : '';
+      return;
+    }
     $('#notlabelrij', el).hidden = !n.labels.length && !voorstel.length;
     $('#notvoet', el).innerHTML = NOTITIES.includes(n) ? `<button class="groteknop rood" data-actie="verwijder">${I.wissen}Notitie verwijderen</button>` : '';
   };
@@ -232,7 +264,9 @@ function zichtbareNotities() {
       const hooi = labelSleutel([n.tekst, n.labels.join(' '), n.afspraak ? n.afspraak.titel : ''].join(' '));
       return woorden.every((w) => hooi.includes(w));
     })
-    .sort((a, b) => (b.afspraak ? b.afspraak.start : b.gemaakt) - (a.afspraak ? a.afspraak.start : a.gemaakt));
+    .sort(naastElkaar()
+      ? (a, b) => b.gewijzigd - a.gewijzigd // iPad en Mac: zoals Notities van Apple, de laatst gewijzigde bovenaan
+      : (a, b) => (b.afspraak ? b.afspraak.start : b.gemaakt) - (a.afspraak ? a.afspraak.start : a.gemaakt));
 }
 // De notitie rechts: een nieuwe, de gekozen, of anders de bovenste uit de lijst
 function gekozenNotitie() {
@@ -257,6 +291,19 @@ function notitieLijstHtml() {
   const lijst = zichtbareNotities();
   const gekozen = naastElkaar() ? gekozenNotitie() : null;
   if (!lijst.length) return `<p class="nleeg nlijstleeg">${levendeNotities().length ? 'Niets gevonden' : 'Nog geen notities'}</p>`;
+  if (naastElkaar()) {
+    let groep = null, html = '';
+    for (const n of lijst) {
+      const g = wijzigGroep(n.gewijzigd);
+      if (g !== groep) { html += `${groep === null ? '' : '</div>'}<h3 class="ngroep">${g}</h3><div class="ngroeplijst">`; groep = g; }
+      const aan = !!gekozen && gekozen.id === n.id;
+      const regels = n.tekst.split('\n').map((r) => r.trim()).filter(Boolean);
+      const voorproef = n.afspraak ? n.afspraak.titel || 'Zonder titel' : regels[1] || 'Geen extra tekst';
+      html += `<button class="notitierij${aan ? ' aan' : ''}" data-notitie="${n.id}" aria-pressed="${aan}"><span class="t1">${esc(regels[0] || 'Nieuwe notitie')}</span>
+        <span class="t2"><span class="ndatum">${esc(wijzigDatum(n.gewijzigd))}</span>${esc(voorproef)}</span>${labelChips(n.labels)}</button>`;
+    }
+    return `${html}</div>`;
+  }
   return `<div class="kaart">${lijst.map((n) => `<button class="drij notitierij${gekozen && gekozen.id === n.id ? ' aan' : ''}" data-notitie="${n.id}"${naastElkaar() ? ` aria-pressed="${!!gekozen && gekozen.id === n.id}"` : ''}>
       <span class="tekst"><div class="t1">${esc(eersteRegel(n.tekst) || 'Zonder tekst')}</div>
       <div class="t2 num">${esc(notitieDatum(n))}${n.afspraak ? ` · ${esc(n.afspraak.titel || 'Zonder titel')}` : ''}</div>${labelChips(n.labels)}</span>${I.verder}</button>`).join('')}</div>`;

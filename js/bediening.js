@@ -204,7 +204,11 @@ function koppel() {
     vv.addEventListener('scroll', meet);
   }
   laadContacten().then(() => { if (CONTACTEN_INFO && isDesktop()) renderZijbalk(); });
-  laadNotities().then(() => { if (ST.tab === 'notities') render(); synchroniseerStraks(1500); });
+  laadNotities().then(() => {
+    if (ST.tab === 'notities') render();
+    else if (levendeNotities().some((n) => openPunten(n).some((p) => p.deadline))) behoudDag(render); // actiepunten in de agenda
+    synchroniseerStraks(1500);
+  });
   // Een eerder geopend .ics-bestand of je agenda-link gaat voor (behalve met ?demo)
   renderKop(); // de titel en knoppen staan er meteen, ook voordat de afspraken uit de opslag komen
   Promise.all([IDB.get('ics').catch(() => null), IDB.get('icsweken').catch(() => null)]).then(async ([b, kopie]) => {

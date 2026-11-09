@@ -113,7 +113,7 @@ async function synchroniseer({ vanzelf = false } = {}) {
   } finally {
     SYNC.bezig = false;
     tekenSyncStatus();
-    if (veranderd) tekenNotities();
+    if (veranderd) { tekenNotities(); if (ST.tab === 'week' || ST.tab === 'forecast') behoudDag(render); } // ook de actiepunten in de agenda
   }
 }
 

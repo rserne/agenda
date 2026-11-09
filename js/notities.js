@@ -256,7 +256,19 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
     if (was !== NOTITIES.includes(n)) tekenLabels(); // de knop Verwijderen verschijnt of verdwijnt
     if (bijWijziging) bijWijziging();
   };
-  tekst.addEventListener('input', bijTypen);
+  // Een woord met een hekje in de tekst (of in een actiepunt) wordt een label, net als ! voor een actiepunt: na een
+  // spatie, komma of Enter verdwijnt #woord uit de tekst en staat het bij de labels. Alleen als het met een letter
+  // begint, zodat bijvoorbeeld 'melding #123' gewoon tekst blijft.
+  const HEKJE = /(^|\s)#(\p{L}[\p{L}\p{N}_-]*)([\s,])$/u;
+  const hekjeNaarLabel = (veld) => {
+    const pos = veld.selectionStart, voor = veld.value.slice(0, pos), m = voor.match(HEKJE);
+    if (!m) return;
+    const ervoor = voor.slice(0, pos - m[0].length + m[1].length) + (m[3] === '\n' ? '\n' : '');
+    veld.value = ervoor + veld.value.slice(pos);
+    veld.setSelectionRange(ervoor.length, ervoor.length);
+    voegTag(m[2]);
+  };
+  tekst.addEventListener('input', () => { hekjeNaarLabel(tekst); bijTypen(); });
 
   // Actiepunten: een rondje om af te vinken, de tekst, en een deadline. Enter maakt een nieuw punt eronder;
   // Backspace in een leeg punt haalt het weg. Een regel in de tekst die begint met ! wordt bij Enter een actiepunt.
@@ -291,6 +303,7 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
   puntenEl.addEventListener('input', (ev) => {
     const p = ev.target.classList.contains('punttekst') && puntVan(ev.target);
     if (!p) return;
+    hekjeNaarLabel(ev.target);
     p.tekst = ev.target.value;
     const was = NOTITIES.includes(n);
     wijzigNotitie(n, { punten: punten(n) });
@@ -322,7 +335,8 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
     tekst.value = v.slice(0, begin) + v.slice(v[eind] === '\n' ? eind + 1 : eind);
     tekst.setSelectionRange(begin, begin);
     bijTypen();
-    voegPunt(m[1].trim());
+    [...m[1].matchAll(/(?:^|\s)#(\p{L}[\p{L}\p{N}_-]*)/gu)].forEach((x) => voegTag(x[1])); // labels in het punt
+    voegPunt(m[1].replace(/(^|\s)#\p{L}[\p{L}\p{N}_-]*/gu, '$1').replace(/\s+/g, ' ').trim());
     tekst.focus();
   });
   if (titelVeld) {
@@ -403,6 +417,92 @@ function openNotitiemenu(knop, verwijder) {
   menu.addEventListener('click', (ev) => { if (ev.target.closest('[data-menu="verwijder"]')) { sluitKeuzemenu(); verwijder(); } });
   menu.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); sluitKeuzemenu(); knop.focus(); } });
 }
+
+/* ------------------------------------------------------------------ */
+/*  Actiepunten in de agenda                                           */
+/* ------------------------------------------------------------------ */
+
+// De open actiepunten met hun deadline op deze dag. Vandaag ook wat te laat is; voorbije dagen niets (dat staat
+// dan bij vandaag).
+function agendaPunten(d) {
+  const t = vandaag();
+  if (startOfDay(d) < t) return [];
+  const dag = ymd(d), isVandaag = sameDay(d, t);
+  const uit = [];
+  levendeNotities().forEach((n) => openPunten(n).forEach((p) => {
+    if (!p.deadline) return;
+    if (p.deadline === dag) uit.push({ n, p, laat: false });
+    else if (isVandaag && teLaat(p.deadline)) uit.push({ n, p, laat: true });
+  }));
+  return uit.sort((a, b) => Number(b.laat) - Number(a.laat) || String(a.p.deadline).localeCompare(String(b.p.deadline)) || a.n.gemaakt - b.n.gemaakt);
+}
+// Eén blok met de actiepunten van de dag, als eerste in de dag: een rondje en de tekst, hooguit drie, daarna '+ 2'.
+// soort: rij (week op de telefoon), krij (week op iPad en Mac) of tegel (Vooruitblik). Een tik opent het overzicht van
+// die dag, waar je afvinkt; in de agenda zelf zijn de rondjes te klein om precies te tikken.
+const AGENDA_MAX = 3;
+function puntenBlokHtml(d, soort) {
+  const lijst = agendaPunten(d);
+  if (!lijst.length) return '';
+  const items = lijst.slice(0, AGENDA_MAX).map(({ p, laat }) => `<span class="agpunt${laat ? ' laat' : ''}"><span class="agvink"></span>
+      <span class="agtekst">${esc(p.tekst.trim())}${laat ? `<span class="aglaat">${esc(deadlineTekst(p.deadline))}</span>` : ''}</span></span>`).join('')
+    + (lijst.length > AGENDA_MAX ? `<span class="agmeer">+ ${lijst.length - AGENDA_MAX}</span>` : '');
+  const label = `${lijst.length === 1 ? '1 actiepunt' : `${lijst.length} actiepunten`}${sameDay(d, vandaag()) ? ' vandaag' : ''}`;
+  if (soort === 'tegel') return `<button class="tegel puntentegel" data-agdag="${ymd(d)}" aria-label="${label}"><span class="agpunten">${items}</span></button>`;
+  return `<button class="${soort} puntenrij" data-agdag="${ymd(d)}" aria-label="${label}"><span class="stip punt"></span><span class="agpunten">${items}</span></button>`;
+}
+// Het overzicht van één dag: grote rondjes om af te vinken, de deadline als die voorbij is, en de notitie of het
+// overleg waar het punt bij hoort. Een tik op de tekst opent de notitie.
+function openDagPunten(d) {
+  const el = document.createElement('div');
+  el.className = 'paneel detail nieuw dagpunten' + (isDesktop() ? ' dialoog' : '');
+  el.setAttribute('role', 'dialog');
+  el.setAttribute('aria-label', 'Actiepunten');
+  const datum = cap(`${DAYS_LONG[d.getDay()]} ${d.getDate()} ${MONTHS_LONG[d.getMonth()]}`);
+  let gedaan = new Set();
+  const teken = () => {
+    const lijst = agendaPunten(d);
+    const rijen = lijst.map(({ n, p, laat }) => {
+      const [titel] = notitieKop(n);
+      const bron = titel === p.tekst.trim() ? '' : titel;
+      return `<div class="punt dagpunt${laat ? ' laat' : ''}">
+        <button type="button" class="puntvink" data-dagvink="${n.id}|${p.id}" aria-label="${esc(p.tekst.trim())} afvinken">${I.vink}</button>
+        <button type="button" class="dagtekst" data-dagnotitie="${n.id}"><span class="t1">${esc(p.tekst.trim())}</span>${laat || bron ? `<span class="t2">${laat ? `<span class="tddatum laat">${esc(deadlineTekst(p.deadline))}</span>` : ''}${esc(bron)}</span>` : ''}</button>
+      </div>`;
+    }).join('');
+    $('.formkaart', el).innerHTML = rijen || '<p class="nleeg dagleeg">Alles afgevinkt</p>';
+  };
+  el.innerHTML = `<div class="detailgreep"><div class="greep"></div>
+      <div class="detailnav"><button class="rond glas" data-actie="sluit" aria-label="Sluiten">${I.kruis}</button></div></div>
+    <div class="detailinhoud">
+      <div class="dkop"><div class="dkopinhoud"><h2 class="dtitel">Actiepunten</h2><div class="dmeta"><div>${datum}</div></div></div></div>
+      <div class="formkaart puntenkaart"></div>
+    </div>`;
+  teken();
+  const p = openPaneel(el, { greepSelector: '.detailgreep', naSluiten: () => behoudDag(render) });
+  el.addEventListener('click', (ev) => {
+    if (ev.target.closest('[data-actie="sluit"]')) { p.sluit(); return; }
+    const v = ev.target.closest('[data-dagvink]');
+    if (v) {
+      const [nid, pid] = v.dataset.dagvink.split('|');
+      const n = NOTITIES.find((x) => x.id === nid);
+      if (!n) return;
+      // Eerst het vinkje laten zien, dan pas uit de lijst
+      v.closest('.punt').classList.add('klaar');
+      wijzigNotitie(n, { punten: punten(n).map((x) => (x.id === pid ? { ...x, klaar: true } : x)) });
+      setTimeout(teken, 450);
+      return;
+    }
+    const o = ev.target.closest('[data-dagnotitie]');
+    if (o) { const n = NOTITIES.find((x) => x.id === o.dataset.dagnotitie); if (n) openNotitie({ notitie: n, klaar: teken }); }
+  });
+}
+// Vóór de algemene klikken in de agenda (capture): het blok opent het overzicht van de dag
+document.addEventListener('click', (ev) => {
+  const b = ev.target.closest('#inhoud [data-agdag]');
+  if (!b) return;
+  ev.stopPropagation();
+  openDagPunten(deadlineDag(b.dataset.agdag));
+}, true);
 
 /* ------------------------------------------------------------------ */
 /*  In het detailscherm van een afspraak                               */

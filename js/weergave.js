@@ -83,8 +83,9 @@ function weekKolommenHtml(events) {
   for (let i = 0; i < 7; i++) {
     const d = addDays(start, i);
     const lijst = eventsForDay(events, d);
+    const punten = ST.filter !== 'free' ? puntenBlokHtml(d, 'krij') : ''; // actiepunten bij Opvallend en Alles
     // Een leeg weekend krijgt een smalle kolom: de werkdagen hebben de ruimte harder nodig
-    const smal = i >= 5 && !lijst.length;
+    const smal = i >= 5 && !lijst.length && !punten;
     breedtes.push(smal ? 'minmax(64px, 0.35fr)' : 'minmax(0, 1fr)');
     const heleDag = lijst.filter((e) => e.allDay);
     const getimed = lijst.filter((e) => !e.allDay);
@@ -94,6 +95,7 @@ function weekKolommenHtml(events) {
     const items = [...getoond.map((e) => ({ t: e.start.getTime(), e })), ...vrij.map((f) => ({ t: f.start.getTime(), f }))].sort((a, b) => a.t - b.t);
     // Hele dagen als smalle balk bovenaan de kolom, zoals in Agenda op de Mac
     let rijen = heleDag.map((e) => `<button class="heledagbalk" data-id="${esc(e.id)}"><span>${esc(e.title)}</span></button>`).join('');
+    rijen += punten;
     const ov = overlapVan(lijst);
     rijen += items.map((it) => (it.e ? kolomRij(it.e, ov) : kolomVrij(it.f))).join('');
     if (verborgen > 0) rijen += `<div class="krij rest"><span class="stip"></span><span>${vastText(verborgen)}</span></div>`;
@@ -114,7 +116,9 @@ function weekHtml(events) {
   let html = '';
   let eerste = true;
   // Lege weekenddagen: samen onder één kop ('21–22 Weekend'), met 'Geen afspraken' eronder, net als een lege werkdag
-  const leegWeekend = [5, 6].filter((i) => !eventsForDay(events, addDays(start, i)).length);
+  const metPunten = ST.filter !== 'free'; // actiepunten bij Opvallend en Alles, niet bij Vrij
+  const punten = (d) => (metPunten ? puntenBlokHtml(d, 'rij') : '');
+  const leegWeekend = [5, 6].filter((i) => !eventsForDay(events, addDays(start, i)).length && !punten(addDays(start, i)));
   const weekendBlok = (dagen) => {
     const [a, b] = dagen.map((i) => addDays(start, i));
     const nr = b ? `${a.getDate()}–${b.getDate()}` : `${a.getDate()}`;
@@ -128,7 +132,7 @@ function weekHtml(events) {
   for (let i = 0; i < 7; i++) {
     const d = addDays(start, i);
     const lijst = eventsForDay(events, d);
-    if (i >= 5 && !lijst.length) {
+    if (i >= 5 && leegWeekend.includes(i)) {
       // Beide dagen leeg: één regel bij zaterdag. Alleen deze dag leeg: een regel voor deze dag.
       if (leegWeekend.length === 2) { if (i === 5) html += weekendBlok([5, 6]); } else html += weekendBlok([i]);
       continue;
@@ -140,6 +144,7 @@ function weekHtml(events) {
     const vrij = ST.filter === 'free' && i < 5 && d >= t ? freeSlots(lijst, d) : [];
     const items = [...getoond.map((e) => ({ t: e.start.getTime(), e })), ...vrij.map((f) => ({ t: f.start.getTime(), f }))].sort((a, b) => a.t - b.t);
     let rijen = heleDag.map((e) => `<button class="rij heledag" data-id="${esc(e.id)}"><span class="rijtitel">${esc(e.title)}</span><span class="hint">hele dag</span></button>`).join('');
+    rijen += punten(d); // de actiepunten van de dag als eerste blok
     const ov = overlapVan(lijst);
     rijen += items.map((it) => (it.e ? weekRij(it.e, ov) : vrijRij(it.f))).join('');
     if (verborgen > 0) rijen += `<div class="rij rest"><span class="stip"></span><span>${vastText(verborgen)}</span></div>`;
@@ -204,12 +209,13 @@ function vooruitblikHtml(events) {
     const vrij = ST.filter === 'free' && werkdag && d >= t ? freeSlots(lijst, d) : [];
     const items = [...tegels.map((e) => ({ t: e.start.getTime(), e })), ...vrij.map((f) => ({ t: f.start.getTime(), f }))].sort((a, b) => a.t - b.t);
     const ov = overlapVan(lijst);
+    const punten = ST.filter !== 'free' ? puntenBlokHtml(d, 'tegel') : ''; // de actiepunten als eerste tegel
     html += `<section class="vbdag">
       <div class="vbdatum${isVandaag ? ' vandaag' : ''}"><span class="dow">${DAYS_SHORT[d.getDay()].toUpperCase()}</span><span class="nr">${d.getDate()}</span>${i === 0 || d.getDate() === 1 ? `<span class="mnd">${MONTHS_SHORT[d.getMonth()]}</span>` : ''}</div>
       <div class="vbinhoud">
-        ${!heleDag.length && !getimed.length && !vrij.length ? `<div class="vbleeg">${isVandaag ? (afgelopen ? 'Geen afspraken meer vandaag' : 'Geen afspraken vandaag') : 'Geen afspraken'}</div>` : ''}
+        ${!heleDag.length && !getimed.length && !vrij.length && !punten ? `<div class="vbleeg">${isVandaag ? (afgelopen ? 'Geen afspraken meer vandaag' : 'Geen afspraken vandaag') : 'Geen afspraken'}</div>` : ''}
         ${heleDag.map((e) => `<button class="vbheledag" data-id="${esc(e.id)}"><span class="t">${esc(e.title)}</span><span class="h">hele dag</span></button>`).join('')}
-        ${items.length ? `<div class="tegels">${items.map((it) => (it.e ? tegel(it.e, d, ov) : vrijeTegel(it.f))).join('')}</div>` : ''}
+        ${items.length || punten ? `<div class="tegels">${punten}${items.map((it) => (it.e ? tegel(it.e, d, ov) : vrijeTegel(it.f))).join('')}</div>` : ''}
         ${verborgen > 0 ? `<div class="vbrest">+ ${vastText(verborgen)}</div>` : ''}
       </div>
     </section>`;

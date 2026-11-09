@@ -5,10 +5,11 @@
 // Werkwijze: eerst sturen wat hier is veranderd, dan ophalen wat elders is veranderd. Per notitie wint de laatste
 // wijziging (het tijdstip 'gewijzigd'). De Worker nummert elke wijziging; de app onthoudt tot welk nummer hij bij is.
 // Elke notitie onthoudt welke wijziging al in de Worker staat (gesynct); wat daarna verandert, gaat de volgende keer mee.
+// De ruimtes uit Instellingen gaan op dezelfde manier mee (/ruimtes), als één lijst: de laatste wijziging wint.
 // Gewoon script (geen module): het gebruikt NOTITIES, BESTAND en LS uit de andere bestanden.
 'use strict';
 
-const SYNC = { bezig: false, fout: null, geenDatabase: false, oud: false, laatst: 0 };
+const SYNC = { bezig: false, fout: null, geenDatabase: false, oud: false, ruimtesOud: false, laatst: 0 };
 const SYNC_ELKE_MS = 5 * 60 * 1000; // ook als er niets gebeurt, elke vijf minuten even kijken
 let _syncTimer = null;
 
@@ -44,6 +45,33 @@ async function vraag(adres, opties) {
   return r.json();
 }
 
+// De ruimtes: eerst kijken wat er in de Worker staat. Is dat nieuwer, dan nemen we het over; is de lijst hier nieuwer
+// (of staat er nog niets in de Worker), dan sturen we hem. Ruimtes van vóór het synchroniseren hebben nog geen
+// tijdstip: dan wint wat er al in de Worker staat.
+function ruimteAdres() {
+  const u = notitieAdres();
+  if (u) u.pathname = '/ruimtes';
+  return u;
+}
+// Een Worker die de notities al kent maar de ruimtes nog niet: dan alleen de ruimtes overslaan (tot je erom vraagt)
+async function synchroniseerRuimtes({ vanzelf = false } = {}) {
+  const adres = ruimteAdres();
+  if (!adres || (vanzelf && SYNC.ruimtesOud)) return;
+  const hier = LS.get(RUIMTES_SLEUTEL), gewijzigd = Number(LS.get(RUIMTES_GEWIJZIGD)) || 0;
+  let daar;
+  try { daar = await vraag(adres); } catch (e) { if (e.oud) { SYNC.ruimtesOud = true; return; } throw e; }
+  SYNC.ruimtesOud = false;
+  if (daar.ruimtes && daar.gewijzigd > gewijzigd) {
+    LS.set(RUIMTES_SLEUTEL, daar.ruimtes);
+    LS.set(RUIMTES_GEWIJZIGD, daar.gewijzigd);
+    document.dispatchEvent(new Event('ruimtesbinnen'));
+  } else if (Array.isArray(hier) && (gewijzigd > daar.gewijzigd || (!daar.ruimtes && hier.length))) {
+    const tijd = gewijzigd || Date.now();
+    await vraag(adres, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ ruimtes: hier, gewijzigd: tijd }) });
+    LS.set(RUIMTES_GEWIJZIGD, tijd);
+  }
+}
+
 // vanzelf: automatisch (na een wijziging, elke paar minuten). Bij een oude Worker alleen nog als je er zelf om vraagt.
 async function synchroniseer({ vanzelf = false } = {}) {
   const adres = notitieAdres();
@@ -77,6 +105,7 @@ async function synchroniseer({ vanzelf = false } = {}) {
     }
     bewaarSyncStand(stand);
     if (veranderd) await IDB.set('notities', NOTITIES).catch(() => {});
+    await synchroniseerRuimtes({ vanzelf });
     Object.assign(SYNC, { fout: null, geenDatabase: false, oud: false, laatst: Date.now() });
   } catch (e) {
     Object.assign(SYNC, { fout: e.message, geenDatabase: !!e.geenDatabase, oud: !!e.oud });

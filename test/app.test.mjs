@@ -856,13 +856,27 @@ test('worker: notities bewaren, de laatste wijziging wint, en zonder database of
   assert.equal((await roep({ SLEUTEL: 'test' }, '/?sleutel=test')).status, 500, 'de agenda mist ICS_URL');
 });
 
+test('worker: ruimtes als één lijst; een nieuwere lijst wint, een oudere verandert niets', async () => {
+  const roep = (env, pad, opties = {}) => worker.fetch(new Request(`https://agenda.voorbeeld.workers.dev${pad}`, { ...opties, headers: { Origin: 'https://rserne.github.io' } }), env);
+  const stuur = async (env, ruimtes, gewijzigd) => (await roep(env, '/ruimtes?sleutel=test', { method: 'POST', body: JSON.stringify({ ruimtes, gewijzigd }) })).json();
+  assert.equal((await roep({ SLEUTEL: 'test' }, '/ruimtes?sleutel=test')).status, 501, 'zonder database');
+  const env = { SLEUTEL: 'test', DB: nepD1() };
+  assert.equal((await roep(env, '/ruimtes?sleutel=fout')).status, 403);
+  assert.deepEqual(await (await roep(env, '/ruimtes?sleutel=test')).json(), { ruimtes: null, gewijzigd: 0 }, 'nog niets');
+  assert.deepEqual(await stuur(env, [{ naam: 'Zonnezaal', email: 'zonnezaal@voorbeeld.nl' }], 100), { ruimtes: [{ naam: 'Zonnezaal', email: 'zonnezaal@voorbeeld.nl' }], gewijzigd: 100 });
+  assert.deepEqual(await stuur(env, [{ naam: 'Ouder', email: '' }], 50), { ruimtes: [{ naam: 'Zonnezaal', email: 'zonnezaal@voorbeeld.nl' }], gewijzigd: 100 }, 'ouder: de huidige lijst blijft');
+  assert.deepEqual((await stuur(env, [{ naam: 'Coupé', email: '' }, { naam: 'Kelder', email: '' }], 200)).ruimtes.map((r) => r.naam), ['Coupé', 'Kelder']);
+  assert.equal((await roep(env, '/ruimtes?sleutel=test', { method: 'POST', body: JSON.stringify({ ruimtes: [{ naam: 1 }], gewijzigd: 300 }) })).status, 400);
+  assert.equal((await roep(env, '/ruimtes?sleutel=test', { method: 'POST', body: 'geen json' })).status, 400);
+});
+
 test('synchroniseren: een notitie van de iPhone staat even later op de Mac; wijzigen en verwijderen gaan mee', async ({ browser, url }) => {
   const env = { SLEUTEL: 'test', DB: nepD1() };
   const ics = fs.readFileSync(ICS, 'utf8');
   const koppel = (p) => p.context().route('https://agenda.voorbeeld.workers.dev/**', async (r) => {
     const v = r.request();
     const cors = { 'Access-Control-Allow-Origin': '*' };
-    if (new URL(v.url()).pathname !== '/notities') return r.fulfill({ status: 200, contentType: 'text/calendar', headers: cors, body: ics });
+    if (!['/notities', '/ruimtes'].includes(new URL(v.url()).pathname)) return r.fulfill({ status: 200, contentType: 'text/calendar', headers: cors, body: ics });
     const a = await worker.fetch(new Request(v.url(), { method: v.method(), body: v.method() === 'POST' ? v.postData() : undefined }), env);
     r.fulfill({ status: a.status, contentType: a.headers.get('Content-Type') || 'text/plain', headers: cors, body: await a.text() });
   });
@@ -886,6 +900,19 @@ test('synchroniseren: een notitie van de iPhone staat even later op de Mac; wijz
   await sync(iphone);
   assert.deepEqual(await sync(mac), [], 'ook op de Mac verdwenen');
   assert.equal(await mac.locator('#notlijst').innerText(), 'Nog geen notities');
+  // Ruimtes: de lijst van de iPhone staat even later op de Mac; een wijziging op de Mac gaat terug
+  await iphone.evaluate(() => zetRuimteLijst([{ naam: 'Zonnezaal', email: 'zonnezaal@voorbeeld.nl' }, { naam: 'Coupé', email: '' }]));
+  await sync(iphone);
+  await sync(mac);
+  assert.deepEqual(await mac.evaluate(() => ruimtes().map((r) => r.naam)), ['Zonnezaal', 'Coupé']);
+  await mac.evaluate(() => zetRuimteLijst([...ruimteLijst(), { naam: 'Kelder', email: '' }]));
+  await sync(mac);
+  await sync(iphone);
+  assert.deepEqual(await iphone.evaluate(() => ruimtes().map((r) => r.naam)), ['Zonnezaal', 'Coupé', 'Kelder']);
+  // Een toestel met ruimtes van vóór het synchroniseren (zonder tijdstip): wat al in de Worker staat, wint
+  await iphone.evaluate(() => { LS.set('ag_ruimtes2', [{ naam: 'Oude lijst', email: '' }]); LS.del('ag_ruimtes_gewijzigd'); });
+  await sync(iphone);
+  assert.deepEqual(await iphone.evaluate(() => ruimtes().map((r) => r.naam)), ['Zonnezaal', 'Coupé', 'Kelder']);
   // Instellingen laat zien hoe het ervoor staat, ook als de Worker nog geen database heeft
   await iphone.locator('#tabbalk [data-tab="instellingen"]').tap(); await wacht(600);
   assert.match(await iphone.locator('#isync').innerText(), /Gesynchroniseerd/);
@@ -902,6 +929,16 @@ test('synchroniseren: een notitie van de iPhone staat even later op de Mac; wijz
   const na = vragen;
   await iphone.evaluate(() => synchroniseer({ vanzelf: true })); await wacht(300);
   assert.equal(vragen, na, 'geen automatische pogingen meer');
+  // Een Worker die de notities al kent maar de ruimtes nog niet: de notities gaan gewoon door
+  await mac.context().unroute('https://agenda.voorbeeld.workers.dev/**');
+  await mac.context().route('https://agenda.voorbeeld.workers.dev/**', async (r) => {
+    const v = r.request();
+    const cors = { 'Access-Control-Allow-Origin': '*' };
+    if (new URL(v.url()).pathname !== '/notities') return r.fulfill({ status: 200, contentType: 'text/calendar', headers: cors, body: ics });
+    const a = await worker.fetch(new Request(v.url(), { method: v.method(), body: v.method() === 'POST' ? v.postData() : undefined }), env);
+    r.fulfill({ status: a.status, contentType: a.headers.get('Content-Type') || 'text/plain', headers: cors, body: await a.text() });
+  });
+  assert.deepEqual(await mac.evaluate(async () => { await synchroniseer({ vanzelf: true }); return { fout: SYNC.fout, oud: SYNC.oud, ruimtesOud: SYNC.ruimtesOud }; }), { fout: null, oud: false, ruimtesOud: true });
   assert.deepEqual([...iphone.fouten, ...mac.fouten], []);
 });
 

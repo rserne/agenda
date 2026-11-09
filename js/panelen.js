@@ -1047,6 +1047,12 @@ function openInstellingen({ doel = null } = {}) {
     $('#iruimtes', el).innerHTML = ruimtesHtml();
     if (focusRij >= 0) { const i = el.querySelector(`.ruimterij[data-i="${focusRij}"] .rnaam`); if (i) i.focus(); }
   };
+  // Komen er ruimtes binnen van een ander toestel, dan de lijst opnieuw tekenen (niet terwijl je erin typt)
+  const ruimtesBinnen = () => {
+    if (!el.isConnected) { document.removeEventListener('ruimtesbinnen', ruimtesBinnen); return; }
+    if (!$('#iruimtes', el).contains(document.activeElement)) tekenRuimtes();
+  };
+  document.addEventListener('ruimtesbinnen', ruimtesBinnen);
   el.addEventListener('input', (ev) => {
     if (ev.target.closest('.ruimterij')) zetRuimteLijst(leesRuimtes());
     if (ev.target.classList.contains('rmail')) { const w = ev.target.value.trim(); ev.target.classList.toggle('ongeldig', !!w && !IS_ADRES.test(w)); }

@@ -84,7 +84,7 @@ Kies je een ruimte met een e-mailadres, dan zet de app de ruimte ook als deelnem
 
 Met een **sleutel van Google** voor de Places API (New) vult Locatie vanaf drie letters ook adressen en plaatsen aan. De app vraagt pas als je even stopt met typen, met één sessie per afspraak; de vorige plaatsen blijven staan tot de nieuwe binnen zijn. Wat je in Locatie typt, gaat dan naar Google. Beperk de sleutel in Google Cloud Console tot de Places API (New) en tot de website `rserne.github.io`, zodat niemand anders er iets aan heeft. De app toont de sleutel nergens: je ziet alleen dat er een is, en je kunt hem testen, wijzigen of verwijderen. Na het bewaren test de app hem meteen.
 
-Ruimtes en sleutel staan alleen op het toestel (localStorage), nooit in de code of in de repository.
+De Google-sleutel staat alleen op het toestel (localStorage). De ruimtes staan ook op het toestel en gaan via je Worker naar je andere toestellen (zie Notities synchroniseren); ze staan nooit in de code of in de repository.
 
 ## Indeling
 
@@ -116,7 +116,7 @@ Repository, Settings, Pages: Deploy from a branch, `main`, map `/ (root)`. De ap
 
 ### 3. Cloudflare Worker
 
-`cloudflare/worker.js` haalt de agenda op en geeft hem door aan de app; de agenda bewaart hij niet. Op `/notities` bewaart hij je notities in een D1-database, zodat iPhone, iPad en Mac dezelfde notities hebben. Gratis, zonder betaalkaart.
+`cloudflare/worker.js` haalt de agenda op en geeft hem door aan de app; de agenda bewaart hij niet. Op `/notities` bewaart hij je notities in een D1-database, en op `/ruimtes` je lijst met ruimtes, zodat iPhone, iPad en Mac dezelfde notities en ruimtes hebben. Gratis, zonder betaalkaart.
 
 1. cloudflare.com, gratis account, **Workers & Pages**, **Create**, **Worker** (Start with Hello World).
 2. **Edit code**: vervang de code door `cloudflare/worker.js` en kies **Deploy**.
@@ -135,6 +135,8 @@ De Worker-link is net zo geheim als de Outlook-link: wie hem heeft, ziet je agen
 4. In de app: **Instellingen**, **Notities**, **Nu synchroniseren**. Daar staat daarna 'Gesynchroniseerd'. De tabel maakt de Worker zelf aan.
 
 Hoe het werkt: de app gebruikt je agenda-link met `/notities` erachter. Kort na elke wijziging, bij het openen en elke vijf minuten stuurt hij wat op het toestel is veranderd, en haalt hij op wat elders is veranderd. Per notitie wint de laatste wijziging; een verwijderde notitie gaat als markering mee. Zonder database, of met een Worker van vóór de notities, blijven de notities op het toestel en meldt Instellingen waarom.
+
+De ruimtes gaan op dezelfde momenten mee, via `/ruimtes`, als één lijst in een eigen tabel (`lijsten`) die de Worker zelf aanmaakt. De laatste wijziging wint. Staan er nog geen ruimtes in de Worker, dan stuurt het eerste toestel met ruimtes zijn lijst; ruimtes van vóór het synchroniseren wijken voor een lijst die er al staat. Een Worker die `/ruimtes` nog niet kent, slaat de app over; de notities gaan gewoon door. De contacten en de Google-sleutel blijven op het toestel.
 
 ### 4. Op je iPhone en iPad
 

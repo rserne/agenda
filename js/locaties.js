@@ -1,5 +1,6 @@
 // Locaties bij een nieuwe afspraak: je eigen ruimtes, en (met een Google-sleutel) adressen en plaatsen.
-// Ruimtes en sleutel geef je op onder Instellingen; ze blijven alleen op dit toestel (localStorage).
+// Ruimtes en sleutel geef je op onder Instellingen. De sleutel blijft op dit toestel (localStorage); de ruimtes
+// gaan ook via je Worker naar je andere toestellen.
 
 // Ruimtes: een lijst met per ruimte een naam en (optioneel) een e-mailadres.
 // Met een adres zet de app de ruimte ook als deelnemer in de uitnodiging, zodat Outlook hem reserveert.
@@ -29,7 +30,14 @@ function ruimteLijst() {
   }
   return [];
 }
-const zetRuimteLijst = (lijst) => LS.set(RUIMTES_SLEUTEL, lijst.map((r) => ({ naam: String(r.naam || '').trim(), email: String(r.email || '').trim() })));
+// Een wijziging hier krijgt een tijdstip en gaat via je Worker naar je andere toestellen (synchroniseren.js)
+const RUIMTES_GEWIJZIGD = 'ag_ruimtes_gewijzigd';
+function zetRuimteLijst(lijst) {
+  LS.set(RUIMTES_SLEUTEL, lijst.map((r) => ({ naam: String(r.naam || '').trim(), email: String(r.email || '').trim() })));
+  // Altijd later dan de lijst die we kennen, ook als de klok van dit toestel iets achterloopt
+  LS.set(RUIMTES_GEWIJZIGD, Math.max(Date.now(), (Number(LS.get(RUIMTES_GEWIJZIGD)) || 0) + 1));
+  if (typeof synchroniseerStraks === 'function') synchroniseerStraks();
+}
 
 // De bruikbare ruimtes: met een naam, zonder dubbele, en alleen een geldig adres
 function ruimtes() {

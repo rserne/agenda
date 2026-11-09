@@ -2,6 +2,7 @@
 // Outlook staat niet toe dat een andere website de agenda rechtstreeks ophaalt (CORS). Deze Worker haalt hem op
 // en geeft hem door aan de app, met die toestemming erbij. De agenda bewaart hij niet.
 // Op /notities bewaart hij je notities in een D1-database, zodat iPhone, iPad en Mac dezelfde notities hebben.
+// Op /ruimtes bewaart hij in dezelfde database je lijst met vergaderruimtes (naam en e-mailadres).
 //
 // Geheimen (Worker, Settings, Variables and Secrets, type Secret):
 //   ICS_URL  de ICS-link van je gepubliceerde agenda (webcal:// of https://)
@@ -15,6 +16,8 @@ const HERKOMSTEN = ['https://rserne.github.io', 'http://localhost:8080'];
 const MAX_NOTITIE = 200 * 1024; // tekens per notitie
 const MAX_PER_KEER = 500; // notities per verzending
 const PER_PAGINA = 500; // notities per keer ophalen
+const MAX_RUIMTES = 300; // ruimtes in de lijst
+const MAX_VELD = 200; // tekens per naam of adres
 
 // Twee teksten vergelijken zonder dat de tijd verraadt hoeveel tekens kloppen
 function gelijk(a, b) {
@@ -32,6 +35,8 @@ async function zorgVoorTabel(db) {
   await db.batch([
     db.prepare('CREATE TABLE IF NOT EXISTS notities (id TEXT PRIMARY KEY, gewijzigd INTEGER NOT NULL, versie INTEGER NOT NULL, data TEXT NOT NULL)'),
     db.prepare('CREATE INDEX IF NOT EXISTS notities_versie ON notities (versie)'),
+    // Lijsten die als geheel worden bewaard, zoals de ruimtes: per sleutel de laatste wijziging
+    db.prepare('CREATE TABLE IF NOT EXISTS lijsten (sleutel TEXT PRIMARY KEY, gewijzigd INTEGER NOT NULL, data TEXT NOT NULL)'),
   ]);
   tabelKlaar.add(db);
 }
@@ -67,17 +72,43 @@ async function notities(request, env, cors, url) {
   return json({ ontvangen: opdrachten.length }, cors);
 }
 
+// De ruimtes: één lijst voor al je toestellen. GET geeft de lijst en het tijdstip van de laatste wijziging; POST
+// bewaart een lijst, maar alleen als die nieuwer is dan wat er staat. Het antwoord is steeds de lijst die nu geldt.
+async function ruimtes(request, env, cors) {
+  if (!env.DB) return new Response('De Worker heeft nog geen database', { status: 501, headers: cors });
+  await zorgVoorTabel(env.DB);
+  const huidig = async () => {
+    const r = await env.DB.prepare("SELECT gewijzigd, data FROM lijsten WHERE sleutel = 'ruimtes'").first();
+    return r ? { ruimtes: JSON.parse(r.data), gewijzigd: r.gewijzigd } : { ruimtes: null, gewijzigd: 0 };
+  };
+  if (request.method === 'GET') return json(await huidig(), cors);
+  let invoer;
+  try { invoer = JSON.parse(await request.text()); } catch (e) { return new Response('Geen geldige gegevens', { status: 400, headers: cors }); }
+  const lijst = Array.isArray(invoer && invoer.ruimtes) ? invoer.ruimtes : null;
+  const veld = (v) => typeof v === 'string' && v.length <= MAX_VELD;
+  if (!lijst || lijst.length > MAX_RUIMTES || !Number.isFinite(invoer.gewijzigd) || !lijst.every((r) => r && veld(r.naam) && veld(r.email))) {
+    return new Response('Geen geldige gegevens', { status: 400, headers: cors });
+  }
+  const data = JSON.stringify(lijst.map((r) => ({ naam: r.naam, email: r.email })));
+  await env.DB.prepare(`INSERT INTO lijsten (sleutel, gewijzigd, data) VALUES ('ruimtes', ?1, ?2)
+    ON CONFLICT(sleutel) DO UPDATE SET gewijzigd = excluded.gewijzigd, data = excluded.data
+    WHERE excluded.gewijzigd > lijsten.gewijzigd`).bind(invoer.gewijzigd, data).run();
+  return json(await huidig(), cors);
+}
+
 export default {
   async fetch(request, env) {
     const origin = request.headers.get('Origin');
     const cors = HERKOMSTEN.includes(origin) ? { 'Access-Control-Allow-Origin': origin, Vary: 'Origin' } : {};
     if (request.method === 'OPTIONS') return new Response(null, { headers: { ...cors, 'Access-Control-Allow-Methods': 'GET, POST', 'Access-Control-Allow-Headers': 'Content-Type', 'Access-Control-Max-Age': '86400' } });
     const url = new URL(request.url);
-    const notitieAdres = url.pathname.replace(/\/+$/, '') === '/notities';
-    if (request.method !== 'GET' && !(notitieAdres && request.method === 'POST')) return new Response('Alleen GET', { status: 405, headers: cors });
+    const pad = url.pathname.replace(/\/+$/, '');
+    const notitieAdres = pad === '/notities', ruimteAdres = pad === '/ruimtes';
+    if (request.method !== 'GET' && !((notitieAdres || ruimteAdres) && request.method === 'POST')) return new Response('Alleen GET', { status: 405, headers: cors });
     if (!env.SLEUTEL) return new Response('De Worker mist SLEUTEL', { status: 500, headers: cors });
     if (!gelijk(url.searchParams.get('sleutel'), env.SLEUTEL)) return new Response('Geen toegang', { status: 403, headers: cors });
     if (notitieAdres) return notities(request, env, cors, url);
+    if (ruimteAdres) return ruimtes(request, env, cors);
     if (!env.ICS_URL) return new Response('De Worker mist ICS_URL', { status: 500, headers: cors });
     const r = await fetch(env.ICS_URL.trim().replace(/^webcals?:\/\//i, 'https://'), { headers: { Accept: 'text/calendar' } });
     if (!r.ok) return new Response(`Outlook gaf fout ${r.status}`, { status: 502, headers: cors });

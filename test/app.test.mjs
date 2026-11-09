@@ -659,7 +659,7 @@ test('notities: bij een afspraak schrijven, een nieuw label maken, en na herstar
   // Labels als tags: een woord typen en Enter; kleine letters, met een hekje
   assert.ok(await p.locator('#notlabel').evaluate((x) => parseFloat(getComputedStyle(x).fontSize)) >= 16, '#notlabel minstens 16 punten');
   await p.fill('#notlabel', 'Pilot');
-  assert.deepEqual(await p.locator('#notaanvul .aanvuloptie .t1').allInnerTexts(), ['#pilot']);
+  assert.equal(await p.locator('#notaanvul').isVisible(), false, 'geen voorstellen tijdens het typen');
   await p.keyboard.press('Enter'); await wacht(200);
   assert.deepEqual(await p.locator('#notlabels .tag').allInnerTexts(), ['#pilot']);
   if (await p.locator('#notaanvul').isVisible()) { await p.keyboard.press('Escape'); await wacht(300); } // eerst de voorstellen dicht
@@ -693,7 +693,6 @@ test('notities: labels die al bestaan gaan voor, ook met andere hoofdletters', a
   await p.locator('#notlabels .tag').tap(); await p.locator('#notlabels .tag').tap(); await wacht(200); // twee tikken: weg
   assert.deepEqual(await p.locator('#notlabels .tag').allInnerTexts(), []);
   await p.fill('#notlabel', 'Klant-A'); await wacht(200);
-  assert.deepEqual(await p.locator('#notaanvul .aanvuloptie .t1').allInnerTexts(), ['#klant-a'], 'geen nieuw label als het al bestaat');
   await p.keyboard.press('Enter'); await wacht(200);
   await p.locator('#notlabel').pressSequentially('pilot '); await wacht(200);
   assert.deepEqual(await p.locator('#notlabels .tag').allInnerTexts(), ['#klant-a', '#pilot']);

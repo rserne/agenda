@@ -209,17 +209,16 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
     invoer.value = delen.pop();
     delen.forEach(voegTag);
   });
-  // Voorstellen tijdens het typen: wat je typt bovenaan, daaronder bestaande labels; leeg: de organisatie en de meest gebruikte
+  // Voorstellen alleen in het lege veld: de organisatie van het overleg en de meest gebruikte labels. Tijdens het typen niet.
   koppelSuggesties(invoer, $('#notaanvul', el), {
     vraagVan: (w) => tagVan(w),
     leegTonen: true,
     zoek: (vraag) => {
-      const k = tagSleutel(vraag), gekozen = new Set(n.labels.map(tagSleutel));
+      if (vraag) return { nu: [] };
+      const gekozen = new Set(n.labels.map(tagSleutel));
       const bestaand = [...voorstelOrgs, ...alleLabels()].map(tagVan).filter((l, i, a) => a.findIndex((x) => tagSleutel(x) === tagSleutel(l)) === i)
-        .filter((l) => !gekozen.has(tagSleutel(l)) && (!k || tagSleutel(l).includes(k)));
-      const precies = bestaand.find((l) => tagSleutel(l) === k);
-      const eerst = !k || gekozen.has(k) ? [] : [precies ? { t1: toonLabel(precies), label: precies } : { t1: toonLabel(vraag), t2: 'Nieuw label', label: vraag }];
-      return { nu: [...eerst, ...bestaand.filter((l) => l !== precies).slice(0, 6).map((l) => ({ t1: toonLabel(l), label: l }))] };
+        .filter((l) => !gekozen.has(tagSleutel(l)));
+      return { nu: bestaand.slice(0, 6).map((l) => ({ t1: toonLabel(l), label: l })) };
     },
     kies: (c) => { voegTag(c.label); invoer.value = ''; },
   });

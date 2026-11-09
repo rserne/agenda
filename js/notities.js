@@ -96,10 +96,12 @@ function bestaandLabel(l) {
 /*  Tekst en datum                                                     */
 /* ------------------------------------------------------------------ */
 
+// Het moment waar een notitie bij hoort: de afspraak, of bij een losse notitie de laatste wijziging. De lijst en de
+// notitie zelf tonen allebei dit moment, zodat je een terugkerend overleg aan de datum herkent.
+const notitieMoment = (n) => new Date(n.afspraak ? n.afspraak.start : (n.gewijzigd || n.gemaakt));
 function notitieDatum(n) {
-  const d = new Date(n.afspraak ? n.afspraak.start : n.gemaakt);
-  const dag = `${DAYS_SHORT[d.getDay()]} ${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}${d.getFullYear() !== vandaag().getFullYear() ? ` ${d.getFullYear()}` : ''}`;
-  return n.afspraak ? `${dag}, ${hhmm(d)}` : dag;
+  const d = notitieMoment(n);
+  return `${DAYS_LONG[d.getDay()]} ${d.getDate()} ${MONTHS_LONG[d.getMonth()]} ${d.getFullYear()} om ${hhmm(d)}`;
 }
 // iPad en Mac: de lijst zoals in Notities van Apple, in groepen naar de laatste wijziging
 const dagenGeleden = (ms) => Math.round((vandaag() - startOfDay(new Date(ms))) / 864e5);
@@ -113,9 +115,10 @@ function wijzigGroep(ms) {
 }
 function wijzigDatum(ms) {
   const dagen = dagenGeleden(ms), d = new Date(ms);
-  if (dagen <= 0) return hhmm(d);
+  if (dagen === 0) return hhmm(d);
   if (dagen === 1) return 'Gisteren';
-  if (dagen < 7) return cap(DAYS_LONG[d.getDay()]);
+  if (dagen === -1) return 'Morgen'; // een notitie bij een afspraak die nog moet komen
+  if (Math.abs(dagen) < 7) return cap(DAYS_LONG[d.getDay()]);
   return `${d.getDate()}-${d.getMonth() + 1}-${d.getFullYear()}`;
 }
 // De titel van een notitie: bij een afspraak de titel van de afspraak, anders de eerste regel (zoals in Notities van
@@ -167,9 +170,7 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
     el.setAttribute('role', 'dialog');
     el.setAttribute('aria-label', 'Notitie');
   }
-  const meta = n.afspraak
-    ? notitieDatum(n)
-    : (() => { const d = new Date(n.gewijzigd || n.gemaakt); return `${d.getDate()} ${MONTHS_LONG[d.getMonth()]} ${d.getFullYear()} om ${hhmm(d)}`; })();
+  const meta = notitieDatum(n);
   // De titel groot bovenaan: van de afspraak, of bij een losse notitie de eerste regel, die je daar ook typt.
   // Labels en actiepunten verschijnen pas als er iets in staat; tot die tijd staan er alleen twee knopjes.
   // De tags op een eigen regel, daaronder '# Label' om er een toe te voegen, net als '! Actiepunt' onder de actiepunten
@@ -676,7 +677,7 @@ function notitieLijstHtml() {
   const rij = (n) => {
     const [titel, voorproef] = notitieKop(n);
     const inhoud = `<span class="t1">${esc(titel)}</span>
-        <span class="t2"><span class="ndatum">${esc(wijzigDatum(n.gewijzigd))}</span>${esc(voorproef || 'Geen extra tekst')}</span>${labelChips(n.labels)}`;
+        <span class="t2"><span class="ndatum">${esc(wijzigDatum(notitieMoment(n).getTime()))}</span>${esc(voorproef || 'Geen extra tekst')}</span>${labelChips(n.labels)}`;
     if (!naastElkaar()) return `<button class="drij notitierij" data-notitie="${n.id}"><span class="tekst">${inhoud}</span>${I.verder}</button>`;
     const aan = !!gekozen && gekozen.id === n.id;
     return `<button class="notitierij${aan ? ' aan' : ''}" data-notitie="${n.id}" aria-pressed="${aan}">${inhoud}</button>`;

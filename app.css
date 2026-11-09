@@ -1169,6 +1169,8 @@ label.frij:focus-within .flabel { color: var(--accent); }
   .tabbalk .pil button { font-size: 15px; }
   body.desktop main.kolom { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--barH) + 28px); }
   main .notisplit { --onder: calc(env(safe-area-inset-bottom, 0px) + var(--barH) + 36px); } /* boven de tabbalk */
+  /* De tekst loopt onder de zwevende tabbalk weg in een zachte overgang, zoals in iOS, in plaats van er hard onder te verdwijnen */
+  body:has(.notisplit) .tabbalk::before { content: ''; position: absolute; z-index: -1; left: 0; right: 0; top: -36px; bottom: calc(-8px - env(safe-area-inset-bottom, 0px)); background: linear-gradient(to bottom, transparent, var(--card) 65%); pointer-events: none; }
   body.desktop main.kolom > .legenda { position: static; background: none; padding: 28px 2px 0; }
 }
 
@@ -1286,7 +1288,7 @@ html.paginaopen .shell, html.paginaopen #tabbalk, html.paginaopen #lagen { visib
 .notitierij > .icoon { width: 14px; height: 14px; color: var(--secondary); flex-shrink: 0; }
 .nkort { font-size: 15px; line-height: 21px; color: var(--label); white-space: pre-wrap; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
 .nlabels { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
-.nlabel { background: var(--fill); color: var(--label); border-radius: 7px; padding: 2px 8px; font-size: 12px; font-weight: 600; }
+.nlabel { background: var(--fill); color: var(--secondary); border-radius: 7px; padding: 2px 8px; font-size: 12px; font-weight: 500; }
 /* Labels bij een notitie: de gekozen gevuld, daarachter '+ Label' met een doorgetrokken rand */
 .chip.label { gap: 6px; padding: 0 12px; }
 .chip.label .icoon { width: 13px; height: 13px; }
@@ -1406,6 +1408,7 @@ body.notitietab .titelknop, body.insttab .titelknop { cursor: default; }
   .toetsenbord .notisplit { --onder: 24px; height: calc(var(--vvh, 100vh) - var(--kopH, 52px)); }
   .toetsenbord .shell:has(.notisplit) { transform: translateY(var(--vvpagina, 0px)); }
   .notipaneel > .nlijstleeg { margin: auto; color: var(--secondary); }
+  .notipaneel > .notblad { width: 100%; max-width: 720px; } /* één breedte voor titel, labels, actiepunten en tekst */
   .notblad { flex: 1 0 auto; display: flex; flex-direction: column; gap: 12px; }
   .notbovenbalk { display: grid; grid-template-columns: 40px minmax(0, 1fr) 40px; align-items: center; min-height: 40px; }
   .notmeta { text-align: center; font-size: 13px; line-height: 18px; color: var(--secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -1413,7 +1416,6 @@ body.notitietab .titelknop, body.insttab .titelknop { cursor: default; }
   .notweg:hover { background: var(--fill); }
   .notweg .icoon { width: 21px; height: 21px; }
   .notblad > .dtitel { margin: 0; font-size: 28px; line-height: 34px; letter-spacing: -0.4px; }
-  .notblad .punten { max-width: 600px; } /* de deadline dicht bij de tekst, ook in een breed venster */
   .notblad .punttekst, .notblad .puntnieuw, .notblad .taginvoer { font-size: 16px; }
   .notblad .tag { font-size: 15px; height: 28px; }
   .notblad > .dtitel { font-size: 28px; line-height: 34px; }

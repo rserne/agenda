@@ -816,6 +816,16 @@ test('notities op de Mac: lijst en notitie naast elkaar; typen loopt mee in de l
   await p.locator('#notipaneel #notlabel').click(); await p.keyboard.type('Overleg '); await wacht(200);
   assert.deepEqual(await p.locator('#notipaneel #notlabels .tag').allInnerTexts(), ['#overleg']);
   assert.deepEqual(await p.locator('#notlijst .notitierij.aan .nlabel').allInnerTexts(), ['#overleg'], 'de lijst loopt mee');
+  // Labels boven de lijst: hooguit twee regels; Meer toont de rest, Minder klapt ze weer in
+  assert.equal(await p.locator('#notfilter .nmeer').isVisible(), false, 'weinig labels: geen Meer');
+  await p.evaluate(() => { const n = maakNotitie(); wijzigNotitie(n, { tekst: 'Veel labels', labels: Array.from({ length: 24 }, (_, i) => `onderwerp-${i + 1}`) }); tekenNotities(); });
+  await wacht(200);
+  assert.ok(await p.locator('#notfilter .nhoofd').evaluate((x) => x.clientHeight) <= 70, 'twee regels');
+  await p.locator('#notfilter .nmeer').click(); await wacht(200);
+  assert.ok(await p.locator('#notfilter .nhoofd').evaluate((x) => x.clientHeight) > 70, 'uitgeklapt');
+  assert.equal(await p.locator('#notfilter .nmeer').innerText(), 'Minder');
+  await p.locator('#notfilter .nmeer').click(); await wacht(200);
+  assert.equal(await p.locator('#notfilter .nmeer').innerText(), 'Meer');
   assert.deepEqual(p.fouten, []);
 });
 

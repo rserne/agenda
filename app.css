@@ -1241,7 +1241,11 @@ body.notitietab .titelknop, body.insttab .titelknop { cursor: default; }
   .notisplit { --onder: 24px; display: grid; grid-template-columns: 340px minmax(0, 1fr); height: calc(100vh - var(--kopH, 52px)); padding: 0; gap: 0; background: var(--card); }
   .notilinks { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 14px 10px var(--onder); border-right: 0.5px solid var(--separator); }
   .notisplit .nfilters { margin: 2px 0 4px; gap: 6px; }
-  .notisplit .nfilter { gap: 6px; margin: 0 -10px; padding: 0 20px; }
+  /* Op iPad en Mac geen regel die zijwaarts scrolt: de labels lopen door over hooguit twee regels, Meer toont de rest */
+  .notisplit .nfilter { gap: 6px; flex-wrap: wrap; overflow: visible; margin: 0; padding: 0 10px; }
+  .notisplit .nhoofd:not(.open) { max-height: calc(2 * 30px + 6px); overflow: hidden; }
+  .nmeer { align-self: flex-start; margin: -2px 10px 0; padding: 2px 0; color: var(--accent); font-size: 14px; font-weight: 500; }
+  .nmeer:hover { text-decoration: underline; }
   .notisplit .nfilter .chip { height: 30px; padding: 0 12px; font-size: 14px; }
   .notisplit #notlijst { display: block; }
   .ngroep { margin: 18px 12px 6px; font-size: 20px; line-height: 25px; font-weight: 700; letter-spacing: -0.3px; color: var(--label); }

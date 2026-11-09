@@ -319,7 +319,8 @@ function notitieSectieHtml(e) {
 /* ------------------------------------------------------------------ */
 
 let notZoek = '';
-let notLabels = []; // het gekozen label, en eventueel labels daarbinnen (de tweede regel)
+let notLabels = [];
+let notMeer = false; // iPad en Mac: alle labels tonen in plaats van twee regels // het gekozen label, en eventueel labels daarbinnen (de tweede regel)
 let notGekozen = null; // iPad en Mac: de notitie rechts naast de lijst
 let notNieuw = null; // een nieuwe notitie rechts die nog leeg is (en dus nog niet in de lijst staat)
 const isLabel = (a, b) => !!a && !!b && tagSleutel(a) === tagSleutel(b);
@@ -356,7 +357,9 @@ function filterHtml() {
   const hoofd = notLabels[0];
   const rij1 = alle.filter((l) => !hekjes.length || hekjes.some((h) => tagSleutel(l).startsWith(h)));
   const eerste = hoofd ? [hoofd, ...rij1.filter((l) => !isLabel(l, hoofd))] : rij1;
-  let html = `<div class="chips nfilter">${eerste.map((l) => chip(l, isLabel(l, hoofd), 1)).join('')}</div>`;
+  // Op iPad en Mac lopen de labels door over hooguit twee regels; Meer klapt de rest uit (pasMeerAan)
+  let html = `<div class="chips nfilter nhoofd${notMeer ? ' open' : ''}">${eerste.map((l) => chip(l, isLabel(l, hoofd), 1)).join('')}</div>`
+    + (naastElkaar() ? `<button type="button" class="nmeer" hidden>${notMeer ? 'Minder' : 'Meer'}</button>` : '');
   if (!hoofd) return html;
   const sub = notLabels.slice(1);
   const tel = new Map();
@@ -369,6 +372,13 @@ function filterHtml() {
   if (binnen.length) html += `<div class="chips nfilter nsub" aria-label="Binnen ${esc(toonLabel(hoofd))}">${binnen.map((l) => chip(l, sub.some((k) => isLabel(l, k)), 2)).join('')}</div>`;
   return html;
 }
+// Meer alleen als de labels niet op twee regels passen (of als ze uitgeklapt zijn)
+function pasMeerAan() {
+  const rij = $('#notfilter .nhoofd'), knop = $('#notfilter .nmeer');
+  if (!rij || !knop) return;
+  knop.hidden = !notMeer && rij.scrollHeight <= rij.clientHeight + 1;
+}
+window.addEventListener('resize', () => { if (ST.tab === 'notities') pasMeerAan(); });
 function notitiesHtml() {
   const filter = `<div class="nfilters" id="notfilter">${filterHtml()}</div>`;
   if (!naastElkaar()) return `<div class="notitab">${filter}<div id="notlijst">${notitieLijstHtml()}</div></div>`;
@@ -414,10 +424,12 @@ function tekenNotities(volledig = false) {
   const main = $('#inhoud');
   if (volledig || !$('#notlijst', main) || !!$('#notipaneel', main) !== naastElkaar()) {
     main.innerHTML = notitiesHtml();
+    pasMeerAan();
     if (naastElkaar()) vulNotitiepaneel();
     return;
   }
   $('#notfilter', main).innerHTML = filterHtml();
+  pasMeerAan();
   $('#notlijst', main).innerHTML = notitieLijstHtml();
   if (!naastElkaar()) return;
   const vak = $('#notipaneel', main);
@@ -441,11 +453,12 @@ function nieuweNotitie() {
 $('#notzoek').addEventListener('input', (ev) => {
   notZoek = ev.target.value;
   const l = $('#notlijst'), f = $('#notfilter');
-  if (f) f.innerHTML = filterHtml();
+  if (f) { f.innerHTML = filterHtml(); pasMeerAan(); }
   if (l) l.innerHTML = notitieLijstHtml();
 });
 document.addEventListener('click', (ev) => {
   if (!ev.target.closest('#inhoud .notitab') || ev.target.closest('#notipaneel')) return;
+  if (ev.target.closest('.nmeer')) { notMeer = !notMeer; tekenNotities(); return; }
   const f = ev.target.closest('[data-label]');
   if (f) {
     const l = f.dataset.label;

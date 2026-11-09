@@ -1143,7 +1143,9 @@ label.frij:focus-within .flabel { color: var(--accent); }
   /* Weergave (Week of Vooruitblik) als knopje in de werkbalk, want de zijbalk toont hier geen Weergave */
   body.desktop.agendatab .kop .weergaveknop { display: flex; order: 3; margin-left: auto; width: 42px; height: 42px; border-radius: 21px; background: var(--glass); border: 0.5px solid var(--glassBorder); box-shadow: var(--glassShadow); -webkit-backdrop-filter: var(--glassBlur); backdrop-filter: var(--glassBlur); }
   body.desktop.agendatab .kop #schakelaar { margin-left: 0; }
-  body.desktop .kop .zoekbalk { height: 42px; border-radius: 21px; width: 320px; padding: 0 14px; }
+  body.desktop .kop .zoekbalk { height: 42px; border-radius: 21px; width: 420px; padding: 0 14px; }
+  body.desktop .kop .zoektoken { height: 30px; padding: 0 9px 0 11px; font-size: 14px; border-radius: 15px; }
+  body.desktop .kop .zoektoken .icoon { width: 10px; height: 10px; }
   body.desktop .kop .zoekbalk .icoon { width: 17px; height: 17px; }
   body.desktop .kop .zoekbalk input { font-size: 16px; }
 
@@ -1171,6 +1173,47 @@ label.frij:focus-within .flabel { color: var(--accent); }
 /* Losse notitie: de eerste regel is de titel, groot bovenaan, net als de titel van een afspraak */
 input.nottitel { display: block; width: 100%; min-width: 0; padding: 0; border: 0; outline: none; background: transparent; color: var(--label); font-family: inherit; -webkit-appearance: none; appearance: none; }
 input.nottitel::placeholder { color: var(--secondary); opacity: 0.6; }
+/* Een notitie: kleine meta-regel, de titel groot, dan (als er iets in staat) labels en actiepunten, elk met een dunne
+   lijn ertussen, een werkbalk met # Label en Actiepunt, en de tekst. Rechts naast de lijst, als venster en als scherm. */
+.notblad { display: flex; flex-direction: column; gap: 12px; }
+.notmeta { text-align: center; font-size: 13px; line-height: 18px; color: var(--secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.notblad > .dtitel { margin: 0; font-size: 28px; line-height: 34px; letter-spacing: -0.4px; }
+.notsectie { border-top: 0.5px solid var(--separator); padding-top: 10px; }
+.notsectie[hidden] { display: none; }
+.notwerkbalk { display: flex; gap: 18px; padding: 8px 0; border-top: 0.5px solid var(--separator); border-bottom: 0.5px solid var(--separator); }
+.notwerkbalk button { display: inline-flex; align-items: center; gap: 7px; height: 30px; color: var(--accent); font-size: 15px; font-weight: 500; }
+.werkhekje { width: 15px; text-align: center; font-weight: 700; font-size: 16px; }
+.werkvink { width: 15px; height: 15px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px currentColor; }
+.notblad textarea { flex: 1; min-height: 200px; width: 100%; padding: 0; border: 0; outline: none; resize: none; background: transparent; color: var(--label); font: inherit; font-size: 17px; line-height: 26px; }
+.notblad textarea::placeholder, input.nottitel::placeholder { color: var(--secondary); opacity: 0.7; }
+.notitie .rond[hidden] { display: none; }
+.paneel.notitie .detailinhoud { display: flex; flex-direction: column; }
+.paneel.notitie .notblad { flex: 1; }
+/* iPhone: de notitie als eigen scherm dat van rechts inschuift */
+.notpagina { position: fixed; top: 0; left: 0; right: 0; bottom: var(--tb, 0px); z-index: 65; display: flex; flex-direction: column; overflow-y: auto; overscroll-behavior: contain; background: var(--card); transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.3, 1); box-shadow: -8px 0 24px rgba(0, 0, 0, 0.12); }
+.notpagina.open { transform: none; }
+.notpaginabalk { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; padding: calc(env(safe-area-inset-top, 0px) + 6px) 12px 6px 6px; background: var(--card); }
+.terugknop { display: inline-flex; align-items: center; gap: 0; height: 40px; padding: 0 8px 0 2px; color: var(--accent); font-size: 17px; }
+.terugknop .icoon { width: 24px; height: 24px; }
+.notpaginabalk .rond { background: var(--fill); }
+.notpagina .notblad { flex: 1; padding: 4px 20px calc(env(safe-area-inset-bottom, 0px) + 24px); }
+
+/* Zoeken: labels en Te doen als blokjes in het zoekveld, met suggesties eronder */
+.zoektokens { display: flex; gap: 4px; flex-shrink: 1; min-width: 0; overflow: hidden; }
+.zoektokens:empty { display: none; }
+.zoektoken { flex-shrink: 0; display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 9px 0 11px; border-radius: 14px; background: var(--accent); color: var(--onAccent); font-size: 15px; font-weight: 600; white-space: nowrap; }
+.zoektoken .icoon { width: 11px; height: 11px; }
+.zoekbalk input { min-width: 70px; }
+.zoekvoorstel { position: fixed; z-index: 40; display: flex; flex-direction: column; gap: 6px; max-height: 60vh; overflow-y: auto; padding: 8px; border-radius: 16px; background: var(--popBg, var(--card)); border: 0.5px solid var(--separator); box-shadow: 0 10px 32px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.08); }
+.zoekvoorstel[hidden] { display: none; }
+.zvtedoen { display: flex; align-items: center; gap: 10px; min-height: 42px; padding: 0 10px; border-radius: 10px; color: var(--label); font-size: 16px; font-weight: 500; text-align: left; }
+.zvtedoen .icoon { width: 16px; height: 16px; color: var(--accent); }
+.zvtedoen .aantal { margin-left: auto; color: var(--secondary); font-weight: 400; }
+.zvtedoen:hover, .zvtedoen:active { background: var(--fill); }
+.zvkop { padding: 6px 10px 0; color: var(--secondary); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
+.zvlabels { gap: 6px; padding: 2px 6px 6px; }
+.zvlabels .chip { height: 32px; font-size: 15px; }
+
 /* Actiepunten bovenaan een notitie: een rondje om af te vinken, de tekst en een deadline */
 .punten { display: flex; flex-direction: column; }
 .punt { position: relative; display: flex; align-items: center; gap: 10px; min-height: 42px; }
@@ -1287,6 +1330,9 @@ body.notitietab .titelknop, body.insttab .titelknop { cursor: default; }
 @media (min-width: 1200px) {
   .kop .zoekbalk { order: 3; margin-left: auto; width: 280px; height: 32px; padding: 0 12px; border-radius: 16px; gap: 6px; background: var(--glass); border: 0.5px solid var(--glassBorder); box-shadow: var(--glassShadow); -webkit-backdrop-filter: var(--glassBlur); backdrop-filter: var(--glassBlur); }
   .kop .zoekbalk .icoon { width: 14px; height: 14px; }
+  .kop .zoekbalk { width: 380px; }
+  .kop .zoektoken { height: 22px; padding: 0 7px 0 9px; font-size: 12px; }
+  .kop .zoektoken .icoon { width: 9px; height: 9px; }
   .kop .zoekbalk input { font-size: 13px; }
   /* Instellingen: een kolom in het midden, met lucht onder de werkbalk */
   .instscherm { width: 100%; max-width: 760px; margin: 0 auto; padding-top: 28px; }

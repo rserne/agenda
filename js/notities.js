@@ -137,7 +137,6 @@ const labelChips = (labels) => (labels.length ? `<span class="nlabels">${labels.
 async function openNotitie({ notitie = null, e = null, klaar = null, doel = null, bijWijziging = null } = {}) {
   await laadNotities();
   const n = notitie || (e && notitieBij(e.id)) || maakNotitie(e);
-  const voorstelOrgs = e && e.external ? e.orgs || [] : [];
 
   const el = doel || document.createElement('div');
   if (!doel) {
@@ -149,7 +148,7 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
     ? notitieDatum(n)
     : (() => { const d = new Date(n.gewijzigd || n.gemaakt); return `${d.getDate()} ${MONTHS_LONG[d.getMonth()]} ${d.getFullYear()} om ${hhmm(d)}`; })();
   // De titel groot bovenaan: van de afspraak, of bij een losse notitie de eerste regel, die je daar ook typt
-  const labelHtml = `<div class="taglijn"><span class="tags" id="notlabels"></span><input id="notlabel" class="taginvoer" placeholder="Labels" aria-label="Labels" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="done"><div class="aanvullijst" id="notaanvul" hidden></div></div>`;
+  const labelHtml = `<div class="taglijn"><span class="tags" id="notlabels"></span><input id="notlabel" class="taginvoer" placeholder="Labels" aria-label="Labels" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="done"></div>`;
   const titelHtml = n.afspraak
     ? `<h2 class="dtitel">${esc(n.afspraak.titel || 'Zonder titel')}</h2>`
     : '<input id="nottitel" class="dtitel nottitel" placeholder="Titel" aria-label="Titel" autocomplete="off" autocapitalize="sentences" enterkeyhint="next">';
@@ -201,26 +200,13 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
   const haalWeg = (i) => zetLabels(n.labels.filter((_, j) => j !== i));
   tekenLabels();
 
-  // Een spatie of komma maakt van het woord ervoor een tag (vóór de voorstellen, zodat die het nette woord zien)
+  // Een spatie of komma maakt van het woord ervoor een tag
   invoer.addEventListener('input', () => {
     if (gekozenTag >= 0) { gekozenTag = -1; tekenLabels(); }
     if (!/[\s,]/.test(invoer.value)) return;
     const delen = invoer.value.split(/[\s,]+/);
     invoer.value = delen.pop();
     delen.forEach(voegTag);
-  });
-  // Voorstellen alleen in het lege veld: de organisatie van het overleg en de meest gebruikte labels. Tijdens het typen niet.
-  koppelSuggesties(invoer, $('#notaanvul', el), {
-    vraagVan: (w) => tagVan(w),
-    leegTonen: true,
-    zoek: (vraag) => {
-      if (vraag) return { nu: [] };
-      const gekozen = new Set(n.labels.map(tagSleutel));
-      const bestaand = [...voorstelOrgs, ...alleLabels()].map(tagVan).filter((l, i, a) => a.findIndex((x) => tagSleutel(x) === tagSleutel(l)) === i)
-        .filter((l) => !gekozen.has(tagSleutel(l)));
-      return { nu: bestaand.slice(0, 6).map((l) => ({ t1: toonLabel(l), label: l })) };
-    },
-    kies: (c) => { voegTag(c.label); invoer.value = ''; },
   });
   invoer.addEventListener('keydown', (ev) => {
     if (ev.defaultPrevented || ev.isComposing) return;
@@ -229,7 +215,6 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
       if (!invoer.value.trim()) { tekst.focus(); return; }
       voegTag(invoer.value);
       invoer.value = '';
-      invoer.dispatchEvent(new Event('input')); // de voorstellen opnieuw
     } else if (ev.key === 'Backspace' && !invoer.value && n.labels.length) {
       ev.preventDefault();
       if (gekozenTag >= 0) haalWeg(gekozenTag); else { gekozenTag = n.labels.length - 1; tekenLabels(); }

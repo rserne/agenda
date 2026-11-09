@@ -1168,8 +1168,6 @@ input.nottitel::placeholder { color: var(--secondary); opacity: 0.6; }
 .tag .icoon { width: 12px; height: 12px; }
 .taginvoer { flex: 1 0 110px; min-width: 0; height: 28px; padding: 0 2px; border: 0; outline: none; background: transparent; color: var(--label); font: inherit; font-size: 16px; -webkit-appearance: none; appearance: none; }
 .taginvoer::placeholder { color: var(--secondary); opacity: 0.8; }
-.taglijn .aanvullijst { top: calc(100% + 4px); left: 0; right: auto; width: min(320px, 100%); }
-.taglijn .aanvuloptie { justify-content: center; min-height: 44px; }
 .notitie .taglijn { padding: 0 4px; }
 .nfilter { margin: 2px 4px 0; }
 .nfilter:empty { display: none; }

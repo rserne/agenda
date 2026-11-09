@@ -1038,6 +1038,7 @@ label.frij:focus-within .flabel { color: var(--accent); }
   /* Nieuwe afspraak: knop in de werkbalk, vrije blokken met hover */
   .nieuwknop { display: flex; align-items: center; order: 5; width: auto; height: 32px; border-radius: 16px; padding: 0 14px 0 10px; gap: 5px; background: var(--accent); color: var(--onAccent); border: 0; box-shadow: 0 4px 14px rgba(31, 114, 160, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3); -webkit-backdrop-filter: none; backdrop-filter: none; font-size: 12.5px; font-weight: 600; }
   .nieuwknop .icoon { width: 13px; height: 13px; }
+  body.notitietab .kop .nieuwknop { margin-left: auto; } /* het zoekveld staat dan boven de lijst */
   .nieuwknop span { display: inline; }
   .nieuwknop:hover { filter: brightness(1.08); }
   .krij.vrij .plus { align-self: center; opacity: 0; transition: opacity 0.12s; }
@@ -1060,6 +1061,8 @@ label.frij:focus-within .flabel { color: var(--accent); }
 /* ================================================================ iPad liggend: desktop-indeling, maar voor de vinger
    Grotere maandkalender en knoppen in de zijbalk en werkbalk; de muis-maten zijn op een aanraakscherm te priegelig */
 @media (min-width: 1200px) and (pointer: coarse) {
+  body .notilinks > .zoekbalk { height: 42px; border-radius: 12px; }
+  body .notilinks .zoektoken { height: 28px; font-size: 14px; }
   .zbbinnen { padding: 14px 12px 20px; gap: 24px; }
   .minikal .kiezerkop { padding: 0 2px 18px 6px; }
   .minikal .kiezerkop h2 { font-size: 19px; }
@@ -1187,6 +1190,11 @@ input.nottitel::placeholder { color: var(--secondary); opacity: 0.6; }
 .notblad textarea { flex: 1; min-height: 200px; width: 100%; padding: 0; border: 0; outline: none; resize: none; background: transparent; color: var(--label); font: inherit; font-size: 17px; line-height: 26px; }
 .notblad textarea::placeholder, input.nottitel::placeholder { color: var(--secondary); opacity: 0.7; }
 .notitie .rond[hidden] { display: none; }
+/* Labels (#) en actiepunten (!) elk op een eigen regel, met het teken ervoor, net als de snelkoppelingen in de tekst */
+.regelteken { flex-shrink: 0; width: 22px; text-align: center; color: var(--accent); font-size: 18px; font-weight: 700; line-height: 1; }
+.notblad .puntnieuw { gap: 10px; min-height: 36px; color: var(--secondary); font-size: 16px; }
+.notblad .taglijn { gap: 6px 8px; }
+.notblad textarea { border-top: 0.5px solid var(--separator); padding-top: 12px; }
 .paneel.notitie .detailinhoud { display: flex; flex-direction: column; }
 .paneel.notitie .notblad { flex: 1; }
 /* iPhone: de notitie als eigen scherm dat van rechts inschuift */
@@ -1199,7 +1207,8 @@ input.nottitel::placeholder { color: var(--secondary); opacity: 0.6; }
 .notpagina .notblad { flex: 1; padding: 4px 20px calc(env(safe-area-inset-bottom, 0px) + 24px); }
 
 /* Zoeken: labels en Te doen als blokjes in het zoekveld, met suggesties eronder */
-.zoektokens { display: flex; gap: 4px; flex-shrink: 1; min-width: 0; overflow: hidden; }
+.zoektokens { display: flex; gap: 4px; flex-shrink: 1; min-width: 0; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; } /* veel blokjes: zijwaarts vegen */
+.zoektokens::-webkit-scrollbar { display: none; }
 .zoektokens:empty { display: none; }
 .zoektoken { flex-shrink: 0; display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 9px 0 11px; border-radius: 14px; background: var(--accent); color: var(--onAccent); font-size: 15px; font-weight: 600; white-space: nowrap; }
 .zoektoken .icoon { width: 11px; height: 11px; }
@@ -1267,7 +1276,6 @@ input.nottitel::placeholder { color: var(--secondary); opacity: 0.6; }
 .tag .icoon { width: 12px; height: 12px; }
 .taginvoer { flex: 1 0 110px; min-width: 0; height: 28px; padding: 0 2px; border: 0; outline: none; background: transparent; color: var(--label); font: inherit; font-size: 16px; -webkit-appearance: none; appearance: none; }
 .taginvoer::placeholder { color: var(--secondary); opacity: 0.8; }
-.notitie .taglijn { padding: 0 4px; }
 .nfilters { display: flex; flex-direction: column; gap: 8px; }
 /* Labels om op te filteren: één regel die zijwaarts scrolt, tot aan de rand van het scherm */
 .nfilter { flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; margin: 0 -16px; padding: 0 20px; }
@@ -1366,6 +1374,11 @@ body.notitietab .titelknop, body.insttab .titelknop { cursor: default; }
   .notisplit .notitierij.aan .t1 { color: var(--selText); }
   .notisplit .notitierij .nlabels { margin-top: 6px; }
   .notisplit .nlijstleeg { padding: 8px 12px; }
+  /* Het zoekveld boven de lijst, dicht bij wat je zoekt */
+  .notilinks > .zoekbalk { position: sticky; top: 0; z-index: 3; flex-shrink: 0; height: 36px; margin: 0 10px 12px; padding: 0 10px; gap: 6px; border: 0; border-radius: 10px; background: var(--fill); box-shadow: 0 0 0 10px var(--card); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .notilinks > .zoekbalk .icoon { width: 15px; height: 15px; }
+  .notilinks .zoektoken { height: 24px; padding: 0 7px 0 9px; font-size: 13px; }
+  .notilinks .zoektoken .icoon { width: 9px; height: 9px; }
   .notipaneel { display: flex; flex-direction: column; min-width: 0; min-height: 0; padding: 10px 36px var(--onder); }
   .notipaneel > .nlijstleeg { margin: auto; color: var(--secondary); }
   .notblad { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
@@ -1376,7 +1389,7 @@ body.notitietab .titelknop, body.insttab .titelknop { cursor: default; }
   .notweg .icoon { width: 21px; height: 21px; }
   .notblad > .dtitel { margin: 0; font-size: 28px; line-height: 34px; letter-spacing: -0.4px; }
   .notblad .punten { max-width: 600px; } /* de deadline dicht bij de tekst, ook in een breed venster */
-  .notblad textarea { flex: 1; min-height: 0; width: 100%; padding: 0; border: 0; outline: none; resize: none; background: transparent; color: var(--label); font: inherit; font-size: 17px; line-height: 26px; }
+  .notblad textarea { flex: 1; min-height: 0; width: 100%; padding: 12px 0 0; border: 0; border-top: 0.5px solid var(--separator); outline: none; resize: none; background: transparent; color: var(--label); font: inherit; font-size: 17px; line-height: 26px; }
   .notblad textarea::placeholder { color: var(--secondary); opacity: 0.8; }
   .zbnotities { border-top: 0; padding-top: 6px; }
   .zbinstellingen { margin-top: auto; } /* Instellingen onderaan de zijbalk */

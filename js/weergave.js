@@ -257,6 +257,7 @@ function renderKop() {
 }
 
 function render() {
+  zoekbalkThuis(); // het zoekveld van de notities terug in de kop, voordat de inhoud opnieuw wordt opgebouwd
   document.body.classList.toggle('desktop', isDesktop());
   renderKop();
   renderZijbalk();

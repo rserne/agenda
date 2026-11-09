@@ -682,7 +682,7 @@ test('notities: bij een afspraak schrijven, een nieuw label maken, en na herstar
   assert.ok(await p.locator('#nottekst').evaluate((x) => parseFloat(getComputedStyle(x).fontSize)) >= 16, '#nottekst minstens 16 punten');
   await p.fill('#nottekst', 'Afgesproken: offerte voor de pilot\nVolgende stap: planning delen');
   // Labels als tags: een woord typen en Enter; kleine letters, met een hekje
-  await p.locator('.notwerkbalk [data-actie="label-nieuw"]').tap(); await wacht(200);
+  await p.locator('#notlabel').tap(); await wacht(200);
   assert.ok(await p.locator('#notlabel').evaluate((x) => parseFloat(getComputedStyle(x).fontSize)) >= 16, '#notlabel minstens 16 punten');
   await p.fill('#notlabel', 'Pilot');
   await p.keyboard.press('Enter'); await wacht(200);
@@ -709,13 +709,13 @@ test('notities: labels die al bestaan gaan voor, ook met andere hoofdletters', a
   });
   await p.evaluate(() => openNotitie()); await wacht(800);
   await p.fill('#nottitel', 'Derde');
-  await p.locator('.notwerkbalk [data-actie="label-nieuw"]').tap(); await wacht(300);
+  await p.locator('#notlabel').tap(); await wacht(300);
   assert.equal(await p.locator('.aanvullijst:visible').count(), 0, 'geen voorstellen');
   await p.fill('#notlabel', 'KLANT '); await wacht(200); // de spatie maakt er een tag van, in kleine letters
   assert.deepEqual(await p.locator('#notlabels .tag').allInnerTexts(), ['#klant']);
   await p.locator('#notlabels .tag').tap(); await p.locator('#notlabels .tag').tap(); await wacht(200); // twee tikken: weg
   assert.deepEqual(await p.locator('#notlabels .tag').allInnerTexts(), []);
-  await p.locator('.notwerkbalk [data-actie="label-nieuw"]').tap(); await wacht(200);
+  await p.locator('#notlabel').tap(); await wacht(200);
   await p.fill('#notlabel', 'Klant-A'); await wacht(200);
   await p.keyboard.press('Enter'); await wacht(200);
   await p.locator('#notlabel').pressSequentially('pilot '); await wacht(200);
@@ -808,9 +808,9 @@ test('actiepunten: bovenaan de notitie, met een deadline, via ! in de tekst, en 
   await p.goto(url); await wacht(1000);
   await p.evaluate(() => openNotitie()); await wacht(800);
   await p.fill('#nottitel', 'Overleg pilot');
-  assert.equal(await p.locator('#notpuntsectie').isVisible(), false, 'nog geen actiepunten: geen lege sectie');
-  assert.equal(await p.locator('#notlabelsectie').isVisible(), false);
-  await p.locator('.notwerkbalk [data-actie="punt-nieuw"]').tap(); await wacht(200);
+  assert.equal(await p.locator('#notlabelsectie .regelteken').innerText(), '#', 'labels op een eigen regel met #');
+  assert.match(await p.locator('#notpuntsectie [data-actie="punt-nieuw"]').innerText(), /!\s*Actiepunt/, 'actiepunten op een eigen regel met !');
+  await p.locator('#notpuntsectie [data-actie="punt-nieuw"]').tap(); await wacht(200);
   await p.keyboard.type('Offerte sturen'); await p.keyboard.press('Enter'); await wacht(200);
   await p.keyboard.type('Planning delen'); await wacht(200);
   assert.deepEqual(await p.locator('#notpunten .punttekst').evaluateAll((l) => l.map((x) => x.value)), ['Offerte sturen', 'Planning delen']);
@@ -938,11 +938,12 @@ test('notities op de Mac: lijst en notitie naast elkaar; typen loopt mee in de l
   assert.equal(await p.locator('#notipaneel #nottekst').inputValue(), 'Over de offerte');
   assert.match(await p.locator('#notlijst .notitierij.aan .t2').innerText(), /Over de offerte/);
   // Labels: een woord en een spatie wordt een tag; de lijst loopt mee
-  await p.locator('#notipaneel [data-actie="label-nieuw"]').click(); await p.keyboard.type('Overleg '); await wacht(200);
+  await p.locator('#notipaneel #notlabel').click(); await p.keyboard.type('Overleg '); await wacht(200);
   assert.deepEqual(await p.locator('#notipaneel #notlabels .tag').allInnerTexts(), ['#overleg']);
   assert.deepEqual(await p.locator('#notlijst .notitierij.aan .nlabel').allInnerTexts(), ['#overleg'], 'de lijst loopt mee');
-  // Labels staan niet boven de lijst maar in het zoekveld
+  // Labels staan in het zoekveld, en dat staat op de Mac boven de lijst
   assert.equal(await p.locator('#notfilter').count(), 0);
+  assert.equal(await p.locator('.notilinks > #zoekbalk').count(), 1, 'het zoekveld boven de lijst');
   await p.locator('#notzoek').click(); await wacht(200);
   assert.ok((await p.locator('#zoekvoorstel .zvlabels .chip').allInnerTexts()).includes('#overleg'));
   await p.keyboard.press('Escape'); await wacht(200);

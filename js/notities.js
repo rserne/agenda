@@ -172,16 +172,16 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
     : (() => { const d = new Date(n.gewijzigd || n.gemaakt); return `${d.getDate()} ${MONTHS_LONG[d.getMonth()]} ${d.getFullYear()} om ${hhmm(d)}`; })();
   // De titel groot bovenaan: van de afspraak, of bij een losse notitie de eerste regel, die je daar ook typt.
   // Labels en actiepunten verschijnen pas als er iets in staat; tot die tijd staan er alleen twee knopjes.
-  const labelHtml = `<div class="taglijn"><span class="tags" id="notlabels"></span><input id="notlabel" class="taginvoer" placeholder="Label" aria-label="Labels" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="done"></div>`;
+  const labelHtml = `<div class="taglijn"><span class="regelteken" aria-hidden="true">#</span><span class="tags" id="notlabels"></span><input id="notlabel" class="taginvoer" placeholder="Label" aria-label="Labels" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="done"></div>`;
   const titelHtml = n.afspraak
     ? `<h2 class="dtitel">${esc(n.afspraak.titel || 'Zonder titel')}</h2>`
     : '<input id="nottitel" class="dtitel nottitel" placeholder="Titel" aria-label="Titel" autocomplete="off" autocapitalize="sentences" enterkeyhint="next">';
   const blad = `<div class="notblad">
       ${doel ? `<div class="notbovenbalk"><span></span><div class="notmeta num">${meta}</div><div id="notvoet"></div></div>` : `<div class="notmeta num">${meta}</div>`}
       ${titelHtml}
-      <div class="notsectie" id="notlabelsectie" hidden>${labelHtml}</div>
-      <div class="notsectie" id="notpuntsectie" hidden><div class="punten" id="notpunten"></div></div>
-      <div class="notwerkbalk"><button type="button" data-actie="label-nieuw"><span class="werkhekje">#</span>Label</button><button type="button" data-actie="punt-nieuw"><span class="werkvink"></span>Actiepunt</button></div>
+      <div class="notsectie" id="notlabelsectie">${labelHtml}</div>
+      <div class="notsectie" id="notpuntsectie"><div class="punten" id="notpunten"></div>
+        <button type="button" class="puntnieuw" data-actie="punt-nieuw"><span class="regelteken" aria-hidden="true">!</span>Actiepunt</button></div>
       <textarea id="nottekst" placeholder="Notitie" aria-label="Notitie"></textarea>
     </div>`;
   const menuKnop = (klasse) => `<button class="rond ${klasse}" data-actie="notmenu" aria-label="Meer" aria-haspopup="menu">${I.meer}</button>`;
@@ -198,9 +198,8 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
 
   // Labels als tags op één regel: typ een woord en een spatie (of Enter), dan wordt het een tag in kleine letters.
   // Een tik op een tag kiest hem (met een kruisje), nog een tik haalt hem weg; Backspace in een leeg veld ook.
-  let gekozenTag = -1, labelsOpen = false;
+  let gekozenTag = -1;
   const tekenLabels = () => {
-    $('#notlabelsectie', el).hidden = !n.labels.length && !labelsOpen;
     $('#notlabels', el).innerHTML = n.labels.map((l, i) => (i === gekozenTag
       ? `<button type="button" class="tag aan" data-tag="${i}" aria-label="${esc(toonLabel(l))} weghalen">${esc(toonLabel(l))}${I.kruis}</button>`
       : `<button type="button" class="tag" data-tag="${i}">${esc(toonLabel(l))}</button>`)).join('');
@@ -246,7 +245,6 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
     if (document.activeElement === invoer) return;
     if (invoer.value.trim()) { voegTag(invoer.value); invoer.value = ''; }
     else if (gekozenTag >= 0 && !el.contains(document.activeElement)) { gekozenTag = -1; tekenLabels(); }
-    if (labelsOpen && !invoer.value) { labelsOpen = false; tekenLabels(); } // niets getypt: de regel weer weg
   }, 160));
 
   // Meteen bewaren tijdens het typen; het tekstvak vult de ruimte van het scherm
@@ -280,7 +278,6 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
         <button type="button" class="puntdatum${p.deadline ? ' aan' : ''}${!p.klaar && teLaat(p.deadline) ? ' laat' : ''}" data-actie="deadline" aria-label="${p.deadline ? `Deadline ${deadlineTekst(p.deadline)}` : 'Deadline'}">${p.deadline ? esc(deadlineTekst(p.deadline)) : I.kalender}</button>
         <input type="date" class="puntkiezer" value="${p.deadline || ''}" tabindex="-1" aria-hidden="true">
       </div>`).join('');
-    $('#notpuntsectie', el).hidden = !punten(n).length;
     if (focusId) { const i = puntenEl.querySelector(`[data-punt="${focusId}"] .punttekst`); if (i) { i.focus(); i.setSelectionRange(i.value.length, i.value.length); } }
   };
   const zetPunten = (lijst, focusId = null) => {
@@ -373,7 +370,6 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
     const menuKnop = t.closest('[data-actie="notmenu"]');
     if (menuKnop) { openNotitiemenu(menuKnop, verwijder); return; }
     if (t.closest('[data-actie="punt-nieuw"]')) { voegPunt(); return; }
-    if (t.closest('[data-actie="label-nieuw"]')) { labelsOpen = true; tekenLabels(); invoer.focus(); return; }
     const pa = t.closest('#notpunten [data-actie]');
     if (pa) {
       const p = puntVan(pa);
@@ -588,6 +584,11 @@ function gekozenNotitie() {
   notGekozen = n ? n.id : null;
   return n;
 }
+// Op iPad en Mac staat het zoekveld boven de lijst, niet in de werkbalk. Het is hetzelfde veld: we verplaatsen het, en
+// zetten het terug voordat de inhoud opnieuw wordt opgebouwd.
+const zoekbalkEl = $('#zoekbalk');
+const zoekThuis = { ouder: zoekbalkEl.parentNode, na: zoekbalkEl.nextSibling };
+function zoekbalkThuis() { if (zoekbalkEl.parentNode !== zoekThuis.ouder) zoekThuis.ouder.insertBefore(zoekbalkEl, zoekThuis.na); }
 function notitiesHtml() {
   if (!naastElkaar()) return `<div class="notitab"><div id="notlijst">${notitieLijstHtml()}</div></div>`;
   return `<div class="notitab notisplit"><div class="notilinks"><div id="notlijst">${notitieLijstHtml()}</div></div><div class="notipaneel" id="notipaneel"></div></div>`;
@@ -657,7 +658,10 @@ function tekenNotities(volledig = false) {
   if (ST.tab !== 'notities') return;
   const main = $('#inhoud');
   if (volledig || !$('#notlijst', main) || !!$('#notipaneel', main) !== naastElkaar()) {
+    const bezig = document.activeElement === zoekVeld;
+    zoekbalkThuis();
     main.innerHTML = notitiesHtml();
+    if (naastElkaar()) { $('.notilinks', main).prepend(zoekbalkEl); if (bezig) zoekVeld.focus(); }
     tekenZoek();
     if (naastElkaar()) vulNotitiepaneel();
     return;
@@ -713,7 +717,9 @@ const hekjeWoord = () => { const m = zoekVeld.value.match(/(?:^|\s)#(\S*)$/); re
 function tekenZoek() {
   notLabels = notLabels.filter((k) => alleLabels().some((l) => isLabel(l, k)));
   const blokje = (tekst, sleutel) => `<button type="button" class="zoektoken" data-token="${esc(sleutel)}" aria-label="${esc(tekst)} weghalen">${esc(tekst)}${I.kruis}</button>`;
-  $('#zoektokens').innerHTML = (notTeDoen ? blokje('Te doen', '') : '') + notLabels.map((l) => blokje(toonLabel(l), l)).join('');
+  const tokens = $('#zoektokens');
+  tokens.innerHTML = (notTeDoen ? blokje('Te doen', '') : '') + notLabels.map((l) => blokje(toonLabel(l), l)).join('');
+  tokens.scrollLeft = tokens.scrollWidth; // het laatste blokje in beeld; de rest door zijwaarts te vegen
   zoekVeld.placeholder = notTeDoen || notLabels.length ? '' : 'Zoeken';
   if (!voorstelEl.hidden) toonVoorstel();
 }

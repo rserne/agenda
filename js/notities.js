@@ -130,9 +130,6 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
     el.setAttribute('role', 'dialog');
     el.setAttribute('aria-label', 'Notitie');
   }
-  const kop = n.afspraak
-    ? `<div class="dmeta"><div>${esc(n.afspraak.titel || 'Zonder titel')}</div><div class="num">${notitieDatum(n)}</div></div>`
-    : '';
   const meta = n.afspraak
     ? `${esc(n.afspraak.titel || 'Zonder titel')} · ${notitieDatum(n)}`
     : (() => { const d = new Date(n.gewijzigd || n.gemaakt); return `${d.getDate()} ${MONTHS_LONG[d.getMonth()]} ${d.getFullYear()} om ${hhmm(d)}`; })();
@@ -147,7 +144,7 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
   else el.innerHTML = `${doel ? '' : `<div class="detailgreep"><div class="greep"></div>
       <div class="detailnav"><button class="rond glas" data-actie="sluit" aria-label="Sluiten">${I.kruis}</button></div></div>`}
     <div class="detailinhoud">
-      <div class="dkop"><div class="dkopinhoud"><h2 class="dtitel">${doel && n.afspraak ? esc(n.afspraak.titel || 'Zonder titel') : 'Notitie'}</h2>${doel && n.afspraak ? `<div class="dmeta"><div class="num">${notitieDatum(n)}</div></div>` : kop}</div></div>
+      <div class="dkop"><div class="dkopinhoud"><h2 class="dtitel">${n.afspraak ? esc(n.afspraak.titel || 'Zonder titel') : 'Notitie'}</h2>${n.afspraak ? `<div class="dmeta"><div class="num">${notitieDatum(n)}</div></div>` : ''}</div></div>
       <div class="formkaart tekstkaart">
         <label class="frij boven"><textarea id="nottekst" rows="8" placeholder="Notitie" aria-label="Notitie"></textarea></label>
       </div>

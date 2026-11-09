@@ -826,6 +826,7 @@ label.frij:focus-within .flabel { color: var(--accent); }
 .inststatus .tekst { display: flex; flex-direction: column; min-width: 0; }
 .inststatus .t1 { font-size: 16px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .inststatus .t2 { font-size: 13px; line-height: 17px; color: var(--secondary); }
+.instsectie .formkaart + .insttoelichting + .formkaart { margin-top: 14px; }
 .instknop { width: 100%; color: var(--accent); font-size: 16px; font-weight: 500; text-align: left; }
 .instknop:active { opacity: 0.6; }
 .instknop:disabled { opacity: 0.5; }

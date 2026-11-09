@@ -253,9 +253,8 @@ let zijMaand = null;
 // Waar de afspraken vandaan komen: [titel, toelichting]
 function agendaBron() {
   if (BESTAND && BESTAND.link) {
-    const d = new Date(BESTAND.gecontroleerd || BESTAND.datum);
-    const wanneer = sameDay(d, vandaag()) ? `Bijgewerkt om ${hhmm(d)}` : `Bijgewerkt ${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}, ${hhmm(d)}`;
-    return ['Outlook-agenda', LINK_BEZIG ? 'Bijwerken…' : BESTAND.linkFout ? 'Bijwerken lukte niet' : `${wanneer} · via je agenda-link`];
+    // Wanneer hij is bijgewerkt, staat bij Cloudflare; hier alleen als het bezig is of niet lukte
+    return ['Outlook-agenda', LINK_BEZIG ? 'Bijwerken…' : BESTAND.linkFout ? 'Bijwerken lukte niet' : ''];
   }
   if (BESTAND) {
     const d = new Date(BESTAND.datum);
@@ -888,19 +887,19 @@ function openVisitekaartje(k) {
 function openLinkPaneel(voorstel = '') {
   const el = document.createElement('div');
   el.className = 'paneel detail nieuw linkpaneel' + (isDesktop() ? ' dialoog' : '');
-  const huidig = voorstel || (BESTAND && BESTAND.link ? BESTAND.link : '');
+  const huidig = voorstel; // de huidige link tonen we niet
   el.innerHTML = `<div class="detailgreep"><div class="greep"></div>
       <div class="detailnav"><button class="rond glas" data-actie="sluit" aria-label="Sluiten">${I.kruis}</button></div></div>
     <div class="detailinhoud">
-      <div class="dkop"><h2 class="dtitel">Agenda-link</h2></div>
+      <div class="dkop"><h2 class="dtitel">Cloudflare</h2></div>
       <p class="linkuitleg">Plak de link van je Cloudflare Worker, met de sleutel erin.</p>
       <div class="formkaart">
         <label class="frij kolom"><span class="flabel">Link</span><input id="linkinvoer" type="url" inputmode="url" placeholder="https://agenda.rserne.workers.dev/?sleutel=…" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="go" value="${esc(huidig)}"></label>
       </div>
       <p class="linkfout" id="linkfout" hidden></p>
       <div class="dvoet">
-        <button class="groteknop hoofd" id="linkknop">Agenda ophalen</button>
-        <p class="voetnoot">De link blijft op dit toestel. Wie de link heeft, ziet je agenda: deel hem dus niet.</p>
+        <button class="groteknop hoofd" id="linkknop">Koppelen</button>
+        <p class="voetnoot">De link blijft op dit toestel. Wie de link heeft, ziet je agenda en notities: deel hem dus niet.</p>
       </div>
     </div>`;
   const p = openPaneel(el, { greepSelector: '.detailgreep' });
@@ -912,7 +911,9 @@ function openLinkPaneel(voorstel = '') {
       : !/^https:\/\/\S+$/i.test(link) ? 'Dit is geen geldige link. Hij begint met https://.' : null;
     if (melding) { fout.textContent = melding; fout.hidden = false; return; }
     p.sluit();
-    gebruikLink(link);
+    // Met een .ics-bestand als agenda blijft dat zo; anders haalt de app meteen je Outlook-agenda op
+    zetKoppeling(link);
+    if (BESTAND && !BESTAND.link) { synchroniseerStraks(300); tekenSyncStatus(); } else gebruikLink(link);
   };
   $('#linkknop', el).addEventListener('click', haal);
   invoer.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') haal(); });
@@ -947,7 +948,7 @@ function openBronPaneel() {
     // Het bestandsvenster moet direct bij de tik openen (iOS), dus vóór het sluiten van het paneel
     if (keuze === 'bestand') { $('#icsinvoer').click(); p.sluit(); return; }
     p.sluit();
-    if (keuze === 'link') setTimeout(() => openLinkPaneel(), 250);
+    if (keuze === 'link') { if (koppeling()) gebruikLink(koppeling()); else setTimeout(() => openLinkPaneel(), 250); }
     else if (keuze === 'voorbeeld' && nu !== 'voorbeeld' && confirm(wisVraag())) vergeetBestand();
   });
 }
@@ -966,11 +967,11 @@ function openInstellingen({ doel = null } = {}) {
     el.setAttribute('aria-label', 'Instellingen');
   }
   const knop = (actie, icoon, tekst, uit = false, gevaar = false) => `<button class="frij instknop${gevaar ? ' gevaar' : ''}" data-actie="${actie}"${uit ? ' disabled' : ''}>${icoon}<span>${tekst}</span></button>`;
-  const status = (icoon, t1, t2) => `<div class="frij inststatus">${icoon}<span class="tekst"><span class="t1">${t1}</span><span class="t2">${t2}</span></span></div>`;
+  const status = (icoon, t1, t2) => `<div class="frij inststatus">${icoon}<span class="tekst"><span class="t1">${t1}</span>${t2 ? `<span class="t2">${t2}</span>` : ''}</span></div>`;
   const agendaHtml = () => {
     const [t1, t2] = agendaBron();
     return status(BESTAND && BESTAND.link ? I.koppel : BESTAND ? I.inladen : I.kalender, t1, t2)
-      + (BESTAND && BESTAND.link ? knop('ics-nu', I.herhaal, 'Nu bijwerken', LINK_BEZIG) : BESTAND ? knop('ics-openen', I.inladen, 'Ander bestand inladen') : '')
+      + (BESTAND && !BESTAND.link ? knop('ics-openen', I.inladen, 'Ander bestand inladen') : '')
       + knop('ics-kies', I.kalender, BESTAND ? 'Andere agenda kiezen' : 'Je eigen agenda kiezen');
   };
   const contactHtml = () => {
@@ -993,9 +994,9 @@ function openInstellingen({ doel = null } = {}) {
   const googleHtml = (bewerk = false) => {
     if (bewerk) return `<label class="frij"><span class="flabel">Sleutel</span><input id="igoogle" class="geheim" type="text" placeholder="Plak hier je sleutel" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done"></label>`
       + knop('google-bewaar', I.vink, 'Bewaren') + knop('google-annuleer', I.kruis, 'Annuleren');
-    if (googleSleutel()) return status(I.speld, 'Sleutel ingesteld', 'Bij Locatie zoek je ook naar adressen en plaatsen')
+    if (googleSleutel()) return status(I.speld, 'Google-sleutel ingesteld', 'Bij Locatie zoek je ook naar adressen en plaatsen')
       + knop('google-wijzig', I.herhaal, 'Sleutel wijzigen') + knop('google-wis', I.wissen, 'Sleutel verwijderen', false, true);
-    return status(I.speld, 'Geen sleutel', 'Met een sleutel zoek je bij Locatie ook naar adressen en plaatsen')
+    return status(I.speld, 'Geen Google-sleutel', 'Met een sleutel zoek je bij Locatie ook naar adressen en plaatsen')
       + knop('google-wijzig', I.plus, 'Sleutel opgeven');
   };
   const ruimtesHtml = () => ruimteLijst().map(ruimteRij).join('') + `<button class="frij instknop" data-actie="ruimte-erbij">${I.plus}<span>Ruimte toevoegen</span></button>`;
@@ -1003,13 +1004,14 @@ function openInstellingen({ doel = null } = {}) {
       <div class="detailnav"><button class="rond glas" data-actie="sluit" aria-label="Sluiten">${I.kruis}</button></div></div>`}
     <div class="detailinhoud">
       ${doel ? '' : '<div class="dkop"><h2 class="dtitel">Instellingen</h2></div>'}
+      <section class="instsectie"><h3>Cloudflare</h3><div class="formkaart" id="isync">${syncStatusHtml()}</div></section>
       <section class="instsectie"><h3>Agenda</h3><div class="formkaart" id="iagenda">${agendaHtml()}</div></section>
-      <section class="instsectie"><h3>Notities</h3><div class="formkaart" id="isync">${syncStatusHtml()}</div></section>
-      <section class="instsectie"><h3>Contacten</h3><div class="formkaart" id="icontacten">${contactHtml()}</div>
-        <p class="insttoelichting">Een csv uit NK2Edit of Outlook, of een vCard (.vcf).</p></section>
       <section class="instsectie"><h3>Ruimtes</h3><div class="formkaart" id="iruimtes">${ruimtesHtml()}</div></section>
-      <section class="instsectie"><h3>Plaatsen via Google</h3><div class="formkaart" id="igooglekaart">${googleHtml()}</div><p class="insttoelichting" id="igoogleuitslag" aria-live="polite"></p></section>
-      <p class="voetnoot">Alles op dit scherm staat alleen op dit toestel. In Outlook verandert er niets.<br>Versie ${esc(APP_VERSIE)}</p>
+      <section class="instsectie"><h3>Alleen op dit toestel</h3>
+        <div class="formkaart" id="icontacten">${contactHtml()}</div>
+        <p class="insttoelichting">Een csv uit NK2Edit of Outlook, of een vCard (.vcf).</p>
+        <div class="formkaart" id="igooglekaart">${googleHtml()}</div><p class="insttoelichting" id="igoogleuitslag" aria-live="polite"></p></section>
+      <p class="voetnoot">Versie ${esc(APP_VERSIE)}</p>
     </div>`;
   const p = doel ? { sluit: () => {} } : openPaneel(el, { greepSelector: '.detailgreep' });
   const tekenAgenda = () => { const a = $('#iagenda', el); if (a) a.innerHTML = agendaHtml(); };
@@ -1068,8 +1070,23 @@ function openInstellingen({ doel = null } = {}) {
     if (actie === 'ics-kies') { p.sluit(); setTimeout(openBronPaneel, 250); return; }
     if (actie === 'ruimte-erbij') { const l = leesRuimtes(); l.push({ naam: '', email: '' }); zetRuimteLijst(l); tekenRuimtes(l.length - 1); return; }
     if (actie === 'ruimte-weg') { const l = leesRuimtes(); l.splice(Number(a.closest('.ruimterij').dataset.i), 1); zetRuimteLijst(l); tekenRuimtes(); return; }
-    if (actie === 'ics-nu') { Promise.resolve(nuBijwerken()).finally(tekenAgenda); tekenAgenda(); return; }
-    if (actie === 'sync-nu') { synchroniseer(); return; }
+    // Nu synchroniseren: ook de Outlook-agenda opnieuw ophalen
+    if (actie === 'sync-nu') {
+      if (BESTAND && BESTAND.link) { Promise.resolve(nuBijwerken()).finally(() => { tekenAgenda(); tekenSyncStatus(); }); tekenAgenda(); }
+      synchroniseer();
+      return;
+    }
+    if (actie === 'koppeling-wijzig') { p.sluit(); setTimeout(() => openLinkPaneel(), doel ? 0 : 250); return; }
+    if (actie === 'koppeling-wis') {
+      const vraagTekst = BESTAND && BESTAND.link
+        ? 'De koppeling met Cloudflare van dit toestel verwijderen? Je notities en ruimtes blijven hier staan; je Outlook-agenda verdwijnt van dit toestel.'
+        : 'De koppeling met Cloudflare van dit toestel verwijderen? Je notities en ruimtes blijven hier staan.';
+      if (!confirm(vraagTekst)) return;
+      vergeetKoppeling();
+      if (BESTAND && BESTAND.link) await vergeetBestand();
+      tekenSyncStatus(); tekenAgenda();
+      return;
+    }
     if (actie === 'contacten-wis') {
       if (confirm('Contacten van dit toestel verwijderen? Je bestand zelf blijft bestaan.')) { await vergeetContacten(); tekenContacten(); render(); renderZijbalk(); }
       return;

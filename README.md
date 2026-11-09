@@ -23,11 +23,16 @@ De lezer (`js/mailtijden.js`) werkt met vaste regels en draait op het toestel; e
 
 ## Waar de afspraken vandaan komen
 
-Alles wat alleen op jouw toestel staat, geef je op onder **Instellingen**: het tandwiel links onderin op iPhone en iPad, op de Mac onderaan de zijbalk (als venster). Daar staan Agenda, Contacten, Ruimtes en Plaatsen via Google.
+Wat de app nodig heeft, geef je op onder **Instellingen**: het tandwiel links onderin op iPhone en iPad, op de Mac onderaan de zijbalk (als venster). Van boven naar beneden:
+
+- **Cloudflare:** de koppeling met je Cloudflare Worker (de link met de sleutel erin). Daarmee haalt de app je Outlook-agenda op en houdt hij je notities en ruimtes gelijk op al je toestellen. Je ziet wanneer er voor het laatst is gesynchroniseerd, met **Nu synchroniseren** (haalt ook de agenda opnieuw op), **Koppeling wijzigen** en **Koppeling verwijderen**. De link zelf staat nergens leesbaar; hij blijft op het toestel (localStorage). Een eerder opgegeven agenda-link neemt de app vanzelf over.
+- **Agenda:** waar de afspraken vandaan komen.
+- **Ruimtes:** je vergaderruimtes.
+- **Alleen op dit toestel:** je contacten en de Google-sleutel.
 
 Onder **Agenda** kies je de bron:
 
-1. **Agenda-link:** de link van je Cloudflare Worker, met de sleutel erin. De app haalt je agenda daarmee zelf op (zie hieronder).
+1. **Outlook-agenda:** via de koppeling met je Cloudflare Worker (zie hieronder). Is er nog geen koppeling, dan vraagt de app om de link.
 2. **Eigen .ics-bestand:** een bestand dat je eenmalig inlaadt.
 3. **Niets gekozen:** dan toont de app verzonnen voorbeeldgegevens uit `voorbeeld.js`. Met `?demo` achter het adres krijg je die altijd, ook als je een eigen agenda hebt gekoppeld.
 
@@ -121,7 +126,7 @@ Repository, Settings, Pages: Deploy from a branch, `main`, map `/ (root)`. De ap
 1. cloudflare.com, gratis account, **Workers & Pages**, **Create**, **Worker** (Start with Hello World).
 2. **Edit code**: vervang de code door `cloudflare/worker.js` en kies **Deploy**.
 3. **Settings**, **Variables and Secrets**, twee keer **Add**, type *Secret*: `ICS_URL` (de ICS-link uit Outlook) en `SLEUTEL` (een lange willekeurige tekst). Kies opnieuw **Deploy** als Cloudflare daarom vraagt.
-4. In de app, onder Instellingen, Agenda, Je eigen agenda kiezen, Via je agenda-link: `https://<worker>.<account>.workers.dev/?sleutel=<SLEUTEL>`.
+4. In de app, onder Instellingen, Cloudflare, Koppeling opgeven: `https://<worker>.<account>.workers.dev/?sleutel=<SLEUTEL>`.
 
 Koppel je de Worker liever aan GitHub (Import a repository), dan gebruikt Cloudflare `wrangler.jsonc` en plaatst het alleen de Worker. De naam in dat bestand (`agenda`) moet gelijk zijn aan de naam van de Worker in Cloudflare.
 
@@ -134,13 +139,13 @@ De Worker-link is net zo geheim als de Outlook-link: wie hem heeft, ziet je agen
 3. Zet de nieuwe `cloudflare/worker.js` in de Worker (**Edit code**, plakken, **Deploy**). Is de Worker aan GitHub gekoppeld, dan moet de koppeling met de database ook in `wrangler.jsonc` staan, anders haalt een nieuwe deploy hem weg (zie de opmerking in dat bestand).
 4. In de app: **Instellingen**, **Notities**, **Nu synchroniseren**. Daar staat daarna 'Gesynchroniseerd'. De tabel maakt de Worker zelf aan.
 
-Hoe het werkt: de app gebruikt je agenda-link met `/notities` erachter. Kort na elke wijziging, bij het openen en elke vijf minuten stuurt hij wat op het toestel is veranderd, en haalt hij op wat elders is veranderd. Per notitie wint de laatste wijziging; een verwijderde notitie gaat als markering mee. Zonder database, of met een Worker van vóór de notities, blijven de notities op het toestel en meldt Instellingen waarom.
+Hoe het werkt: de app gebruikt de koppeling met `/notities` erachter. Dat werkt ook als je agenda uit een .ics-bestand komt. Kort na elke wijziging, bij het openen en elke vijf minuten stuurt hij wat op het toestel is veranderd, en haalt hij op wat elders is veranderd. Per notitie wint de laatste wijziging; een verwijderde notitie gaat als markering mee. Zonder database, of met een Worker van vóór de notities, blijven de notities op het toestel en meldt Instellingen waarom.
 
 De ruimtes gaan op dezelfde momenten mee, via `/ruimtes`, als één lijst in een eigen tabel (`lijsten`) die de Worker zelf aanmaakt. De laatste wijziging wint. Staan er nog geen ruimtes in de Worker, dan stuurt het eerste toestel met ruimtes zijn lijst; ruimtes van vóór het synchroniseren wijken voor een lijst die er al staat. Een Worker die `/ruimtes` nog niet kent, slaat de app over; de notities gaan gewoon door. De contacten en de Google-sleutel blijven op het toestel.
 
 ### 4. Op je iPhone en iPad
 
-Open de app in Safari, tik op Delen, Zet op beginscherm. Geef daarna onder Instellingen je agenda-link op, en eventueel je contacten en ruimtes.
+Open de app in Safari, tik op Delen, Zet op beginscherm. Geef daarna onder Instellingen, Cloudflare je koppeling op, en eventueel je contacten en ruimtes.
 
 ## Code
 

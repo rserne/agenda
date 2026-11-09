@@ -263,6 +263,19 @@ function verbergStatus() {
 }
 
 // Een nieuwe link: ophalen en inlezen gebeuren op de achtergrond; de app blijft bruikbaar
+// De koppeling met je Cloudflare Worker (link met sleutel): voor je Outlook-agenda en om notities en ruimtes op al je
+// toestellen te hebben. Hij staat los van de agenda: ook met een .ics-bestand synchroniseren notities en ruimtes.
+// Alleen op dit toestel (localStorage). Een eerder opgegeven agenda-link neemt de app vanzelf over.
+const KOPPELING_SLEUTEL = 'ag_koppeling';
+function koppeling() {
+  const l = LS.get(KOPPELING_SLEUTEL);
+  if (l) return l;
+  if (BESTAND && BESTAND.link) { LS.set(KOPPELING_SLEUTEL, BESTAND.link); return BESTAND.link; }
+  return null;
+}
+const zetKoppeling = (l) => LS.set(KOPPELING_SLEUTEL, l.trim());
+const vergeetKoppeling = () => LS.del(KOPPELING_SLEUTEL);
+
 async function gebruikLink(link) {
   if (LINK_BEZIG) return;
   LINK_BEZIG = true;
@@ -273,6 +286,7 @@ async function gebruikLink(link) {
     toonStatus('Agenda inlezen…');
     const nu = Date.now();
     const b = { naam: 'Outlook-agenda', datum: nu, tekst, link: link.trim(), gecontroleerd: nu };
+    zetKoppeling(link);
     try { await IDB.set('ics', b); } catch (e) { /* privévenster: dan alleen voor deze sessie */ }
     await IDB.del('icsweken').catch(() => {});
     await gebruikBestand(b);
@@ -282,7 +296,7 @@ async function gebruikLink(link) {
     toonStatus('Je agenda is ingeladen.', { soort: 'klaar', duur: 2500 });
     synchroniseerStraks(500); // met de link kunnen ook de notities mee
   } catch (e) {
-    toonStatus(e.message, { soort: 'fout', actie: ['Link aanpassen', () => openLinkPaneel(link)] });
+    toonStatus(e.message, { soort: 'fout', actie: ['Koppeling aanpassen', () => openLinkPaneel(link)] });
   } finally {
     LINK_BEZIG = false;
     renderZijbalk();
@@ -335,11 +349,11 @@ async function nuBijwerken() {
   if (LINK_BEZIG) return;
   toonStatus('Agenda bijwerken…');
   await vernieuwLink({ ookAlsVers: true });
-  if (BESTAND && BESTAND.linkFout) toonStatus(BESTAND.linkFout, { soort: 'fout', actie: ['Link aanpassen', () => openLinkPaneel()] });
+  if (BESTAND && BESTAND.linkFout) toonStatus(BESTAND.linkFout, { soort: 'fout', actie: ['Koppeling aanpassen', () => openLinkPaneel()] });
   else toonStatus('Je agenda is bijgewerkt.', { soort: 'klaar', duur: 2000 });
 }
 const wisVraag = () => (BESTAND && BESTAND.link
-  ? 'De agenda-link en de afspraken van dit toestel wissen? De app toont dan weer voorbeeldgegevens. In Outlook verandert er niets.'
+  ? 'Je Outlook-agenda van dit toestel wissen? De app toont dan weer voorbeeldgegevens. In Outlook verandert er niets.'
   : 'Het agenda-bestand van dit toestel wissen? De app toont dan weer voorbeeldgegevens.');
 async function vergeetBestand() {
   await IDB.del('ics').catch(() => {});

@@ -14,9 +14,10 @@ const SYNC_ELKE_MS = 5 * 60 * 1000; // ook als er niets gebeurt, elke vijf minut
 let _syncTimer = null;
 
 function notitieAdres() {
-  if (!BESTAND || !BESTAND.link) return null;
+  const link = koppeling();
+  if (!link) return null;
   try {
-    const u = new URL(BESTAND.link);
+    const u = new URL(link);
     u.pathname = '/notities';
     return u;
   } catch (e) { return null; }
@@ -125,16 +126,25 @@ setInterval(() => synchroniseer({ vanzelf: true }), SYNC_ELKE_MS);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') synchroniseerStraks(300); });
 window.addEventListener('online', () => synchroniseerStraks(300));
 
-// Onder Instellingen: hoe het ervoor staat
+// Onder Instellingen, bij Cloudflare: gekoppeld of niet, wanneer er voor het laatst is gesynchroniseerd, en per onderdeel
+// hoe het ervoor staat. De link zelf tonen we niet.
+// Wat er via de koppeling gaat: de agenda (als die via Cloudflare komt), notities en ruimtes
+function wat() {
+  const delen = [...(BESTAND && BESTAND.link ? ['agenda'] : []), 'notities', SYNC.ruimtesOud ? 'ruimtes (werk je Worker bij)' : 'ruimtes'];
+  return delen.length === 3 ? `${delen[0]}, ${delen[1]} en ${delen[2]}` : delen.join(' en ');
+}
 function syncStatusHtml() {
-  const knop = `<button class="frij instknop" data-actie="sync-nu"${SYNC.bezig ? ' disabled' : ''}>${I.herhaal}<span>Nu synchroniseren</span></button>`;
-  const regel = (t1, t2) => `<div class="frij inststatus">${I.notitie}<span class="tekst"><span class="t1">${t1}</span><span class="t2">${t2}</span></span></div>`;
-  if (!notitieAdres()) return regel('Alleen op dit toestel', 'Synchroniseren werkt met je agenda-link');
-  if (SYNC.bezig) return regel('Synchroniseren…', 'Via je Worker') + knop;
-  if (SYNC.geenDatabase) return regel('Alleen op dit toestel', 'Je Worker heeft nog geen database') + knop;
-  if (SYNC.fout) return regel('Synchroniseren lukte niet', esc(SYNC.fout)) + knop;
-  if (SYNC.laatst) return regel('Gesynchroniseerd', `Om ${hhmm(new Date(SYNC.laatst))}, via je Worker`) + knop;
-  return regel('Nog niet gesynchroniseerd', 'Via je Worker') + knop;
+  const knop = (actie, icoon, tekst, uit = false, gevaar = false) => `<button class="frij instknop${gevaar ? ' gevaar' : ''}" data-actie="${actie}"${uit ? ' disabled' : ''}>${icoon}<span>${tekst}</span></button>`;
+  const regel = (t1, t2) => `<div class="frij inststatus">${I.koppel}<span class="tekst"><span class="t1">${t1}</span><span class="t2">${t2}</span></span></div>`;
+  if (!notitieAdres()) return regel('Niet gekoppeld', 'Voor je Outlook-agenda, en notities en ruimtes op al je toestellen') + knop('koppeling-wijzig', I.plus, 'Koppeling opgeven');
+  const [t1, t2] = SYNC.bezig ? ['Synchroniseren…', 'Even geduld']
+    : SYNC.geenDatabase ? ['Gekoppeld', 'Je Worker heeft nog geen database']
+      : SYNC.fout ? ['Synchroniseren lukte niet', esc(SYNC.fout)]
+        : SYNC.laatst ? ['Gesynchroniseerd', `Om ${hhmm(new Date(SYNC.laatst))} · ${wat()}`] : ['Gekoppeld', 'Nog niet gesynchroniseerd'];
+  return regel(t1, t2)
+    + knop('sync-nu', I.herhaal, 'Nu synchroniseren', SYNC.bezig || LINK_BEZIG)
+    + knop('koppeling-wijzig', I.koppel, 'Koppeling wijzigen')
+    + knop('koppeling-wis', I.wissen, 'Koppeling verwijderen', false, true);
 }
 function tekenSyncStatus() {
   document.querySelectorAll('#isync').forEach((el) => { el.innerHTML = syncStatusHtml(); });

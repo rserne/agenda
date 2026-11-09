@@ -244,6 +244,30 @@ test('agenda-link: ophalen op de achtergrond, en een duidelijke melding bij een 
   assert.deepEqual(p.fouten, []);
 });
 
+test('cloudflare: de koppeling staat los van de agenda; met een .ics-bestand gaan notities en ruimtes ook mee', async ({ browser, url }) => {
+  const p = await nieuwePagina(browser, TELEFOON);
+  p.on('dialog', (d) => d.accept());
+  await p.context().route('https://agenda.voorbeeld.workers.dev/**', (r) => r.fulfill({ status: 501, headers: { 'Access-Control-Allow-Origin': '*' }, body: 'De Worker heeft nog geen database' }));
+  await p.goto(url); await wacht(800);
+  await p.setInputFiles('#icsinvoer', ICS); await wacht(2500);
+  await p.locator('#tabbalk [data-tab="instellingen"]').tap(); await wacht(900);
+  assert.deepEqual(await p.locator('#instscherm .instsectie h3').allTextContents(), ['Cloudflare', 'Agenda', 'Ruimtes', 'Alleen op dit toestel']);
+  assert.match(await p.locator('#isync').innerText(), /Niet gekoppeld/);
+  assert.match(await p.locator('#instscherm .voetnoot').innerText(), /^Versie /);
+  await p.locator('#isync [data-actie="koppeling-wijzig"]').tap(); await wacht(800);
+  assert.equal(await p.locator('#linkinvoer').inputValue(), '', 'de huidige link staat er niet in');
+  await p.fill('#linkinvoer', LINK);
+  await p.locator('#linkknop').tap(); await wacht(1200);
+  assert.equal(await p.evaluate(() => koppeling()), LINK);
+  assert.equal(await p.evaluate(() => BESTAND && BESTAND.link), null, 'de agenda blijft het bestand');
+  assert.match(await p.locator('#isync').innerText(), /Je Worker heeft nog geen database/);
+  await p.locator('#isync [data-actie="koppeling-wis"]').tap(); await wacht(400);
+  assert.equal(await p.evaluate(() => koppeling()), null);
+  assert.match(await p.locator('#isync').innerText(), /Niet gekoppeld/);
+  assert.equal(await p.evaluate(() => !!BESTAND), true, 'het bestand blijft');
+  assert.deepEqual(p.fouten, []);
+});
+
 test('agenda-link: na Nu bijwerken in Instellingen toont de agenda de nieuwe afspraken zodra je terugkeert', async ({ browser, url }) => {
   const p = await nieuwePagina(browser, TELEFOON);
   let ics = fs.readFileSync(ICS, 'utf8');
@@ -254,7 +278,8 @@ test('agenda-link: na Nu bijwerken in Instellingen toont de agenda de nieuwe afs
   const titel = await p.evaluate(() => DATA.ruw.get(document.querySelector('#inhoud [data-id]').dataset.id).title);
   ics = ics.split(`SUMMARY:${titel}`).join('SUMMARY:Bijgewerkt overleg');
   await p.locator('#tabbalk [data-tab="instellingen"]').tap(); await wacht(900);
-  await p.locator('#instscherm [data-actie="ics-nu"]').tap(); await wacht(3000);
+  assert.equal(await p.locator('#instscherm [data-actie="ics-nu"]').count(), 0, 'geen Nu bijwerken meer bij de agenda');
+  await p.locator('#instscherm [data-actie="sync-nu"]').tap(); await wacht(3000);
   assert.equal(await p.locator('#statustekst').innerText(), 'Je agenda is bijgewerkt.');
   await p.locator('#tabbalk [data-tab="agenda"]').tap(); await wacht(800);
   assert.match(await p.locator('#inhoud').innerText(), /Bijgewerkt overleg/);
@@ -451,7 +476,7 @@ test('plaatsen: met een Google-sleutel vult Locatie ook adressen aan, en de sleu
   await p.goto(url); await wacht(800);
   await p.locator('#tabbalk [data-tab="instellingen"]').tap(); await wacht(900);
   const kaart = p.locator('#igooglekaart');
-  assert.match(await kaart.innerText(), /Geen sleutel/);
+  assert.match(await kaart.innerText(), /Geen Google-sleutel/);
   await p.locator('[data-actie="google-wijzig"]').tap(); await wacht(200);
   await p.locator('[data-actie="google-bewaar"]').tap(); await wacht(200);
   assert.equal(await p.locator('#igoogleuitslag').innerText(), 'Plak eerst een sleutel.');
@@ -464,7 +489,7 @@ test('plaatsen: met een Google-sleutel vult Locatie ook adressen aan, en de sleu
   await p.fill('#igoogle', 'proefsleutel');
   await p.locator('#igoogle').press('Enter'); await wacht(600); // Enter bewaart ook
   assert.match(await p.locator('#igoogleuitslag').innerText(), /^De sleutel werkt\.$/);
-  assert.match(await kaart.innerText(), /Sleutel ingesteld/);
+  assert.match(await kaart.innerText(), /Google-sleutel ingesteld/);
   assert.deepEqual(await kaart.locator('.instknop').allInnerTexts(), ['Sleutel wijzigen', 'Sleutel verwijderen'], 'geen aparte testknop');
   assert.equal(await p.locator('#instscherm').evaluate((e) => e.innerHTML.includes('proefsleutel')), false, 'de sleutel staat nergens in beeld');
   // Wijzigen begint met een leeg veld; annuleren laat de sleutel staan
@@ -916,6 +941,8 @@ test('synchroniseren: een notitie van de iPhone staat even later op de Mac; wijz
   // Instellingen laat zien hoe het ervoor staat, ook als de Worker nog geen database heeft
   await iphone.locator('#tabbalk [data-tab="instellingen"]').tap(); await wacht(600);
   assert.match(await iphone.locator('#isync').innerText(), /Gesynchroniseerd/);
+  assert.match(await iphone.locator('#isync').innerText(), /Om \d\d:\d\d · agenda, notities en ruimtes/);
+  assert.equal(await iphone.locator('#isync').innerText().then((t) => t.includes(LINK)), false, 'de link zelf staat er niet');
   const db = env.DB; delete env.DB;
   await iphone.locator('#isync [data-actie="sync-nu"]').tap(); await wacht(800);
   assert.match(await iphone.locator('#isync').innerText(), /Je Worker heeft nog geen database/);

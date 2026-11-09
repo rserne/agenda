@@ -261,6 +261,33 @@ test('agenda-link: na Nu bijwerken in Instellingen toont de agenda de nieuwe afs
   assert.deepEqual(p.fouten, []);
 });
 
+test('bestand op de Mac: na opnieuw openen geen voorbeeldafspraken tussen je eigen agenda, ook niet uit een oude kopie', async ({ browser, url }) => {
+  const p = await nieuwePagina(browser, MAC);
+  await p.goto(url); await wacht(800);
+  await p.setInputFiles('#icsinvoer', ICS); await wacht(3000);
+  const uids = new Set([...fs.readFileSync(ICS, 'utf8').matchAll(/^UID:(.+)$/gm)].map((m) => m[1].trim()));
+  const vreemd = () => p.evaluate((u) => [...DATA.ruw.values()].filter((e) => !u.includes(e.uid)).map((e) => e.title), [...uids]);
+  // Opnieuw openen in de tab Notities en met contacten: de zijbalk staat er dan meteen, maar laadt geen
+  // voorbeeldweken voordat de agenda uit de opslag komt
+  await p.setInputFiles('#contactinvoer', path.join(MAP, 'test', 'contacten.csv')); await wacht(600);
+  await p.locator('#zijbalk [data-tab="notities"]').click(); await wacht(400);
+  await p.reload(); await wacht(3000);
+  assert.ok(await p.evaluate(() => DATA.ruw.size) > 3);
+  assert.deepEqual(await vreemd(), []);
+  // Een kopie van vóór v163 (zonder stempel) met een voorbeeldafspraak erin: de app leest het bestand opnieuw
+  await p.evaluate(async () => {
+    const k = await IDB.get('icsweken');
+    const e = [...DATA.ruw.values()][0];
+    delete k.soort;
+    k.events.push({ ...e, id: 'vb|1', uid: 'voorbeeld-1', title: 'Bespreken voorbeeld' });
+    await IDB.set('icsweken', k);
+  });
+  await p.reload(); await wacht(3500);
+  assert.deepEqual(await vreemd(), []);
+  assert.equal((await p.evaluate(() => IDB.get('icsweken'))).soort, 2, 'de nieuwe kopie heeft de stempel');
+  assert.deepEqual(p.fouten, []);
+});
+
 test('bestand: zonder Web Worker leest de app het bestand zelf in', async ({ browser, url }) => {
   const p = await nieuwePagina(browser, TELEFOON);
   await p.context().addInitScript(() => { window.Worker = function () { throw new Error('geen worker'); }; });

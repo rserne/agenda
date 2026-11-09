@@ -10,6 +10,12 @@
 const DATA = { ruw: new Map(), weken: new Set(), me: null, ownDomains: [] };
 const BEWAAR_WEKEN = 26;
 
+// Pas weken laden als bij het opstarten bekend is waar de afspraken vandaan komen. Anders vult de zijbalk op de
+// iPad en de Mac al voorbeeldweken in voordat je eigen agenda uit de opslag komt, en raken die twee vermengd.
+let BRON_BEKEND = false;
+// De bewaarde kopie van de weken: een kopie zonder deze stempel kan nog voorbeeldafspraken bevatten (tot v163)
+const KOPIE_SOORT = 2;
+
 // Voorbeeldgegevens: per ontbrekende week maken (voorbeeld.js)
 function laadVoorbeeld(van, tot) {
   DATA.me = VOORBEELD_IK;
@@ -168,7 +174,7 @@ function bewaarWeken({ meteen = false } = {}) {
     const grens = BEWAAR_WEKEN * 7 * 864e5;
     const weken = [...DATA.weken].filter((w) => Math.abs(w - t) < grens);
     const events = [...DATA.ruw.values()].filter((e) => Math.abs(new Date(e.start).getTime() - t) < grens);
-    IDB.set('icsweken', { datum: BESTAND.datum, weken, events, eigenDomeinen: DATA.ownDomains }).catch(() => {});
+    IDB.set('icsweken', { soort: KOPIE_SOORT, datum: BESTAND.datum, weken, events, eigenDomeinen: DATA.ownDomains }).catch(() => {});
   }, meteen ? 0 : 800);
 }
 async function laadUitBestand(van, tot) {
@@ -345,5 +351,6 @@ async function vergeetBestand() {
 }
 // Zorg dat de weken van van t/m tot er zijn: uit je eigen agenda, of anders de voorbeeldgegevens
 function zorgVoor(van, tot) {
+  if (!BRON_BEKEND) return Promise.resolve();
   return BESTAND ? laadUitBestand(van, tot) : laadVoorbeeld(van, tot);
 }

@@ -209,12 +209,13 @@ function koppel() {
   renderKop(); // de titel en knoppen staan er meteen, ook voordat de afspraken uit de opslag komen
   Promise.all([IDB.get('ics').catch(() => null), IDB.get('icsweken').catch(() => null)]).then(async ([b, kopie]) => {
     if (b && b.tekst && !PARAMS.has('demo')) {
-      if (kopie && kopie.weken && kopie.weken.length) startUitBewaard(b, kopie);
+      if (kopie && kopie.soort === KOPIE_SOORT && kopie.weken && kopie.weken.length) startUitBewaard(b, kopie);
       else {
         $('#inhoud').innerHTML = '<div class="laden">Agenda-bestand inlezen…</div>';
         try { await gebruikBestand(b); } catch (e) { BESTAND = null; }
       }
     }
+    BRON_BEKEND = true;
     // Eerst tonen wat er bewaard is, daarna de rest van de weken klaarzetten
     render();
     laad();

@@ -30,12 +30,17 @@ function bewaarNotities({ meteen = false } = {}) {
 const nieuwId = () => (crypto.randomUUID ? crypto.randomUUID() : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`);
 const levendeNotities = () => NOTITIES.filter((n) => !n.weg);
 const notitieBij = (afspraakId) => levendeNotities().find((n) => n.afspraak && n.afspraak.id === afspraakId) || null;
-const notitieLeeg = (n) => !n.tekst.trim() && !n.labels.length;
+// Actiepunten staan in de notitie zelf: { id, tekst, klaar, deadline ('jjjj-mm-dd' of null) }. Een los actiepunt is een
+// notitie met alleen dat punt. Zo blijven de koppelingen met de notitie, het overleg en de labels vanzelf bewaard.
+const punten = (n) => (Array.isArray(n.punten) ? n.punten : []);
+const openPunten = (n) => punten(n).filter((p) => !p.klaar && p.tekst.trim());
+const notitieLeeg = (n) => !n.tekst.trim() && !n.labels.length && !punten(n).some((p) => p.tekst.trim());
+const maakPunt = (tekst = '') => ({ id: nieuwId(), tekst, klaar: false, deadline: null });
 
 function maakNotitie(e = null) {
   const nu = Date.now();
   return {
-    id: nieuwId(), tekst: '', labels: [],
+    id: nieuwId(), tekst: '', labels: [], punten: [],
     afspraak: e ? { id: e.id, titel: e.title || '', start: +e.start, end: +e.end } : null,
     gemaakt: nu, gewijzigd: nu, weg: false,
   };
@@ -56,7 +61,7 @@ function wijzigNotitie(n, velden) {
 }
 function verwijderNotitie(n) {
   // Niet echt weghalen: de markering gaat straks mee naar de andere toestellen
-  Object.assign(n, { tekst: '', labels: [], weg: true, gewijzigd: Date.now() });
+  Object.assign(n, { tekst: '', labels: [], punten: [], weg: true, gewijzigd: Date.now() });
   if (!NOTITIES.includes(n)) return;
   bewaarNotities({ meteen: true });
 }
@@ -117,7 +122,11 @@ function wijzigDatum(ms) {
 // Apple). Daarnaast een voorproef: de eerste regel tekst bij een afspraak, anders de tweede regel.
 function notitieKop(n) {
   const regels = n.tekst.split('\n').map((r) => r.trim()).filter(Boolean);
-  return n.afspraak ? [n.afspraak.titel || 'Zonder titel', regels[0] || ''] : [regels[0] || 'Nieuwe notitie', regels[1] || ''];
+  const open = openPunten(n).length;
+  const metPunten = (t) => t || (open ? (open === 1 ? '1 open actiepunt' : `${open} open actiepunten`) : '');
+  if (n.afspraak) return [n.afspraak.titel || 'Zonder titel', metPunten(regels[0])];
+  if (!regels.length && punten(n).some((p) => p.tekst.trim())) return [punten(n).find((p) => p.tekst.trim()).tekst.trim(), open > 1 ? `${open} open actiepunten` : ''];
+  return [regels[0] || 'Nieuwe notitie', metPunten(regels[1])];
 }
 // Wat er op het scherm staat: bij een losse notitie de titel (groot, bovenaan) en daaronder de rest
 function schermTekst(el) {
@@ -125,6 +134,17 @@ function schermTekst(el) {
   if (!r) return null;
   return t && t.value ? t.value + (r.value ? `\n${r.value}` : '') : r.value;
 }
+// Een deadline kort: vandaag, morgen, de dag van de week, of de datum
+const deadlineDag = (d) => { const [j, m, g] = d.split('-').map(Number); return new Date(j, m - 1, g); };
+function deadlineTekst(d) {
+  const dag = deadlineDag(d), dagen = Math.round((dag - vandaag()) / 864e5);
+  if (dagen === 0) return 'Vandaag';
+  if (dagen === 1) return 'Morgen';
+  if (dagen === -1) return 'Gisteren';
+  if (dagen > 1 && dagen < 7) return cap(DAYS_LONG[dag.getDay()]);
+  return `${dag.getDate()} ${MONTHS_SHORT[dag.getMonth()]}${dag.getFullYear() !== vandaag().getFullYear() ? ` ${dag.getFullYear()}` : ''}`;
+}
+const teLaat = (d) => !!d && deadlineDag(d) < vandaag();
 const labelChips = (labels) => (labels.length ? `<span class="nlabels">${labels.map((l) => `<span class="nlabel">${esc(toonLabel(l))}</span>`).join('')}</span>` : '');
 
 /* ------------------------------------------------------------------ */
@@ -156,6 +176,7 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
       <div class="notbovenbalk"><span></span><div class="notmeta num">${meta}</div><div id="notvoet"></div></div>
       ${titelHtml}
       ${labelHtml}
+      <div class="punten" id="notpunten"></div>
       <textarea id="nottekst" placeholder="Notitie" aria-label="Notitie"></textarea>
     </div>`;
   else el.innerHTML = `${doel ? '' : `<div class="detailgreep"><div class="greep"></div>
@@ -164,6 +185,7 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
       <div class="dkop"><div class="dkopinhoud">${titelHtml}${n.afspraak ? `<div class="dmeta"><div class="num">${notitieDatum(n)}</div></div>` : ''}</div>
         <button class="rond kopknop" data-actie="notmenu" aria-label="Meer" aria-haspopup="menu">${I.meer}</button></div>
       ${labelHtml}
+      <div class="formkaart puntenkaart"><div class="punten" id="notpunten"></div></div>
       <div class="formkaart tekstkaart">
         <label class="frij boven"><textarea id="nottekst" rows="8" placeholder="Notitie" aria-label="Notitie"></textarea></label>
       </div>
@@ -235,6 +257,74 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
     if (bijWijziging) bijWijziging();
   };
   tekst.addEventListener('input', bijTypen);
+
+  // Actiepunten: een rondje om af te vinken, de tekst, en een deadline. Enter maakt een nieuw punt eronder;
+  // Backspace in een leeg punt haalt het weg. Een regel in de tekst die begint met ! wordt bij Enter een actiepunt.
+  const puntenEl = $('#notpunten', el);
+  const tekenPunten = (focusId = null) => {
+    puntenEl.innerHTML = punten(n).map((p) => `<div class="punt${p.klaar ? ' klaar' : ''}" data-punt="${p.id}">
+        <button type="button" class="puntvink" data-actie="vink" aria-label="${p.klaar ? 'Niet afgevinkt maken' : 'Afvinken'}" aria-pressed="${p.klaar}">${I.vink}</button>
+        <input class="punttekst" value="${esc(p.tekst)}" placeholder="Actiepunt" aria-label="Actiepunt" autocomplete="off" autocapitalize="sentences" enterkeyhint="next">
+        <button type="button" class="puntdatum${p.deadline ? ' aan' : ''}${!p.klaar && teLaat(p.deadline) ? ' laat' : ''}" data-actie="deadline" aria-label="${p.deadline ? `Deadline ${deadlineTekst(p.deadline)}` : 'Deadline'}">${p.deadline ? esc(deadlineTekst(p.deadline)) : I.kalender}</button>
+        <input type="date" class="puntkiezer" value="${p.deadline || ''}" tabindex="-1" aria-hidden="true">
+      </div>`).join('') + `<button type="button" class="puntnieuw" data-actie="punt-nieuw">${I.plus}<span>Actiepunt</span></button>`;
+    if (focusId) { const i = puntenEl.querySelector(`[data-punt="${focusId}"] .punttekst`); if (i) { i.focus(); i.setSelectionRange(i.value.length, i.value.length); } }
+  };
+  const zetPunten = (lijst, focusId = null) => {
+    const was = NOTITIES.includes(n);
+    wijzigNotitie(n, { punten: lijst });
+    if (doel) el.dataset.punten = JSON.stringify(punten(n));
+    tekenPunten(focusId);
+    if (was !== NOTITIES.includes(n)) tekenLabels();
+    if (bijWijziging) bijWijziging();
+  };
+  const voegPunt = (tekstPunt = '', na = null) => {
+    const p = maakPunt(tekstPunt), lijst = [...punten(n)];
+    const i = na ? lijst.findIndex((x) => x.id === na) : -1;
+    lijst.splice(i >= 0 ? i + 1 : lijst.length, 0, p);
+    zetPunten(lijst, tekstPunt ? null : p.id);
+    return p;
+  };
+  const puntVan = (t) => { const r = t.closest('[data-punt]'); return r ? punten(n).find((p) => p.id === r.dataset.punt) : null; };
+  tekenPunten();
+  if (doel) el.dataset.punten = JSON.stringify(punten(n));
+  puntenEl.addEventListener('input', (ev) => {
+    const p = ev.target.classList.contains('punttekst') && puntVan(ev.target);
+    if (!p) return;
+    p.tekst = ev.target.value;
+    const was = NOTITIES.includes(n);
+    wijzigNotitie(n, { punten: punten(n) });
+    if (doel) el.dataset.punten = JSON.stringify(punten(n));
+    if (was !== NOTITIES.includes(n)) tekenLabels();
+    if (bijWijziging) bijWijziging();
+  });
+  puntenEl.addEventListener('change', (ev) => {
+    const p = ev.target.classList.contains('puntkiezer') && puntVan(ev.target);
+    if (p) zetPunten(punten(n).map((x) => (x === p ? { ...x, deadline: ev.target.value || null } : x)));
+  });
+  puntenEl.addEventListener('keydown', (ev) => {
+    const p = ev.target.classList.contains('punttekst') && puntVan(ev.target);
+    if (!p || ev.isComposing) return;
+    if (ev.key === 'Enter') { ev.preventDefault(); if (p.tekst.trim()) voegPunt('', p.id); else tekst.focus(); }
+    else if (ev.key === 'Backspace' && !ev.target.value) {
+      ev.preventDefault();
+      const lijst = punten(n), i = lijst.indexOf(p);
+      zetPunten(lijst.filter((x) => x !== p), i > 0 ? lijst[i - 1].id : null);
+    }
+  });
+  tekst.addEventListener('keydown', (ev) => {
+    if (ev.key !== 'Enter' || ev.isComposing) return;
+    const v = tekst.value, pos = tekst.selectionStart, begin = v.lastIndexOf('\n', pos - 1) + 1;
+    let eind = v.indexOf('\n', pos); if (eind < 0) eind = v.length;
+    const m = v.slice(begin, eind).match(/^\s*!\s*(\S.*)$/);
+    if (!m) return;
+    ev.preventDefault();
+    tekst.value = v.slice(0, begin) + v.slice(v[eind] === '\n' ? eind + 1 : eind);
+    tekst.setSelectionRange(begin, begin);
+    bijTypen();
+    voegPunt(m[1].trim());
+    tekst.focus();
+  });
   if (titelVeld) {
     titelVeld.addEventListener('input', bijTypen);
     // Enter in de titel: verder in de tekst eronder. Backspace vooraan in de tekst: de eerste regel terug in de titel.
@@ -266,6 +356,17 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
     if (t.closest('[data-actie="verwijder"]')) { verwijder(); return; }
     const menuKnop = t.closest('[data-actie="notmenu"]');
     if (menuKnop) { openNotitiemenu(menuKnop, verwijder); return; }
+    const pa = t.closest('#notpunten [data-actie]');
+    if (pa) {
+      const p = puntVan(pa);
+      if (pa.dataset.actie === 'punt-nieuw') voegPunt();
+      else if (pa.dataset.actie === 'vink' && p) zetPunten(punten(n).map((x) => (x === p ? { ...x, klaar: !x.klaar } : x)));
+      else if (pa.dataset.actie === 'deadline' && p) {
+        const k = pa.parentElement.querySelector('.puntkiezer');
+        try { k.showPicker(); } catch (e) { k.focus(); k.click(); }
+      }
+      return;
+    }
     const tag = t.closest('[data-tag]');
     if (tag) {
       const i = Number(tag.dataset.tag);
@@ -320,7 +421,8 @@ function notitieSectieHtml(e) {
 
 let notZoek = '';
 let notLabels = [];
-let notMeer = false; // iPad en Mac: alle labels tonen in plaats van twee regels // het gekozen label, en eventueel labels daarbinnen (de tweede regel)
+let notMeer = false;
+let notTeDoen = false; // het overzicht van open actiepunten in plaats van de notities // iPad en Mac: alle labels tonen in plaats van twee regels // het gekozen label, en eventueel labels daarbinnen (de tweede regel)
 let notGekozen = null; // iPad en Mac: de notitie rechts naast de lijst
 let notNieuw = null; // een nieuwe notitie rechts die nog leeg is (en dus nog niet in de lijst staat)
 const isLabel = (a, b) => !!a && !!b && tagSleutel(a) === tagSleutel(b);
@@ -332,7 +434,7 @@ function zichtbareNotities() {
     .filter((n) => notLabels.every((k) => n.labels.some((l) => isLabel(l, k))))
     .filter((n) => {
       if (!woorden.length) return true;
-      const hooi = labelSleutel([n.tekst, n.labels.map(toonLabel).join(' '), n.afspraak ? n.afspraak.titel : ''].join(' '));
+      const hooi = labelSleutel([n.tekst, punten(n).map((p) => p.tekst).join(' '), n.labels.map(toonLabel).join(' '), n.afspraak ? n.afspraak.titel : ''].join(' '));
       return woorden.every((w) => hooi.includes(w));
     })
     .sort((a, b) => b.gewijzigd - a.gewijzigd); // zoals Notities van Apple: de laatst gewijzigde bovenaan
@@ -358,7 +460,10 @@ function filterHtml() {
   const rij1 = alle.filter((l) => !hekjes.length || hekjes.some((h) => tagSleutel(l).startsWith(h)));
   const eerste = hoofd ? [hoofd, ...rij1.filter((l) => !isLabel(l, hoofd))] : rij1;
   // Op iPad en Mac lopen de labels door over hooguit twee regels; Meer klapt de rest uit (pasMeerAan)
-  let html = `<div class="chips nfilter nhoofd${notMeer ? ' open' : ''}">${eerste.map((l) => chip(l, isLabel(l, hoofd), 1)).join('')}</div>`
+  // Voorop: Te doen, met het aantal open actiepunten (binnen het gekozen label)
+  const open = levendeNotities().filter((n) => notLabels.every((k) => n.labels.some((l) => isLabel(l, k)))).reduce((t, n) => t + openPunten(n).length, 0);
+  const teDoen = open || notTeDoen ? `<button type="button" class="chip tedoen${notTeDoen ? ' aan' : ''}" data-tedoen aria-pressed="${notTeDoen}">${I.vink}Te doen<span class="aantal">${open}</span></button>` : '';
+  let html = `<div class="chips nfilter nhoofd${notMeer ? ' open' : ''}">${teDoen}${eerste.map((l) => chip(l, isLabel(l, hoofd), 1)).join('')}</div>`
     + (naastElkaar() ? `<button type="button" class="nmeer" hidden>${notMeer ? 'Minder' : 'Meer'}</button>` : '');
   if (!hoofd) return html;
   const sub = notLabels.slice(1);
@@ -384,7 +489,33 @@ function notitiesHtml() {
   if (!naastElkaar()) return `<div class="notitab">${filter}<div id="notlijst">${notitieLijstHtml()}</div></div>`;
   return `<div class="notitab notisplit"><div class="notilinks">${filter}<div id="notlijst">${notitieLijstHtml()}</div></div><div class="notipaneel" id="notipaneel"></div></div>`;
 }
+// Te doen: alle open actiepunten uit de zichtbare notities, geordend op deadline. Onder elk punt de notitie of het
+// overleg waar het bij hoort; een tik opent die notitie.
+function teDoenHtml() {
+  const t = vandaag();
+  const groepVan = (d) => {
+    if (!d) return 'Zonder deadline';
+    const dagen = Math.round((deadlineDag(d) - t) / 864e5);
+    return dagen < 0 ? 'Te laat' : dagen === 0 ? 'Vandaag' : dagen === 1 ? 'Morgen' : dagen < 7 ? 'Deze week' : 'Later';
+  };
+  const volgorde = ['Te laat', 'Vandaag', 'Morgen', 'Deze week', 'Later', 'Zonder deadline'];
+  const items = [];
+  zichtbareNotities().forEach((n) => openPunten(n).forEach((p) => items.push({ n, p, groep: groepVan(p.deadline) })));
+  if (!items.length) return `<p class="nleeg nlijstleeg">Geen open actiepunten</p>`;
+  items.sort((a, b) => volgorde.indexOf(a.groep) - volgorde.indexOf(b.groep) || String(a.p.deadline || '').localeCompare(String(b.p.deadline || '')) || b.n.gemaakt - a.n.gemaakt); // vast: afvinken laat niets verspringen
+  const rij = ({ n, p }) => {
+    const [titel] = notitieKop(n);
+    const bron = titel === p.tekst.trim() ? '' : titel;
+    const dl = p.deadline ? `<span class="tddatum${teLaat(p.deadline) ? ' laat' : ''}">${esc(deadlineTekst(p.deadline))}</span>` : '';
+    return `<div class="${naastElkaar() ? '' : 'drij '}notitierij tdrij" data-notitie="${n.id}" role="button" tabindex="0">
+      <button type="button" class="puntvink" data-tdvink="${n.id}|${p.id}" aria-label="Afvinken"></button>
+      <span class="tekst"><span class="t1">${esc(p.tekst.trim())}</span>${dl || bron ? `<span class="t2">${dl}${esc(bron)}</span>` : ''}</span></div>`;
+  };
+  return volgorde.filter((g) => items.some((i) => i.groep === g))
+    .map((g) => `<h3 class="ngroep${g === 'Te laat' ? ' laat' : ''}">${g}</h3><div class="${naastElkaar() ? 'ngroeplijst' : 'kaart'}">${items.filter((i) => i.groep === g).map(rij).join('')}</div>`).join('');
+}
 function notitieLijstHtml() {
+  if (notTeDoen) return teDoenHtml();
   const lijst = zichtbareNotities();
   const gekozen = naastElkaar() ? gekozenNotitie() : null;
   if (!lijst.length) return `<p class="nleeg nlijstleeg">${levendeNotities().length ? 'Niets gevonden' : 'Nog geen notities'}</p>`;
@@ -436,7 +567,8 @@ function tekenNotities(volledig = false) {
   const n = gekozenNotitie();
   const bezig = vak.contains(document.activeElement);
   const opScherm = schermTekst(vak);
-  if (vak.dataset.id !== (n ? n.id : '') || (n && !bezig && opScherm !== null && opScherm !== n.tekst)) vulNotitiepaneel();
+  const anderePunten = n && vak.dataset.punten !== undefined && vak.dataset.punten !== JSON.stringify(punten(n));
+  if (vak.dataset.id !== (n ? n.id : '') || (n && !bezig && ((opScherm !== null && opScherm !== n.tekst) || anderePunten))) vulNotitiepaneel();
 }
 // Een nieuwe notitie: op iPad en Mac in de tab Notities meteen rechts, anders als paneel
 function nieuweNotitie() {
@@ -459,6 +591,14 @@ $('#notzoek').addEventListener('input', (ev) => {
 document.addEventListener('click', (ev) => {
   if (!ev.target.closest('#inhoud .notitab') || ev.target.closest('#notipaneel')) return;
   if (ev.target.closest('.nmeer')) { notMeer = !notMeer; tekenNotities(); return; }
+  if (ev.target.closest('[data-tedoen]')) { notTeDoen = !notTeDoen; tekenNotities(); return; }
+  const vink = ev.target.closest('[data-tdvink]');
+  if (vink) {
+    const [nid, pid] = vink.dataset.tdvink.split('|');
+    const n = NOTITIES.find((x) => x.id === nid);
+    if (n) { wijzigNotitie(n, { punten: punten(n).map((p) => (p.id === pid ? { ...p, klaar: true } : p)) }); tekenNotities(); }
+    return;
+  }
   const f = ev.target.closest('[data-label]');
   if (f) {
     const l = f.dataset.label;

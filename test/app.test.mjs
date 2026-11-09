@@ -792,6 +792,45 @@ test('notities: de tab zoekt op tekst, filtert op label, en een losse notitie ka
   assert.deepEqual(p.fouten, []);
 });
 
+test('actiepunten: bovenaan de notitie, met een deadline, via ! in de tekst, en Te doen als overzicht', async ({ browser, url }) => {
+  const p = await nieuwePagina(browser, TELEFOON);
+  await p.goto(url); await wacht(1000);
+  await p.evaluate(() => openNotitie()); await wacht(800);
+  await p.fill('#nottitel', 'Overleg pilot');
+  await p.locator('#notpunten [data-actie="punt-nieuw"]').tap(); await wacht(200);
+  await p.keyboard.type('Offerte sturen'); await p.keyboard.press('Enter'); await wacht(200);
+  await p.keyboard.type('Planning delen'); await wacht(200);
+  assert.deepEqual(await p.locator('#notpunten .punttekst').evaluateAll((l) => l.map((x) => x.value)), ['Offerte sturen', 'Planning delen']);
+  assert.ok(await p.locator('#notpunten .punttekst').first().evaluate((x) => parseFloat(getComputedStyle(x).fontSize)) >= 16);
+  // Een deadline: gisteren, dus te laat
+  await p.locator('#notpunten .puntkiezer').first().evaluate((k) => { k.value = '2026-11-03'; k.dispatchEvent(new Event('change', { bubbles: true })); }); await wacht(200);
+  assert.equal(await p.locator('#notpunten .puntdatum.laat').innerText(), 'Gisteren');
+  // Een regel met ! in de tekst wordt bij Enter een actiepunt
+  await p.locator('#nottekst').tap(); await p.keyboard.type('Afgesproken: we starten in januari.\n! Team uitnodigen'); await p.keyboard.press('Enter'); await wacht(200);
+  assert.equal(await p.locator('#nottekst').inputValue(), 'Afgesproken: we starten in januari.\n');
+  assert.equal(await p.locator('#notpunten .punt').count(), 3);
+  // Afvinken in de notitie
+  await p.locator('#notpunten .punt').nth(1).locator('.puntvink').tap(); await wacht(200);
+  assert.equal(await p.locator('#notpunten .punt.klaar').count(), 1);
+  await p.keyboard.press('Escape'); await wacht(600);
+  // Een los actiepunt: een notitie met alleen dat punt; de titel is het punt
+  await p.evaluate(() => { const n = maakNotitie(); wijzigNotitie(n, { punten: [{ id: 'los', tekst: 'Boek terugbrengen', klaar: false, deadline: null }] }); });
+  await p.locator('#tabbalk [data-tab="notities"]').tap(); await wacht(700);
+  assert.ok((await p.locator('#notlijst .notitierij .t1').allInnerTexts()).includes('Boek terugbrengen'));
+  // Te doen: alle open actiepunten, geordend op deadline
+  assert.match(await p.locator('#notfilter [data-tedoen]').innerText(), /Te doen\s*3/);
+  await p.locator('#notfilter [data-tedoen]').tap(); await wacht(300);
+  assert.deepEqual(await p.locator('#notlijst .ngroep').allInnerTexts(), ['Te laat', 'Zonder deadline']);
+  assert.deepEqual(await p.locator('#notlijst .tdrij .t1').allInnerTexts(), ['Offerte sturen', 'Boek terugbrengen', 'Team uitnodigen']);
+  assert.match(await p.locator('#notlijst .tdrij').first().innerText(), /Gisteren\s*Overleg pilot/);
+  await p.locator('#notlijst .tdrij').first().locator('.puntvink').tap(); await wacht(300);
+  assert.deepEqual(await p.locator('#notlijst .tdrij .t1').allInnerTexts(), ['Boek terugbrengen', 'Team uitnodigen']);
+  // Een tik op een punt opent de notitie
+  await p.locator('#notlijst .tdrij .t1', { hasText: 'Team uitnodigen' }).tap(); await wacht(800);
+  assert.equal(await p.locator('#nottitel').inputValue(), 'Overleg pilot');
+  assert.deepEqual(p.fouten, []);
+});
+
 test('notities op de Mac: lijst en notitie naast elkaar; typen loopt mee in de lijst, ook als er intussen iets binnenkomt', async ({ browser, url }) => {
   const p = await nieuwePagina(browser, MAC);
   await p.goto(url); await wacht(1000);

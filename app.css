@@ -1145,6 +1145,35 @@ label.frij:focus-within .flabel { color: var(--accent); }
 /* Losse notitie: de eerste regel is de titel, groot bovenaan, net als de titel van een afspraak */
 input.nottitel { display: block; width: 100%; min-width: 0; padding: 0; border: 0; outline: none; background: transparent; color: var(--label); font-family: inherit; -webkit-appearance: none; appearance: none; }
 input.nottitel::placeholder { color: var(--secondary); opacity: 0.6; }
+/* Actiepunten bovenaan een notitie: een rondje om af te vinken, de tekst en een deadline */
+.punten { display: flex; flex-direction: column; }
+.punt { position: relative; display: flex; align-items: center; gap: 10px; min-height: 42px; }
+.puntvink { flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--secondary); display: grid; place-items: center; color: transparent; }
+.puntvink .icoon { width: 13px; height: 13px; }
+.punt.klaar .puntvink { background: var(--accent); box-shadow: none; color: var(--onAccent); }
+.punttekst { flex: 1; min-width: 0; padding: 9px 0; border: 0; outline: none; background: transparent; color: var(--label); font: inherit; font-size: 16px; }
+.punttekst::placeholder { color: var(--secondary); opacity: 0.8; }
+.punt.klaar .punttekst { color: var(--secondary); }
+.puntdatum { flex-shrink: 0; display: inline-flex; align-items: center; height: 26px; padding: 0 9px; border-radius: 13px; color: var(--secondary); font-size: 13px; font-weight: 500; }
+.puntdatum .icoon { width: 17px; height: 17px; opacity: 0.55; }
+.puntdatum.aan { background: var(--fill); color: var(--label); }
+.puntdatum.laat { color: var(--statusNo); }
+.puntkiezer { position: absolute; right: 0; bottom: 0; width: 1px; height: 1px; padding: 0; border: 0; opacity: 0; pointer-events: none; font-size: 16px; }
+.puntnieuw { display: flex; align-items: center; gap: 10px; min-height: 42px; color: var(--accent); font-size: 16px; }
+.puntnieuw .icoon { width: 22px; height: 18px; flex-shrink: 0; }
+.puntenkaart { padding: 0 16px; }
+.puntenkaart .punt + .punt, .puntenkaart .punt + .puntnieuw { border-top: 0.5px solid var(--separator); }
+/* Te doen: voorop in de labels, met het aantal open actiepunten */
+.chip.tedoen { gap: 6px; }
+.chip.tedoen .icoon { width: 14px; height: 14px; }
+.chip.tedoen .aantal { min-width: 20px; padding: 0 6px; border-radius: 10px; background: rgb(120 120 128 / 0.2); font-size: 12px; line-height: 18px; text-align: center; }
+.chip.tedoen.aan .aantal { background: rgb(255 255 255 / 0.25); }
+.tdrij { display: flex; align-items: flex-start; gap: 12px; }
+.tdrij .puntvink { margin-top: 1px; }
+.tdrij .tekst { flex: 1; min-width: 0; }
+.tddatum { margin-right: 8px; color: var(--label); }
+.tddatum.laat, .ngroep.laat { color: var(--statusNo); }
+.tddatum.laat { font-weight: 600; }
 .notitierij { cursor: pointer; }
 /* Tab Notities: kopjes per periode, zoals in Notities van Apple; per notitie de titel, de datum met een voorproef en de labels */
 .ngroep { margin: 8px 4px -6px; font-size: 20px; line-height: 25px; font-weight: 700; letter-spacing: -0.3px; color: var(--label); }
@@ -1258,6 +1287,7 @@ body.notitietab .titelknop, body.insttab .titelknop { cursor: default; }
   .notisplit .notitierij:hover:not(.aan) { background: var(--fill); }
   .notisplit .notitierij:hover::after, .notisplit .notitierij:has(+ .notitierij:hover)::after { display: none; }
   .notisplit .notitierij.aan { background: var(--selBg); }
+  .notisplit .notitierij.tdrij { display: flex; }
   .notisplit .notitierij .t1 { display: block; font-size: 16px; line-height: 21px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .notisplit .notitierij .t2 { display: block; margin-top: 2px; font-size: 14px; line-height: 19px; color: var(--secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .notisplit .notitierij .t2 .ndatum { margin-right: 8px; color: var(--label); opacity: 0.8; }

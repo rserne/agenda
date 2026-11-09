@@ -159,9 +159,10 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
       <textarea id="nottekst" placeholder="Notitie" aria-label="Notitie"></textarea>
     </div>`;
   else el.innerHTML = `${doel ? '' : `<div class="detailgreep"><div class="greep"></div>
-      <div class="detailnav"><button class="rond glas" data-actie="sluit" aria-label="Sluiten">${I.kruis}</button></div></div>`}
+      <div class="detailnav"><button class="rond glas" data-actie="notmenu" aria-label="Meer" aria-haspopup="menu">${I.meer}</button><button class="rond glas" data-actie="sluit" aria-label="Sluiten">${I.kruis}</button></div></div>`}
     <div class="detailinhoud">
-      <div class="dkop"><div class="dkopinhoud">${titelHtml}${n.afspraak ? `<div class="dmeta"><div class="num">${notitieDatum(n)}</div></div>` : ''}</div></div>
+      <div class="dkop"><div class="dkopinhoud">${titelHtml}${n.afspraak ? `<div class="dmeta"><div class="num">${notitieDatum(n)}</div></div>` : ''}</div>
+        <button class="rond kopknop" data-actie="notmenu" aria-label="Meer" aria-haspopup="menu">${I.meer}</button></div>
       ${labelHtml}
       <div class="formkaart tekstkaart">
         <label class="frij boven"><textarea id="nottekst" rows="8" placeholder="Notitie" aria-label="Notitie"></textarea></label>
@@ -182,9 +183,9 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
     $('#notlabels', el).innerHTML = n.labels.map((l, i) => (i === gekozenTag
       ? `<button type="button" class="tag aan" data-tag="${i}" aria-label="${esc(toonLabel(l))} weghalen">${esc(toonLabel(l))}${I.kruis}</button>`
       : `<button type="button" class="tag" data-tag="${i}">${esc(toonLabel(l))}</button>`)).join('');
-    $('#notvoet', el).innerHTML = !NOTITIES.includes(n) ? ''
-      : doel ? `<button class="notweg" data-actie="verwijder" aria-label="Notitie verwijderen">${I.wissen}</button>`
-        : `<button class="groteknop rood" data-actie="verwijder">${I.wissen}Notitie verwijderen</button>`;
+    // Verwijderen: op iPad en Mac een prullenbak naast de notitie, in een paneel onder de knop met drie puntjes
+    if (doel) $('#notvoet', el).innerHTML = NOTITIES.includes(n) ? `<button class="notweg" data-actie="verwijder" aria-label="Notitie verwijderen">${I.wissen}</button>` : '';
+    el.querySelectorAll('[data-actie="notmenu"]').forEach((b) => { b.hidden = !NOTITIES.includes(n); });
   };
   const zetLabels = (labels) => {
     gekozenTag = -1;
@@ -253,16 +254,18 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
     });
   }
 
+  const verwijder = () => {
+    if (!confirm('Deze notitie verwijderen?')) return;
+    verwijderNotitie(n);
+    if (p) p.sluit(); else if (klaar) klaar();
+  };
   const p = doel ? null : openPaneel(el, { greepSelector: '.detailgreep', naSluiten: () => { bewaarNotities({ meteen: true }); tekenNotities(); if (klaar) klaar(); } });
   el.addEventListener('click', (ev) => {
     const t = ev.target;
     if (t.closest('[data-actie="sluit"]') && p) { p.sluit(); return; }
-    if (t.closest('[data-actie="verwijder"]')) {
-      if (!confirm('Deze notitie verwijderen?')) return;
-      verwijderNotitie(n);
-      if (p) p.sluit(); else if (klaar) klaar();
-      return;
-    }
+    if (t.closest('[data-actie="verwijder"]')) { verwijder(); return; }
+    const menuKnop = t.closest('[data-actie="notmenu"]');
+    if (menuKnop) { openNotitiemenu(menuKnop, verwijder); return; }
     const tag = t.closest('[data-tag]');
     if (tag) {
       const i = Number(tag.dataset.tag);
@@ -275,6 +278,29 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
   const eerst = titelVeld || tekst;
   if (!n.tekst && !isDesktop()) setTimeout(() => eerst.focus(), 350);
   else if (!n.tekst) eerst.focus();
+}
+
+// Het menu onder de knop met drie puntjes, boven het paneel van de notitie
+function openNotitiemenu(knop, verwijder) {
+  if (KEUZEMENU) { sluitKeuzemenu(); return; }
+  const laag = document.createElement('div');
+  laag.className = 'keuzelaag notmenulaag';
+  const menu = document.createElement('div');
+  menu.className = 'keuzemenu notmenu';
+  menu.setAttribute('role', 'menu');
+  menu.innerHTML = `<button role="menuitem" class="rood" data-menu="verwijder">${I.wissen}<span>Verwijderen</span></button>`;
+  document.body.append(laag, menu);
+  const r = knop.getBoundingClientRect();
+  menu.style.right = `${Math.max(8, innerWidth - r.right)}px`;
+  menu.style.top = `${r.bottom + 8}px`;
+  KEUZEMENU = { laag, menu, knop };
+  knop.classList.add('open');
+  knop.setAttribute('aria-expanded', 'true');
+  requestAnimationFrame(() => { menu.classList.add('open'); laag.classList.add('open'); });
+  if (!IOS) menu.querySelector('button').focus({ preventScroll: true });
+  laag.addEventListener('click', sluitKeuzemenu);
+  menu.addEventListener('click', (ev) => { if (ev.target.closest('[data-menu="verwijder"]')) { sluitKeuzemenu(); verwijder(); } });
+  menu.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); sluitKeuzemenu(); knop.focus(); } });
 }
 
 /* ------------------------------------------------------------------ */
@@ -293,7 +319,7 @@ function notitieSectieHtml(e) {
 /* ------------------------------------------------------------------ */
 
 let notZoek = '';
-let notLabel = null;
+let notLabels = []; // het gekozen label, en eventueel labels daarbinnen (de tweede regel)
 let notGekozen = null; // iPad en Mac: de notitie rechts naast de lijst
 let notNieuw = null; // een nieuwe notitie rechts die nog leeg is (en dus nog niet in de lijst staat)
 const isLabel = (a, b) => !!a && !!b && tagSleutel(a) === tagSleutel(b);
@@ -302,7 +328,7 @@ const naastElkaar = () => isDesktop();
 function zichtbareNotities() {
   const woorden = labelSleutel(notZoek).split(/\s+/).filter(Boolean);
   return levendeNotities()
-    .filter((n) => !notLabel || n.labels.some((l) => isLabel(l, notLabel)))
+    .filter((n) => notLabels.every((k) => n.labels.some((l) => isLabel(l, k))))
     .filter((n) => {
       if (!woorden.length) return true;
       const hooi = labelSleutel([n.tekst, n.labels.map(toonLabel).join(' '), n.afspraak ? n.afspraak.titel : ''].join(' '));
@@ -319,13 +345,32 @@ function gekozenNotitie() {
   notGekozen = n ? n.id : null;
   return n;
 }
+// Labels om op te filteren: één regel die zijwaarts scrolt, de meest gebruikte voorop. Typ je #woord in de zoekbalk, dan
+// alleen de labels die zo beginnen. Kies je een label, dan staan op een tweede regel de labels die in die notities
+// voorkomen: zo verfijn je naar een subonderwerp.
 function filterHtml() {
-  const labels = alleLabels();
-  if (notLabel && !labels.some((l) => isLabel(l, notLabel))) notLabel = null;
-  return labels.map((l) => `<button type="button" class="chip label${isLabel(l, notLabel) ? ' aan' : ''}" data-label="${esc(l)}" aria-pressed="${isLabel(l, notLabel)}">${esc(toonLabel(l))}</button>`).join('');
+  const alle = alleLabels();
+  notLabels = notLabels.filter((k) => alle.some((l) => isLabel(l, k)));
+  const hekjes = notZoek.split(/\s+/).filter((w) => w.startsWith('#') && w.length > 1).map(tagSleutel);
+  const chip = (l, aan, rij) => `<button type="button" class="chip label${aan ? ' aan' : ''}" data-label="${esc(l)}" data-rij="${rij}" aria-pressed="${aan}">${esc(toonLabel(l))}</button>`;
+  const hoofd = notLabels[0];
+  const rij1 = alle.filter((l) => !hekjes.length || hekjes.some((h) => tagSleutel(l).startsWith(h)));
+  const eerste = hoofd ? [hoofd, ...rij1.filter((l) => !isLabel(l, hoofd))] : rij1;
+  let html = `<div class="chips nfilter">${eerste.map((l) => chip(l, isLabel(l, hoofd), 1)).join('')}</div>`;
+  if (!hoofd) return html;
+  const sub = notLabels.slice(1);
+  const tel = new Map();
+  levendeNotities().filter((n) => notLabels.every((k) => n.labels.some((l) => isLabel(l, k)))).forEach((n) => n.labels.forEach((l) => {
+    if (notLabels.some((k) => isLabel(l, k))) return;
+    const t = tel.get(tagSleutel(l)) || { label: tagVan(l), n: 0 };
+    t.n++; tel.set(tagSleutel(l), t);
+  }));
+  const binnen = [...sub, ...[...tel.values()].sort((a, b) => b.n - a.n || a.label.localeCompare(b.label, 'nl')).map((t) => t.label)];
+  if (binnen.length) html += `<div class="chips nfilter nsub" aria-label="Binnen ${esc(toonLabel(hoofd))}">${binnen.map((l) => chip(l, sub.some((k) => isLabel(l, k)), 2)).join('')}</div>`;
+  return html;
 }
 function notitiesHtml() {
-  const filter = `<div class="chips nfilter" id="notfilter">${filterHtml()}</div>`;
+  const filter = `<div class="nfilters" id="notfilter">${filterHtml()}</div>`;
   if (!naastElkaar()) return `<div class="notitab">${filter}<div id="notlijst">${notitieLijstHtml()}</div></div>`;
   return `<div class="notitab notisplit"><div class="notilinks">${filter}<div id="notlijst">${notitieLijstHtml()}</div></div><div class="notipaneel" id="notipaneel"></div></div>`;
 }
@@ -395,13 +440,20 @@ function nieuweNotitie() {
 }
 $('#notzoek').addEventListener('input', (ev) => {
   notZoek = ev.target.value;
-  const l = $('#notlijst');
+  const l = $('#notlijst'), f = $('#notfilter');
+  if (f) f.innerHTML = filterHtml();
   if (l) l.innerHTML = notitieLijstHtml();
 });
 document.addEventListener('click', (ev) => {
   if (!ev.target.closest('#inhoud .notitab') || ev.target.closest('#notipaneel')) return;
   const f = ev.target.closest('[data-label]');
-  if (f) { notLabel = isLabel(notLabel, f.dataset.label) ? null : f.dataset.label; tekenNotities(); return; }
+  if (f) {
+    const l = f.dataset.label;
+    if (f.dataset.rij === '1') notLabels = isLabel(notLabels[0], l) ? [] : [l];
+    else notLabels = notLabels.some((k) => isLabel(k, l)) ? notLabels.filter((k) => !isLabel(k, l)) : [...notLabels, l];
+    tekenNotities();
+    return;
+  }
   const r = ev.target.closest('[data-notitie]');
   if (!r) return;
   if (naastElkaar()) { bewaarNotities({ meteen: true }); notGekozen = r.dataset.notitie; notNieuw = null; tekenNotities(); }

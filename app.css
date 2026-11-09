@@ -1169,8 +1169,22 @@ input.nottitel::placeholder { color: var(--secondary); opacity: 0.6; }
 .taginvoer { flex: 1 0 110px; min-width: 0; height: 28px; padding: 0 2px; border: 0; outline: none; background: transparent; color: var(--label); font: inherit; font-size: 16px; -webkit-appearance: none; appearance: none; }
 .taginvoer::placeholder { color: var(--secondary); opacity: 0.8; }
 .notitie .taglijn { padding: 0 4px; }
-.nfilter { margin: 2px 4px 0; }
+.nfilters { display: flex; flex-direction: column; gap: 8px; }
+/* Labels om op te filteren: één regel die zijwaarts scrolt, tot aan de rand van het scherm */
+.nfilter { flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; margin: 0 -16px; padding: 0 20px; }
+.nfilter::-webkit-scrollbar { display: none; }
+.nfilter .chip { flex-shrink: 0; }
 .nfilter:empty { display: none; }
+/* De tweede regel: labels binnen het gekozen label, met een rand zolang ze niet gekozen zijn */
+.nsub .chip:not(.aan) { background: transparent; box-shadow: inset 0 0 0 1.5px var(--fill); color: var(--secondary); }
+/* Het menu onder de drie puntjes, boven het paneel van de notitie */
+.keuzelaag.notmenulaag { z-index: 68; }
+.keuzemenu.notmenu { z-index: 69; min-width: 210px; padding: 6px; border-radius: 16px; background: var(--popBg, var(--card)); box-shadow: 0 10px 32px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.08); }
+.keuzemenu.notmenu button { height: 46px; padding: 0 14px; border-radius: 10px; font-size: 17px; font-weight: 500; color: var(--statusNo); }
+.keuzemenu.notmenu button .icoon { width: 20px; height: 20px; color: currentColor; }
+.keuzemenu.notmenu button:hover, .keuzemenu.notmenu button:focus-visible { background: var(--fill); color: var(--statusNo); }
+.keuzemenu.notmenu button:hover .icoon, .keuzemenu.notmenu button:focus-visible .icoon { color: var(--statusNo); }
+.paneel.notitie .rond[hidden] { display: none; }
 .nlijstleeg { padding: 8px 4px; }
 .groteknop.rood { color: var(--statusNo); }
 .rond.glas.aan, .kopknop.aan { color: var(--accent); } /* het overleg heeft een notitie */
@@ -1211,7 +1225,7 @@ body.notitietab .titelknop, body.insttab .titelknop { cursor: default; }
 .instscherm { padding-bottom: calc(var(--barH) + 40px); }
 .instscherm .detailinhoud { overflow: visible; padding: 4px 0 0; gap: 22px; }
 .notitab { display: flex; flex-direction: column; gap: 14px; padding: 4px 0 calc(var(--barH) + 40px); }
-.notitab .nfilter { margin: 0 4px; }
+
 @media (min-width: 1200px) {
   .kop .zoekbalk { order: 3; margin-left: auto; width: 280px; height: 32px; padding: 0 12px; border-radius: 16px; gap: 6px; background: var(--glass); border: 0.5px solid var(--glassBorder); box-shadow: var(--glassShadow); -webkit-backdrop-filter: var(--glassBlur); backdrop-filter: var(--glassBlur); }
   .kop .zoekbalk .icoon { width: 14px; height: 14px; }
@@ -1224,7 +1238,8 @@ body.notitietab .titelknop, body.insttab .titelknop { cursor: default; }
   body.desktop.notitietab main.kolom { padding: 0; max-width: none; }
   .notisplit { --onder: 24px; display: grid; grid-template-columns: 340px minmax(0, 1fr); height: calc(100vh - var(--kopH, 52px)); padding: 0; gap: 0; background: var(--card); }
   .notilinks { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 14px 10px var(--onder); border-right: 0.5px solid var(--separator); }
-  .notisplit .nfilter { margin: 2px 10px 4px; gap: 6px; }
+  .notisplit .nfilters { margin: 2px 0 4px; gap: 6px; }
+  .notisplit .nfilter { gap: 6px; margin: 0 -10px; padding: 0 20px; }
   .notisplit .nfilter .chip { height: 30px; padding: 0 12px; font-size: 14px; }
   .notisplit #notlijst { display: block; }
   .ngroep { margin: 18px 12px 6px; font-size: 20px; line-height: 25px; font-weight: 700; letter-spacing: -0.3px; color: var(--label); }

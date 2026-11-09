@@ -732,9 +732,32 @@ test('notities: de tab zoekt op tekst, filtert op label, en een losse notitie ka
   await p.fill('#notzoek', ''); await wacht(200);
   await p.locator('#notfilter [data-label="klant-a"]').tap(); await wacht(200);
   assert.deepEqual(await p.locator('#notlijst .notitierij .t1').allInnerTexts(), ['Begroting voor volgend jaar']);
+  await p.locator('#notfilter [data-label="klant-a"]').tap(); await wacht(200); // weer alles
+  // Labels binnen een label: een tweede regel om te verfijnen
+  await p.evaluate(() => {
+    const a = maakNotitie(); wijzigNotitie(a, { tekst: 'Pilot planning', labels: ['pilot', 'planning'] });
+    const b = maakNotitie(); wijzigNotitie(b, { tekst: 'Pilot budget', labels: ['pilot', 'budget'] });
+    tekenNotities();
+  }); await wacht(200);
+  assert.equal(await p.locator('#notfilter .nsub').count(), 0, 'zonder gekozen label geen tweede regel');
+  await p.locator('#notfilter [data-label="pilot"]').tap(); await wacht(200);
+  assert.deepEqual(await p.locator('#notfilter .nsub .chip').allInnerTexts(), ['#budget', '#planning']);
+  await p.locator('#notfilter .nsub [data-label="budget"]').tap(); await wacht(200);
+  assert.deepEqual(await p.locator('#notlijst .notitierij .t1').allInnerTexts(), ['Pilot budget']);
+  await p.locator('#notfilter .nfilter:not(.nsub) [data-label="pilot"]').tap(); await wacht(200); // alles weer
+  assert.equal(await p.locator('#notlijst .notitierij').count(), 5);
+  // Een hekje in de zoekbalk: alleen de labels die zo beginnen
+  await p.fill('#notzoek', '#pl'); await wacht(200);
+  assert.deepEqual(await p.locator('#notfilter .chip').allInnerTexts(), ['#planning']);
+  assert.deepEqual(await p.locator('#notlijst .notitierij .t1').allInnerTexts(), ['Pilot planning']);
+  await p.fill('#notzoek', ''); await wacht(200);
+  await p.evaluate(() => { NOTITIES.filter((n) => n.tekst.startsWith('Pilot ')).forEach((n) => wijzigNotitie(n, { tekst: '', labels: [] })); tekenNotities(); }); await wacht(200);
+  await p.locator('#notfilter [data-label="klant-a"]').tap(); await wacht(200);
   // Verwijderen vanuit het overzicht
   await p.locator('#notlijst .notitierij').first().tap(); await wacht(800);
-  await p.locator('.paneel.notitie [data-actie="verwijder"]').tap(); await wacht(700);
+  assert.equal(await p.locator('.paneel.notitie .groteknop').count(), 0, 'geen grote knop Verwijderen');
+  await p.locator('.paneel.notitie .kopknop[data-actie="notmenu"]').tap(); await wacht(400);
+  await p.locator('.keuzemenu.notmenu [data-menu="verwijder"]').tap(); await wacht(700);
   assert.equal(await p.locator('#notfilter [data-label="klant-a"]').count(), 0, 'het label verdwijnt als niets het meer gebruikt');
   assert.equal(await p.locator('#notlijst .notitierij').count(), 2);
   assert.equal(await p.evaluate(() => NOTITIES.filter((n) => n.weg).length), 1, 'verwijderd, maar gemarkeerd voor de andere toestellen');

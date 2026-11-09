@@ -792,9 +792,11 @@ test('notities: de tab zoekt op tekst, filtert op label, en een losse notitie ka
   // Verwijderen vanuit het overzicht
   await p.locator('#notlijst .notitierij').first().tap(); await wacht(800);
   assert.equal(await p.locator('.notpagina.open').count(), 1, 'op de iPhone een eigen scherm');
+  assert.equal(await p.locator('#tabbalk').isVisible(), false, 'het scherm eronder schemert niet door het toetsenbord');
   await p.locator('.notpagina [data-actie="notmenu"]').tap(); await wacht(400);
   await p.locator('.keuzemenu.notmenu [data-menu="verwijder"]').tap(); await wacht(700);
   assert.equal(await p.locator('#zoektokens .zoektoken').count(), 0, 'het label verdwijnt als niets het meer gebruikt');
+  assert.equal(await p.locator('#tabbalk').isVisible(), true, 'na het sluiten weer zichtbaar');
   assert.equal(await p.locator('#notlijst .notitierij').count(), 2);
   assert.equal(await p.evaluate(() => NOTITIES.filter((n) => n.weg).length), 1, 'verwijderd, maar gemarkeerd voor de andere toestellen');
   // In de tab Notities staat Notitie onderaan het plusmenu, het dichtst bij de duim

@@ -412,6 +412,10 @@ function openPagina(el, naSluiten) {
   document.body.style.overflow = 'hidden';
   requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('open')));
   let dicht = false;
+  // Het scherm eronder verbergen zodra de notitie er staat: anders schemert het door het toetsenbord van iOS heen.
+  // Bij het terugvegen en sluiten komt het weer tevoorschijn.
+  const verberg = (aan) => document.documentElement.classList.toggle('paginaopen', aan);
+  setTimeout(() => { if (!dicht) verberg(true); }, 320);
   const bovenste = () => { const l = document.querySelectorAll('.notpagina'); return l[l.length - 1] === el; };
   const toets = (ev) => { if (ev.key === 'Escape' && !KEUZEMENU && bovenste()) { ev.stopPropagation(); ev.preventDefault(); sluit(); } };
   window.addEventListener('keydown', toets, true);
@@ -421,13 +425,14 @@ function openPagina(el, naSluiten) {
     window.removeEventListener('keydown', toets, true);
     el.style.transform = '';
     el.classList.remove('open');
+    if (!document.querySelector('.notpagina.open')) verberg(false);
     setTimeout(() => el.remove(), 320);
     document.body.style.overflow = panelen.length ? 'hidden' : '';
     naSluiten();
   };
   // Vanaf de linkerrand vegen
   let x0 = null, dx = 0;
-  el.addEventListener('touchstart', (ev) => { const t = ev.touches[0]; x0 = t.clientX < 28 ? t.clientX : null; dx = 0; }, { passive: true });
+  el.addEventListener('touchstart', (ev) => { const t = ev.touches[0]; x0 = t.clientX < 28 ? t.clientX : null; dx = 0; if (x0 !== null) verberg(false); }, { passive: true });
   el.addEventListener('touchmove', (ev) => {
     if (x0 === null) return;
     dx = Math.max(0, ev.touches[0].clientX - x0);
@@ -437,7 +442,7 @@ function openPagina(el, naSluiten) {
   el.addEventListener('touchend', () => {
     if (x0 === null) return;
     el.style.transition = '';
-    if (dx > 90) sluit(); else el.style.transform = '';
+    if (dx > 90) sluit(); else { el.style.transform = ''; verberg(true); }
     x0 = null;
   });
   return { sluit };

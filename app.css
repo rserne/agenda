@@ -1062,6 +1062,14 @@ label.frij:focus-within .flabel { color: var(--accent); }
    Grotere maandkalender en knoppen in de zijbalk en werkbalk; de muis-maten zijn op een aanraakscherm te priegelig */
 @media (min-width: 1200px) and (pointer: coarse) {
   body .notilinks > .zoekbalk { height: 42px; border-radius: 12px; }
+  body .notisplit .notitierij .t1 { font-size: 18px; line-height: 23px; }
+  body .notisplit .notitierij .t2 { font-size: 15px; line-height: 20px; }
+  body .notisplit .notitierij .nlabel { font-size: 13px; }
+  body .notblad > .dtitel { font-size: 30px; line-height: 36px; }
+  body .notblad textarea { font-size: 18px; line-height: 27px; }
+  body .notblad .punttekst, body .notblad .puntnieuw, body .notblad .taginvoer { font-size: 18px; }
+  body .notblad .tag { font-size: 16px; height: 30px; }
+  body .notmeta { font-size: 14px; }
   body .notilinks .zoektoken { height: 28px; font-size: 14px; }
   .zbbinnen { padding: 14px 12px 20px; gap: 24px; }
   .minikal .kiezerkop { padding: 0 2px 18px 6px; }
@@ -1180,14 +1188,17 @@ input.nottitel::placeholder { color: var(--secondary); opacity: 0.6; }
    lijn ertussen, een werkbalk met # Label en Actiepunt, en de tekst. Rechts naast de lijst, als venster en als scherm. */
 .notblad { display: flex; flex-direction: column; gap: 12px; }
 .notmeta { text-align: center; font-size: 13px; line-height: 18px; color: var(--secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.notblad > .dtitel { margin: 0; font-size: 28px; line-height: 34px; letter-spacing: -0.4px; }
+.notblad > .dtitel { margin: 0; font-size: 30px; line-height: 36px; letter-spacing: -0.4px; }
 .notsectie { border-top: 0.5px solid var(--separator); padding-top: 10px; }
 .notsectie[hidden] { display: none; }
 .notwerkbalk { display: flex; gap: 18px; padding: 8px 0; border-top: 0.5px solid var(--separator); border-bottom: 0.5px solid var(--separator); }
 .notwerkbalk button { display: inline-flex; align-items: center; gap: 7px; height: 30px; color: var(--accent); font-size: 15px; font-weight: 500; }
 .werkhekje { width: 15px; text-align: center; font-weight: 700; font-size: 16px; }
 .werkvink { width: 15px; height: 15px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px currentColor; }
-.notblad textarea { flex: 1; min-height: 200px; width: 100%; padding: 0; border: 0; outline: none; resize: none; background: transparent; color: var(--label); font: inherit; font-size: 17px; line-height: 26px; }
+.notblad textarea { flex: 1; min-height: 200px; width: 100%; padding: 0; border: 0; outline: none; resize: none; background: transparent; color: var(--label); font: inherit; font-size: 18px; line-height: 27px; }
+.notblad .punttekst, .notblad .puntnieuw, .notblad .taginvoer { font-size: 18px; }
+.notblad .tag { font-size: 16px; height: 30px; }
+.notmeta { font-size: 14px; }
 .notblad textarea::placeholder, input.nottitel::placeholder { color: var(--secondary); opacity: 0.7; }
 .notitie .rond[hidden] { display: none; }
 /* Labels (#) en actiepunten (!) elk op een eigen regel, met het teken ervoor, net als de snelkoppelingen in de tekst */
@@ -1255,12 +1266,14 @@ input.nottitel::placeholder { color: var(--secondary); opacity: 0.6; }
 .tddatum.laat { font-weight: 600; }
 .notitierij { cursor: pointer; }
 /* Tab Notities: kopjes per periode, zoals in Notities van Apple; per notitie de titel, de datum met een voorproef en de labels */
-.ngroep { margin: 8px 4px -6px; font-size: 20px; line-height: 25px; font-weight: 700; letter-spacing: -0.3px; color: var(--label); }
+.ngroep { margin: 8px 4px -6px; font-size: 23px; line-height: 28px; font-weight: 700; letter-spacing: -0.3px; color: var(--label); }
 .notitab:not(.notisplit) #notlijst > .ngroep:first-child { margin-top: 2px; }
 #notlijst { display: flex; flex-direction: column; gap: 14px; }
 .notitierij .t1, .notitierij .t2 { display: block; min-width: 0; }
-.notitab .drij.notitierij .t1 { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.notitab .drij.notitierij .t2 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.notitab .drij.notitierij .t1 { font-size: 19px; line-height: 24px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.notitab .drij.notitierij .t2 { margin-top: 2px; font-size: 16px; line-height: 21px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.notitab .drij.notitierij .nlabel { font-size: 14px; padding: 3px 9px; }
+.notitab .drij.tdrij .t1 { white-space: normal; }
 .notitierij .ndatum { margin-right: 8px; color: var(--label); opacity: 0.8; }
 .notitierij > .icoon { width: 14px; height: 14px; color: var(--secondary); flex-shrink: 0; }
 .nkort { font-size: 15px; line-height: 21px; color: var(--label); white-space: pre-wrap; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
@@ -1390,6 +1403,10 @@ body.notitietab .titelknop, body.insttab .titelknop { cursor: default; }
   .notweg .icoon { width: 21px; height: 21px; }
   .notblad > .dtitel { margin: 0; font-size: 28px; line-height: 34px; letter-spacing: -0.4px; }
   .notblad .punten { max-width: 600px; } /* de deadline dicht bij de tekst, ook in een breed venster */
+  .notblad .punttekst, .notblad .puntnieuw, .notblad .taginvoer { font-size: 16px; }
+  .notblad .tag { font-size: 15px; height: 28px; }
+  .notblad > .dtitel { font-size: 28px; line-height: 34px; }
+  .notmeta { font-size: 13px; }
   .notblad textarea { flex: 1; min-height: 0; width: 100%; padding: 12px 0 0; border: 0; border-top: 0.5px solid var(--separator); outline: none; resize: none; background: transparent; color: var(--label); font: inherit; font-size: 17px; line-height: 26px; }
   .notblad textarea::placeholder { color: var(--secondary); opacity: 0.8; }
   .zbnotities { border-top: 0; padding-top: 6px; }

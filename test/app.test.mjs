@@ -709,7 +709,8 @@ test('notities: de tab zoekt op tekst, filtert op label, en een losse notitie ka
   // Een losse notitie via de plusknop
   await p.locator('#tabbalk .plusknop').tap(); await wacht(400);
   await p.locator('.keuzemenu [data-keuze="notitie"]').tap(); await wacht(800);
-  await p.fill('#nottekst', 'Idee voor de nieuwsbrief');
+  assert.equal(await p.evaluate(() => document.activeElement.id), 'nottitel', 'de cursor staat in de titel');
+  await p.fill('#nottitel', 'Idee voor de nieuwsbrief');
   await p.keyboard.press('Escape'); await wacht(600);
   // De tab Notities: zoeken in de kop, geen weekkeuze en pijlen
   await p.locator('#tabbalk [data-tab="notities"]').tap(); await wacht(700);
@@ -747,25 +748,41 @@ test('notities op de Mac: lijst en notitie naast elkaar; typen loopt mee in de l
   });
   await p.locator('#zijbalk [data-tab="notities"]').click(); await wacht(700);
   assert.equal(await p.locator('#notlijst .notitierij.aan').count(), 1, 'de bovenste staat meteen rechts');
-  assert.equal(await p.locator('#notipaneel #nottekst').inputValue(), await p.evaluate(() => zichtbareNotities()[0].tekst));
+  assert.ok(await p.locator('#nottitel').evaluate((x) => parseFloat(getComputedStyle(x).fontSize)) >= 24, 'de titel groot bovenaan');
+  assert.equal(await p.locator('#notipaneel #nottitel').inputValue(), await p.evaluate(() => zichtbareNotities()[0].tekst));
   await p.locator('#notlijst .notitierij', { hasText: 'Eerste notitie' }).click(); await wacht(400);
-  assert.equal(await p.locator('#notipaneel #nottekst').inputValue(), 'Eerste notitie');
-  await p.locator('#notipaneel #nottekst').click(); await p.keyboard.press('End');
+  assert.equal(await p.locator('#notipaneel #nottitel').inputValue(), 'Eerste notitie');
+  await p.locator('#notipaneel #nottitel').click(); await p.keyboard.press('End');
   await p.keyboard.type(' en meer'); await wacht(200);
   assert.equal(await p.locator('#notlijst .notitierij.aan .t1').innerText(), 'Eerste notitie en meer', 'de lijst loopt mee');
   // Komt er intussen iets binnen (synchroniseren), dan blijft de notitie staan en kun je verder typen
   await p.evaluate(() => tekenNotities()); await wacht(100);
   await p.keyboard.type('!'); await wacht(200);
-  assert.equal(await p.locator('#notipaneel #nottekst').inputValue(), 'Eerste notitie en meer!');
+  assert.equal(await p.locator('#notipaneel #nottitel').inputValue(), 'Eerste notitie en meer!');
   // Nieuw, Notitie: een lege notitie rechts, met de cursor erin; pas na typen staat hij in de lijst
   await p.locator('#nieuwknop').click(); await wacht(300);
   assert.equal(await p.locator('.keuzemenu [role="menuitem"]').first().innerText(), 'Notitie', 'in Notities bovenaan');
   await p.locator('.keuzemenu [data-keuze="notitie"]').click(); await wacht(400);
-  assert.equal(await p.locator('#notipaneel #nottekst').inputValue(), '');
+  assert.equal(await p.locator('#notipaneel #nottitel').inputValue(), '');
   assert.equal(await p.locator('#notlijst .notitierij').count(), 2);
   await p.keyboard.type('Derde notitie'); await wacht(300);
   assert.equal(await p.locator('#notlijst .notitierij').count(), 3);
   assert.equal(await p.locator('#notlijst .notitierij.aan .t1').innerText(), 'Derde notitie');
+  // Enter in de titel: verder in de tekst; de lijst toont de tweede regel als voorproef
+  await p.keyboard.press('Enter'); await p.keyboard.type('Met een tweede regel'); await wacht(300);
+  assert.equal(await p.evaluate(() => zichtbareNotities()[0].tekst), 'Derde notitie\nMet een tweede regel');
+  assert.match(await p.locator('#notlijst .notitierij.aan .t2').innerText(), /Met een tweede regel/);
+  // Backspace vooraan in de tekst: die regel gaat terug de titel in
+  await p.keyboard.press('Home'); await p.keyboard.press('Backspace'); await wacht(300);
+  assert.equal(await p.locator('#nottitel').inputValue(), 'Derde notitieMet een tweede regel');
+  // Een notitie bij een afspraak: de titel van de afspraak bovenaan en in de lijst
+  await p.evaluate(() => { const e = [...zichtbaar.values()].find((x) => !x.allDay); const n = maakNotitie(e); wijzigNotitie(n, { tekst: 'Over de offerte' }); tekenNotities(); });
+  await wacht(300);
+  const titel = await p.evaluate(() => [...zichtbaar.values()].find((x) => !x.allDay).title);
+  await p.locator('#notlijst .notitierij', { hasText: titel }).click(); await wacht(400);
+  assert.equal(await p.locator('#notipaneel h2.dtitel').innerText(), titel);
+  assert.equal(await p.locator('#notipaneel #nottekst').inputValue(), 'Over de offerte');
+  assert.match(await p.locator('#notlijst .notitierij.aan .t2').innerText(), /Over de offerte/);
   assert.deepEqual(p.fouten, []);
 });
 

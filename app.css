@@ -1141,6 +1141,9 @@ label.frij:focus-within .flabel { color: var(--accent); }
 .notitie .tekstkaart { flex: 1 0 auto; display: flex; min-height: 240px; }
 .notitie .tekstkaart .frij { flex: 1; align-items: stretch; padding-bottom: 14px; }
 .notitie .tekstkaart textarea { height: auto; min-height: 0; }
+/* Losse notitie: de eerste regel is de titel, groot bovenaan, net als de titel van een afspraak */
+input.nottitel { display: block; width: 100%; min-width: 0; padding: 0; border: 0; outline: none; background: transparent; color: var(--label); font-family: inherit; -webkit-appearance: none; appearance: none; }
+input.nottitel::placeholder { color: var(--secondary); opacity: 0.6; }
 .notitierij { cursor: pointer; }
 .notitierij > .icoon { width: 14px; height: 14px; color: var(--secondary); flex-shrink: 0; }
 .nkort { font-size: 15px; line-height: 21px; color: var(--label); white-space: pre-wrap; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
@@ -1210,10 +1213,11 @@ body.notitietab .titelknop, body.insttab .titelknop { cursor: default; }
   .ngroep { margin: 18px 12px 6px; font-size: 20px; line-height: 25px; font-weight: 700; letter-spacing: -0.3px; color: var(--label); }
   .notisplit .nfilter:empty + #notlijst .ngroep:first-child { margin-top: 4px; }
   .notisplit .notitierij { position: relative; display: block; width: 100%; padding: 10px 12px 11px; border: 0; border-radius: 10px; background: none; color: var(--label); font: inherit; text-align: left; }
-  .notisplit .notitierij + .notitierij::before { content: ''; position: absolute; top: 0; left: 12px; right: 12px; border-top: 0.5px solid var(--separator); }
-  .notisplit .notitierij.aan::before, .notisplit .notitierij.aan + .notitierij::before { display: none; }
+  /* Een streep onder elke notitie; niet tegen de gekozen notitie aan (of die onder de muis) */
+  .notisplit .notitierij::after { content: ''; position: absolute; bottom: 0; left: 12px; right: 12px; border-bottom: 0.5px solid var(--separator); }
+  .notisplit .notitierij.aan::after, .notisplit .notitierij:has(+ .notitierij.aan)::after { display: none; }
   .notisplit .notitierij:hover:not(.aan) { background: var(--fill); }
-  .notisplit .notitierij:hover::before, .notisplit .notitierij:hover + .notitierij::before { display: none; }
+  .notisplit .notitierij:hover::after, .notisplit .notitierij:has(+ .notitierij:hover)::after { display: none; }
   .notisplit .notitierij.aan { background: var(--selBg); }
   .notisplit .notitierij .t1 { display: block; font-size: 16px; line-height: 21px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .notisplit .notitierij .t2 { display: block; margin-top: 2px; font-size: 14px; line-height: 19px; color: var(--secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -1229,6 +1233,7 @@ body.notitietab .titelknop, body.insttab .titelknop { cursor: default; }
   .notweg { width: 40px; height: 40px; border-radius: 20px; display: flex; align-items: center; justify-content: center; color: var(--accent); }
   .notweg:hover { background: var(--fill); }
   .notweg .icoon { width: 21px; height: 21px; }
+  .notblad > .dtitel { margin: 0; font-size: 28px; line-height: 34px; letter-spacing: -0.4px; }
   .notlabelvak { position: relative; }
   .notlabelvak .chips { align-items: center; gap: 6px; }
   #notlabels { display: contents; }

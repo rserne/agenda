@@ -87,7 +87,6 @@ function bestaandLabel(l) {
 /*  Tekst en datum                                                     */
 /* ------------------------------------------------------------------ */
 
-const eersteRegel = (t) => (t.split('\n').find((r) => r.trim()) || '').trim();
 function notitieDatum(n) {
   const d = new Date(n.afspraak ? n.afspraak.start : n.gemaakt);
   const dag = `${DAYS_SHORT[d.getDay()]} ${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}${d.getFullYear() !== vandaag().getFullYear() ? ` ${d.getFullYear()}` : ''}`;
@@ -110,6 +109,18 @@ function wijzigDatum(ms) {
   if (dagen < 7) return cap(DAYS_LONG[d.getDay()]);
   return `${d.getDate()}-${d.getMonth() + 1}-${d.getFullYear()}`;
 }
+// De titel van een notitie: bij een afspraak de titel van de afspraak, anders de eerste regel (zoals in Notities van
+// Apple). Daarnaast een voorproef: de eerste regel tekst bij een afspraak, anders de tweede regel.
+function notitieKop(n) {
+  const regels = n.tekst.split('\n').map((r) => r.trim()).filter(Boolean);
+  return n.afspraak ? [n.afspraak.titel || 'Zonder titel', regels[0] || ''] : [regels[0] || 'Nieuwe notitie', regels[1] || ''];
+}
+// Wat er op het scherm staat: bij een losse notitie de titel (groot, bovenaan) en daaronder de rest
+function schermTekst(el) {
+  const t = $('#nottitel', el), r = $('#nottekst', el);
+  if (!r) return null;
+  return t && t.value ? t.value + (r.value ? `\n${r.value}` : '') : r.value;
+}
 const labelChips = (labels) => (labels.length ? `<span class="nlabels">${labels.map((l) => `<span class="nlabel">${esc(l)}</span>`).join('')}</span>` : '');
 
 /* ------------------------------------------------------------------ */
@@ -131,10 +142,15 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
     el.setAttribute('aria-label', 'Notitie');
   }
   const meta = n.afspraak
-    ? `${esc(n.afspraak.titel || 'Zonder titel')} · ${notitieDatum(n)}`
+    ? notitieDatum(n)
     : (() => { const d = new Date(n.gewijzigd || n.gemaakt); return `${d.getDate()} ${MONTHS_LONG[d.getMonth()]} ${d.getFullYear()} om ${hhmm(d)}`; })();
+  // De titel groot bovenaan: van de afspraak, of bij een losse notitie de eerste regel, die je daar ook typt
+  const titelHtml = n.afspraak
+    ? `<h2 class="dtitel">${esc(n.afspraak.titel || 'Zonder titel')}</h2>`
+    : '<input id="nottitel" class="dtitel nottitel" placeholder="Titel" aria-label="Titel" autocomplete="off" autocapitalize="sentences" enterkeyhint="next">';
   if (doel) el.innerHTML = `<div class="notblad">
       <div class="notbovenbalk"><span></span><div class="notmeta num">${meta}</div><div id="notvoet"></div></div>
+      ${titelHtml}
       <div class="notlabelvak">
         <div class="chips" id="notlabelrij"><span id="notlabels"></span><label class="frij"><input id="notlabel" placeholder="Label toevoegen" aria-label="Label toevoegen" autocomplete="off" autocapitalize="sentences" enterkeyhint="done"></label></div>
         <div class="aanvullijst" id="notaanvul" hidden></div>
@@ -144,7 +160,7 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
   else el.innerHTML = `${doel ? '' : `<div class="detailgreep"><div class="greep"></div>
       <div class="detailnav"><button class="rond glas" data-actie="sluit" aria-label="Sluiten">${I.kruis}</button></div></div>`}
     <div class="detailinhoud">
-      <div class="dkop"><div class="dkopinhoud"><h2 class="dtitel">${n.afspraak ? esc(n.afspraak.titel || 'Zonder titel') : 'Notitie'}</h2>${n.afspraak ? `<div class="dmeta"><div class="num">${notitieDatum(n)}</div></div>` : ''}</div></div>
+      <div class="dkop"><div class="dkopinhoud">${titelHtml}${n.afspraak ? `<div class="dmeta"><div class="num">${notitieDatum(n)}</div></div>` : ''}</div></div>
       <div class="formkaart tekstkaart">
         <label class="frij boven"><textarea id="nottekst" rows="8" placeholder="Notitie" aria-label="Notitie"></textarea></label>
       </div>
@@ -155,8 +171,12 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
       </div>
       <div class="dvoet" id="notvoet"></div>
     </div>`;
-  const tekst = $('#nottekst', el), invoer = $('#notlabel', el);
-  tekst.value = n.tekst;
+  const tekst = $('#nottekst', el), invoer = $('#notlabel', el), titelVeld = $('#nottitel', el);
+  if (titelVeld) {
+    const i = n.tekst.indexOf('\n');
+    titelVeld.value = i < 0 ? n.tekst : n.tekst.slice(0, i);
+    tekst.value = i < 0 ? '' : n.tekst.slice(i + 1);
+  } else tekst.value = n.tekst;
 
   // Gekozen labels als chips met een kruisje; daarachter voorstellen: de organisatie van het overleg en de meest gebruikte labels
   const tekenLabels = () => {
@@ -204,12 +224,31 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
   });
 
   // Meteen bewaren tijdens het typen; het tekstvak vult de ruimte van het scherm
-  tekst.addEventListener('input', () => {
+  const bijTypen = () => {
     const was = NOTITIES.includes(n);
-    wijzigNotitie(n, { tekst: tekst.value });
+    wijzigNotitie(n, { tekst: schermTekst(el) });
     if (was !== NOTITIES.includes(n)) tekenLabels(); // de knop Verwijderen verschijnt of verdwijnt
     if (bijWijziging) bijWijziging();
-  });
+  };
+  tekst.addEventListener('input', bijTypen);
+  if (titelVeld) {
+    titelVeld.addEventListener('input', bijTypen);
+    // Enter in de titel: verder in de tekst eronder. Backspace vooraan in de tekst: de eerste regel terug in de titel.
+    titelVeld.addEventListener('keydown', (ev) => {
+      if (ev.key !== 'Enter' || ev.isComposing) return;
+      ev.preventDefault();
+      tekst.focus(); tekst.setSelectionRange(0, 0);
+    });
+    tekst.addEventListener('keydown', (ev) => {
+      if (ev.key !== 'Backspace' || tekst.selectionStart !== 0 || tekst.selectionEnd !== 0) return;
+      ev.preventDefault();
+      const i = tekst.value.indexOf('\n'), pos = titelVeld.value.length;
+      titelVeld.value += i < 0 ? tekst.value : tekst.value.slice(0, i);
+      tekst.value = i < 0 ? '' : tekst.value.slice(i + 1);
+      titelVeld.focus(); titelVeld.setSelectionRange(pos, pos);
+      bijTypen();
+    });
+  }
 
   const p = doel ? null : openPaneel(el, { greepSelector: '.detailgreep', naSluiten: () => { bewaarNotities({ meteen: true }); tekenNotities(); if (klaar) klaar(); } });
   el.addEventListener('click', (ev) => {
@@ -226,8 +265,9 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
     const voeg = t.closest('[data-voeg]');
     if (voeg) voegLabel(voeg.dataset.voeg);
   });
-  if (!n.tekst && !isDesktop()) setTimeout(() => tekst.focus(), 350);
-  else if (!n.tekst) tekst.focus();
+  const eerst = titelVeld || tekst;
+  if (!n.tekst && !isDesktop()) setTimeout(() => eerst.focus(), 350);
+  else if (!n.tekst) eerst.focus();
 }
 
 /* ------------------------------------------------------------------ */
@@ -294,16 +334,15 @@ function notitieLijstHtml() {
       const g = wijzigGroep(n.gewijzigd);
       if (g !== groep) { html += `${groep === null ? '' : '</div>'}<h3 class="ngroep">${g}</h3><div class="ngroeplijst">`; groep = g; }
       const aan = !!gekozen && gekozen.id === n.id;
-      const regels = n.tekst.split('\n').map((r) => r.trim()).filter(Boolean);
-      const voorproef = n.afspraak ? n.afspraak.titel || 'Zonder titel' : regels[1] || 'Geen extra tekst';
-      html += `<button class="notitierij${aan ? ' aan' : ''}" data-notitie="${n.id}" aria-pressed="${aan}"><span class="t1">${esc(regels[0] || 'Nieuwe notitie')}</span>
-        <span class="t2"><span class="ndatum">${esc(wijzigDatum(n.gewijzigd))}</span>${esc(voorproef)}</span>${labelChips(n.labels)}</button>`;
+      const [titel, voorproef] = notitieKop(n);
+      html += `<button class="notitierij${aan ? ' aan' : ''}" data-notitie="${n.id}" aria-pressed="${aan}"><span class="t1">${esc(titel)}</span>
+        <span class="t2"><span class="ndatum">${esc(wijzigDatum(n.gewijzigd))}</span>${esc(voorproef || 'Geen extra tekst')}</span>${labelChips(n.labels)}</button>`;
     }
     return `${html}</div>`;
   }
   return `<div class="kaart">${lijst.map((n) => `<button class="drij notitierij${gekozen && gekozen.id === n.id ? ' aan' : ''}" data-notitie="${n.id}"${naastElkaar() ? ` aria-pressed="${!!gekozen && gekozen.id === n.id}"` : ''}>
-      <span class="tekst"><div class="t1">${esc(eersteRegel(n.tekst) || 'Zonder tekst')}</div>
-      <div class="t2 num">${esc(notitieDatum(n))}${n.afspraak ? ` · ${esc(n.afspraak.titel || 'Zonder titel')}` : ''}</div>${labelChips(n.labels)}</span>${I.verder}</button>`).join('')}</div>`;
+      <span class="tekst"><div class="t1">${esc(notitieKop(n)[0])}</div>
+      <div class="t2"><span class="num">${esc(notitieDatum(n))}</span>${notitieKop(n)[1] ? ` · ${esc(notitieKop(n)[1])}` : ''}</div>${labelChips(n.labels)}</span>${I.verder}</button>`).join('')}</div>`;
 }
 // Het vak rechts opnieuw vullen (een nieuw element, zodat er geen oude luisteraars blijven hangen)
 function vulNotitiepaneel() {
@@ -332,8 +371,8 @@ function tekenNotities(volledig = false) {
   const vak = $('#notipaneel', main);
   const n = gekozenNotitie();
   const bezig = vak.contains(document.activeElement);
-  const tekst = $('#nottekst', vak);
-  if (vak.dataset.id !== (n ? n.id : '') || (n && !bezig && tekst && tekst.value !== n.tekst)) vulNotitiepaneel();
+  const opScherm = schermTekst(vak);
+  if (vak.dataset.id !== (n ? n.id : '') || (n && !bezig && opScherm !== null && opScherm !== n.tekst)) vulNotitiepaneel();
 }
 // Een nieuwe notitie: op iPad en Mac in de tab Notities meteen rechts, anders als paneel
 function nieuweNotitie() {
@@ -341,7 +380,7 @@ function nieuweNotitie() {
     bewaarNotities({ meteen: true });
     notNieuw = maakNotitie();
     tekenNotities();
-    const t = $('#notipaneel #nottekst');
+    const t = $('#notipaneel #nottitel') || $('#notipaneel #nottekst');
     if (t) t.focus();
     return;
   }

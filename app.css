@@ -1414,7 +1414,7 @@ body.notitietab .titelknop, body.insttab .titelknop { cursor: default; }
   .notmeta { text-align: center; font-size: 13px; line-height: 18px; color: var(--secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .notweg { width: 40px; height: 40px; border-radius: 20px; display: flex; align-items: center; justify-content: center; color: var(--accent); }
   .notweg:hover { background: var(--fill); }
-  .notweg .icoon { width: 21px; height: 21px; }
+  .notweg .icoon { width: 24px; height: 24px; }
   .notblad > .dtitel { margin: 0; font-size: 28px; line-height: 34px; letter-spacing: -0.4px; }
   .notblad .punttekst, .notblad .puntnieuw, .notblad .taginvoer { font-size: 16px; }
   .notblad .tag { font-size: 15px; height: 28px; }

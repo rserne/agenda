@@ -206,8 +206,8 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
     $('#notlabels', el).innerHTML = n.labels.map((l, i) => (i === gekozenTag
       ? `<button type="button" class="tag aan" data-tag="${i}" aria-label="${esc(toonLabel(l))} weghalen">${esc(toonLabel(l))}${I.kruis}</button>`
       : `<button type="button" class="tag" data-tag="${i}">${esc(toonLabel(l))}</button>`)).join('');
-    // Verwijderen: op iPad en Mac een prullenbak naast de notitie, in een paneel onder de knop met drie puntjes
-    if (doel) $('#notvoet', el).innerHTML = NOTITIES.includes(n) ? `<button class="notweg" data-actie="verwijder" aria-label="Notitie verwijderen">${I.wissen}</button>` : '';
+    // Verwijderen: overal onder de knop met drie puntjes, op iPad en Mac rechts naast de datum
+    if (doel) $('#notvoet', el).innerHTML = NOTITIES.includes(n) ? `<button class="notweg" data-actie="notmenu" aria-label="Meer" aria-haspopup="menu">${I.meer}</button>` : '';
     el.querySelectorAll('[data-actie="notmenu"]').forEach((b) => { b.hidden = !NOTITIES.includes(n); });
   };
   const zetLabels = (labels) => {

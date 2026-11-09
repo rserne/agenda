@@ -172,7 +172,8 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
     : (() => { const d = new Date(n.gewijzigd || n.gemaakt); return `${d.getDate()} ${MONTHS_LONG[d.getMonth()]} ${d.getFullYear()} om ${hhmm(d)}`; })();
   // De titel groot bovenaan: van de afspraak, of bij een losse notitie de eerste regel, die je daar ook typt.
   // Labels en actiepunten verschijnen pas als er iets in staat; tot die tijd staan er alleen twee knopjes.
-  const labelHtml = `<div class="taglijn"><span class="regelteken" aria-hidden="true">#</span><span class="tags" id="notlabels"></span><input id="notlabel" class="taginvoer" placeholder="Label" aria-label="Labels" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="done"></div>`;
+  // De tags op een eigen regel, daaronder '# Label' om er een toe te voegen, net als '! Actiepunt' onder de actiepunten
+  const labelHtml = `<div class="tags" id="notlabels"></div><label class="taglijn"><span class="regelteken" aria-hidden="true">#</span><input id="notlabel" class="taginvoer" placeholder="Label" aria-label="Label toevoegen" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="done"></label>`;
   const titelHtml = n.afspraak
     ? `<h2 class="dtitel">${esc(n.afspraak.titel || 'Zonder titel')}</h2>`
     : '<input id="nottitel" class="dtitel nottitel" placeholder="Titel" aria-label="Titel" autocomplete="off" autocapitalize="sentences" enterkeyhint="next">';
@@ -196,11 +197,11 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
     tekst.value = i < 0 ? '' : n.tekst.slice(i + 1);
   } else tekst.value = n.tekst;
 
-  // Labels als tags op één regel: typ een woord en een spatie (of Enter), dan wordt het een tag in kleine letters.
+  // Labels als tags: typ een woord en een spatie (of Enter), dan wordt het een tag in kleine letters.
   // Een tik op een tag kiest hem (met een kruisje), nog een tik haalt hem weg; Backspace in een leeg veld ook.
   let gekozenTag = -1;
   const tekenLabels = () => {
-    invoer.placeholder = n.labels.length ? '' : 'Label'; // met labels erbij is de tekst overbodig; tikken kan nog steeds
+    $('#notlabels', el).hidden = !n.labels.length;
     $('#notlabels', el).innerHTML = n.labels.map((l, i) => (i === gekozenTag
       ? `<button type="button" class="tag aan" data-tag="${i}" aria-label="${esc(toonLabel(l))} weghalen">${esc(toonLabel(l))}${I.kruis}</button>`
       : `<button type="button" class="tag" data-tag="${i}">${esc(toonLabel(l))}</button>`)).join('');
@@ -388,7 +389,6 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
       else { gekozenTag = i; tekenLabels(); if (isDesktop()) invoer.focus(); }
       return;
     }
-    if (t.closest('.taglijn') && !t.closest('button')) invoer.focus(); // een tik naast de tags: verder typen
   });
   const eerst = titelVeld || tekst;
   if (!n.tekst && pagina) setTimeout(() => eerst.focus(), 350);

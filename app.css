@@ -1204,7 +1204,10 @@ input.nottitel::placeholder { color: var(--secondary); opacity: 0.6; }
 /* Labels (#) en actiepunten (!) elk op een eigen regel, met het teken ervoor, net als de snelkoppelingen in de tekst */
 .regelteken { flex-shrink: 0; width: 22px; text-align: center; color: var(--accent); font-size: 18px; font-weight: 700; line-height: 1; }
 .notblad .puntnieuw { gap: 10px; min-height: 36px; color: var(--secondary); font-size: 16px; }
-.notblad .taglijn { gap: 6px 8px; }
+.notblad .taglijn { gap: 10px; min-height: 36px; }
+.notblad .taginvoer { padding: 0; }
+.notblad .tags { display: flex; flex-wrap: wrap; gap: 6px 8px; margin-bottom: 8px; }
+.notblad .tags[hidden] { display: none; }
 .notblad textarea { border-top: 0.5px solid var(--separator); padding-top: 12px; }
 .paneel.notitie .detailinhoud { display: flex; flex-direction: column; }
 .paneel.notitie .notblad { flex: 1; }
@@ -1266,8 +1269,8 @@ input.nottitel::placeholder { color: var(--secondary); opacity: 0.6; }
 .tddatum.laat { font-weight: 600; }
 .notitierij { cursor: pointer; }
 /* Tab Notities: kopjes per periode, zoals in Notities van Apple; per notitie de titel, de datum met een voorproef en de labels */
-.ngroep { margin: 8px 4px -6px; font-size: 23px; line-height: 28px; font-weight: 700; letter-spacing: -0.3px; color: var(--label); }
-.notitab:not(.notisplit) #notlijst > .ngroep:first-child { margin-top: 2px; }
+.ngroep { margin: 3px 4px 3.5px; font-size: 23px; line-height: 28px; font-weight: 700; letter-spacing: -0.3px; color: var(--label); }
+.notitab:not(.notisplit) #notlijst > .ngroep:first-child { margin-top: -1px; }
 #notlijst { display: flex; flex-direction: column; gap: 14px; }
 .notitierij .t1, .notitierij .t2 { display: block; min-width: 0; }
 .notitab .drij.notitierij .t1 { font-size: 19px; line-height: 24px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -1283,12 +1286,11 @@ input.nottitel::placeholder { color: var(--secondary); opacity: 0.6; }
 .chip.label { gap: 6px; padding: 0 12px; }
 .chip.label .icoon { width: 13px; height: 13px; }
 .chip.label.voorstel { background: transparent; box-shadow: inset 0 0 0 1.5px var(--fill); color: var(--secondary); }
-.taglijn { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-height: 30px; cursor: text; }
-.taglijn .tags { display: contents; }
+.taglijn { position: relative; display: flex; align-items: center; gap: 6px; min-height: 30px; cursor: text; }
 .tag { display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 10px; border-radius: 14px; background: var(--fill); color: var(--label); font-size: 15px; font-weight: 500; cursor: pointer; }
 .tag.aan { background: var(--accent); color: var(--onAccent); }
 .tag .icoon { width: 12px; height: 12px; }
-.taginvoer { flex: 1 0 110px; min-width: 0; height: 28px; padding: 0 2px; border: 0; outline: none; background: transparent; color: var(--label); font: inherit; font-size: 16px; -webkit-appearance: none; appearance: none; }
+.taginvoer { flex: 1; min-width: 0; height: 28px; padding: 0 2px; border: 0; outline: none; background: transparent; color: var(--label); font: inherit; font-size: 16px; -webkit-appearance: none; appearance: none; }
 .taginvoer::placeholder { color: var(--secondary); opacity: 0.8; }
 .nfilters { display: flex; flex-direction: column; gap: 8px; }
 /* Labels om op te filteren: één regel die zijwaarts scrolt, tot aan de rand van het scherm */

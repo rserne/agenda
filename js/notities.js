@@ -186,7 +186,7 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
     </div>`;
   const menuKnop = (klasse) => `<button class="rond ${klasse}" data-actie="notmenu" aria-label="Meer" aria-haspopup="menu">${I.meer}</button>`;
   if (doel) el.innerHTML = blad;
-  else if (pagina) el.innerHTML = `<div class="notpaginabalk"><button type="button" class="terugknop" data-actie="sluit">${I.terug}<span>${ST.tab === 'notities' ? 'Notities' : 'Terug'}</span></button>${menuKnop('glas')}</div>${blad}`;
+  else if (pagina) el.innerHTML = `<div class="notpaginabalk"><button type="button" class="rond glas terugknop" data-actie="sluit" aria-label="Terug">${I.terug}</button>${menuKnop('glas')}</div>${blad}`;
   else el.innerHTML = `<div class="detailgreep"><div class="greep"></div><div class="detailnav">${menuKnop('glas')}<button class="rond glas" data-actie="sluit" aria-label="Sluiten">${I.kruis}</button></div></div>
     <div class="detailinhoud">${blad}</div>`;
   const tekst = $('#nottekst', el), titelVeld = $('#nottitel', el), invoer = $('#notlabel', el);
@@ -200,6 +200,7 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
   // Een tik op een tag kiest hem (met een kruisje), nog een tik haalt hem weg; Backspace in een leeg veld ook.
   let gekozenTag = -1;
   const tekenLabels = () => {
+    invoer.placeholder = n.labels.length ? '' : 'Label'; // met labels erbij is de tekst overbodig; tikken kan nog steeds
     $('#notlabels', el).innerHTML = n.labels.map((l, i) => (i === gekozenTag
       ? `<button type="button" class="tag aan" data-tag="${i}" aria-label="${esc(toonLabel(l))} weghalen">${esc(toonLabel(l))}${I.kruis}</button>`
       : `<button type="button" class="tag" data-tag="${i}">${esc(toonLabel(l))}</button>`)).join('');

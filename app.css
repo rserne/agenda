@@ -1198,12 +1198,13 @@ input.nottitel::placeholder { color: var(--secondary); opacity: 0.6; }
 .paneel.notitie .detailinhoud { display: flex; flex-direction: column; }
 .paneel.notitie .notblad { flex: 1; }
 /* iPhone: de notitie als eigen scherm dat van rechts inschuift */
-.notpagina { position: fixed; top: 0; left: 0; right: 0; bottom: var(--tb, 0px); z-index: 65; display: flex; flex-direction: column; overflow-y: auto; overscroll-behavior: contain; background: var(--card); transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.3, 1); box-shadow: -8px 0 24px rgba(0, 0, 0, 0.12); }
+.notpagina { position: fixed; top: var(--vvtop, 0px); left: 0; right: 0; height: var(--vvh, 100%); z-index: 65; display: flex; flex-direction: column; overflow-y: auto; overscroll-behavior: contain; background: var(--card); transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.3, 1); box-shadow: -8px 0 24px rgba(0, 0, 0, 0.12); }
 .notpagina.open { transform: none; }
 .notpaginabalk { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; padding: calc(env(safe-area-inset-top, 0px) + 6px) 12px 6px 6px; background: var(--card); }
-.terugknop { display: inline-flex; align-items: center; gap: 0; height: 40px; padding: 0 8px 0 2px; color: var(--accent); font-size: 17px; }
-.terugknop .icoon { width: 24px; height: 24px; }
-.notpaginabalk .rond { background: var(--fill); }
+/* Terug en Meer als ronde glazen knoppen, zoals in Notities van iOS */
+.notpaginabalk { padding-left: 12px; }
+.notpaginabalk .rond { width: 44px; height: 44px; border-radius: 22px; color: var(--label); }
+.notpaginabalk .rond .icoon { width: 22px; height: 22px; }
 .notpagina .notblad { flex: 1; padding: 4px 20px calc(env(safe-area-inset-bottom, 0px) + 24px); }
 
 /* Zoeken: labels en Te doen als blokjes in het zoekveld, met suggesties eronder */

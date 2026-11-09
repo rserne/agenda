@@ -199,6 +199,9 @@ function koppel() {
       const open = tb > 80;
       document.documentElement.style.setProperty('--tb', `${open ? tb : 0}px`);
       document.documentElement.classList.toggle('toetsenbord', open);
+      // Het zichtbare deel van het scherm: daarop past de notitie op de iPhone zich aan, ook met het toetsenbord open
+      document.documentElement.style.setProperty('--vvtop', `${Math.round(vv.offsetTop)}px`);
+      document.documentElement.style.setProperty('--vvh', `${Math.round(vv.height)}px`);
     };
     vv.addEventListener('resize', meet);
     vv.addEventListener('scroll', meet);

@@ -268,7 +268,17 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
     veld.setSelectionRange(ervoor.length, ervoor.length);
     voegTag(m[2]);
   };
-  tekst.addEventListener('input', () => { hekjeNaarLabel(tekst); bijTypen(); });
+  // Het tekstveld groeit mee met de tekst, zodat alleen het scherm scrolt en niet ook het veld zelf
+  const scroller = () => { for (let p = tekst.parentElement; p; p = p.parentElement) if (/(auto|scroll)/.test(getComputedStyle(p).overflowY)) return p; return document.scrollingElement; };
+  const groei = () => {
+    const sc = scroller(), top = sc.scrollTop;
+    tekst.style.minHeight = '';
+    tekst.style.minHeight = `${tekst.scrollHeight + tekst.offsetHeight - tekst.clientHeight}px`; // met de streep erboven
+    sc.scrollTop = top;
+  };
+  tekst.addEventListener('input', () => { hekjeNaarLabel(tekst); groei(); bijTypen(); });
+  requestAnimationFrame(groei);
+  if (typeof ResizeObserver === 'function') { let breedte = 0; new ResizeObserver(() => { if (tekst.clientWidth !== breedte) { breedte = tekst.clientWidth; groei(); } }).observe(tekst); }
 
   // Actiepunten: een rondje om af te vinken, de tekst, en een deadline. Enter maakt een nieuw punt eronder;
   // Backspace in een leeg punt haalt het weg. Een regel in de tekst die begint met ! wordt bij Enter een actiepunt.

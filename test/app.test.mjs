@@ -810,6 +810,11 @@ test('actiepunten: bovenaan de notitie, met een deadline, via ! in de tekst, en 
   await p.fill('#nottitel', 'Overleg pilot');
   assert.equal(await p.locator('#notlabelsectie .regelteken').innerText(), '#', 'labels op een eigen regel met #');
   assert.match(await p.locator('#notpuntsectie [data-actie="punt-nieuw"]').innerText(), /!\s*Actiepunt/, 'actiepunten op een eigen regel met !');
+  // Een lange tekst: het veld groeit mee, alleen het scherm scrolt
+  await p.locator('#nottekst').fill('Regel\n'.repeat(80)); await wacht(200);
+  const veld = await p.evaluate(() => { const t = $('#nottekst'), s = $('.notpagina'); return { t: t.scrollHeight - t.clientHeight, s: s.scrollHeight > s.clientHeight }; });
+  assert.deepEqual(veld, { t: 0, s: true }, 'geen scrollbalk in het tekstveld');
+  await p.locator('#nottekst').fill(''); await wacht(200);
   await p.locator('#notpuntsectie [data-actie="punt-nieuw"]').tap(); await wacht(200);
   await p.keyboard.type('Offerte sturen'); await p.keyboard.press('Enter'); await wacht(200);
   await p.keyboard.type('Planning delen'); await wacht(200);

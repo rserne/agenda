@@ -816,6 +816,10 @@ test('actiepunten: bovenaan de notitie, met een deadline, via ! in de tekst, en 
   await p.locator('#nottekst').fill('Regel\n'.repeat(80)); await wacht(200);
   const veld = await p.evaluate(() => { const t = $('#nottekst'), s = $('.notpagina'); return { t: t.scrollHeight - t.clientHeight, s: s.scrollHeight > s.clientHeight }; });
   assert.deepEqual(veld, { t: 0, s: true }, 'geen scrollbalk in het tekstveld');
+  // De cursor onderaan blijft in beeld, ook als het scherm eromheen nog bovenaan staat (zoals als het toetsenbord opengaat)
+  const cursor = await p.evaluate(() => { const t = $('#nottekst'), s = $('.notpagina'); t.focus(); t.setSelectionRange(t.value.length, t.value.length); s.scrollTop = 0;
+    caretInBeeld(t); return s.scrollTop >= s.scrollHeight - s.clientHeight - 60; });
+  assert.ok(cursor, 'de cursor onderaan de tekst is in beeld');
   await p.locator('#nottekst').fill(''); await wacht(200);
   await p.locator('#notpuntsectie [data-actie="punt-nieuw"]').tap(); await wacht(200);
   await p.keyboard.type('Offerte sturen'); await p.keyboard.press('Enter'); await wacht(200);

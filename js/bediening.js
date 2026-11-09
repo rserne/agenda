@@ -202,8 +202,12 @@ function koppel() {
       // Het zichtbare deel van het scherm: daarop past de notitie op de iPhone zich aan, ook met het toetsenbord open
       document.documentElement.style.setProperty('--vvtop', `${Math.round(vv.offsetTop)}px`);
       document.documentElement.style.setProperty('--vvh', `${Math.round(vv.height)}px`);
+      // iPad: iOS schuift de pagina omhoog als het toetsenbord opent; de lijst en de notitie schuiven mee terug in beeld
+      document.documentElement.style.setProperty('--vvpagina', `${open ? Math.round(vv.pageTop) : 0}px`);
     };
     vv.addEventListener('resize', meet);
+    // Gaat het toetsenbord open (of verandert het van hoogte), dan de cursor in de notitie in beeld houden
+    vv.addEventListener('resize', () => requestAnimationFrame(() => { if (document.activeElement?.id === 'nottekst') caretInBeeld(document.activeElement); }));
     vv.addEventListener('scroll', meet);
   }
   laadContacten().then(() => { if (CONTACTEN_INFO && isDesktop()) renderZijbalk(); });

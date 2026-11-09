@@ -1404,6 +1404,7 @@ body.notitietab .titelknop, body.insttab .titelknop { cursor: default; }
   .notipaneel::after { content: ''; flex: 0 0 var(--onder); } /* ruimte onderin, ook als je helemaal naar beneden scrolt */
   /* iPad met het toetsenbord open: lijst en notitie eindigen net boven het toetsenbord */
   .toetsenbord .notisplit { --onder: 24px; height: calc(var(--vvh, 100vh) - var(--kopH, 52px)); }
+  .toetsenbord .shell:has(.notisplit) { transform: translateY(var(--vvpagina, 0px)); }
   .notipaneel > .nlijstleeg { margin: auto; color: var(--secondary); }
   .notblad { flex: 1 0 auto; display: flex; flex-direction: column; gap: 12px; }
   .notbovenbalk { display: grid; grid-template-columns: 40px minmax(0, 1fr) 40px; align-items: center; min-height: 40px; }

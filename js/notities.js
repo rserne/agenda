@@ -276,7 +276,7 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
     tekst.style.minHeight = `${tekst.scrollHeight + tekst.offsetHeight - tekst.clientHeight}px`; // met de streep erboven
     sc.scrollTop = top;
   };
-  tekst.addEventListener('input', () => { hekjeNaarLabel(tekst); groei(); bijTypen(); });
+  tekst.addEventListener('input', () => { hekjeNaarLabel(tekst); groei(); caretInBeeld(tekst); bijTypen(); });
   requestAnimationFrame(groei);
   if (typeof ResizeObserver === 'function') { let breedte = 0; new ResizeObserver(() => { if (tekst.clientWidth !== breedte) { breedte = tekst.clientWidth; groei(); } }).observe(tekst); }
 
@@ -403,6 +403,32 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
   const eerst = titelVeld || tekst;
   if (!n.tekst && pagina) setTimeout(() => eerst.focus(), 350);
   else if (!n.tekst) eerst.focus();
+}
+
+// De cursor in het tekstveld in beeld houden. Het veld groeit mee met de tekst, dus het scherm eromheen moet scrollen;
+// iOS doet dat niet altijd zelf, bijvoorbeeld als het toetsenbord net opengaat. De hoogte van de cursor meten we met
+// een onzichtbare kopie van het veld.
+function caretInBeeld(t) {
+  if (!t || document.activeElement !== t) return;
+  let sc = t.parentElement;
+  while (sc && !/(auto|scroll)/.test(getComputedStyle(sc).overflowY)) sc = sc.parentElement;
+  if (!sc) return;
+  const cs = getComputedStyle(t), kopie = document.createElement('div');
+  ['fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft',
+    'borderTopWidth', 'borderRightWidth', 'borderBottomWidth', 'borderLeftWidth', 'borderStyle', 'boxSizing', 'textIndent', 'tabSize']
+    .forEach((k) => { kopie.style[k] = cs[k]; });
+  Object.assign(kopie.style, { position: 'absolute', visibility: 'hidden', top: '0', left: '-9999px', width: `${t.offsetWidth}px`, whiteSpace: 'pre-wrap', overflowWrap: 'break-word' });
+  kopie.textContent = t.value.slice(0, t.selectionEnd);
+  const merk = document.createElement('span');
+  merk.textContent = '\u200b';
+  kopie.append(merk);
+  document.body.append(kopie);
+  const y = merk.offsetTop, h = merk.offsetHeight || parseFloat(cs.lineHeight) || 24;
+  kopie.remove();
+  const boven = t.getBoundingClientRect().top - sc.getBoundingClientRect().top + y; // ten opzichte van het zichtbare deel
+  const ruimte = 24;
+  if (boven + h + ruimte > sc.clientHeight) sc.scrollTop += boven + h + ruimte - sc.clientHeight;
+  else if (boven < ruimte) sc.scrollTop += boven - ruimte;
 }
 
 // iPhone: een notitie als eigen scherm dat van rechts inschuift. Terug met de knop, Escape, of vanaf de linkerrand

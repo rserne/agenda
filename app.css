@@ -396,6 +396,8 @@ button.puntenrij:active, button.puntentegel:active { background: var(--fill); }
    toetsenbord (--tb), en de knoppen onderaan scrollen mee in plaats van achter het toetsenbord te blijven plakken */
 .toetsenbord .paneel:not(.dialoog) .detailinhoud { padding-bottom: calc(var(--tb, 0px) + 24px); }
 .toetsenbord .paneel:not(.dialoog) .nvast { position: static; }
+/* De tabbalk verdwijnt met het toetsenbord open, zoals in iOS; anders zweeft hij over de tekst */
+.toetsenbord .tabbalk { visibility: hidden; }
 .paneel.open { transform: translate(-50%, 0); }
 .paneel.sleept { transition: none; }
 /* Strook in de kleur van het paneel eronder, zodat er bij omhoog rekken geen gat onderaan ontstaat */
@@ -1400,6 +1402,8 @@ body.notitietab .titelknop, body.insttab .titelknop { cursor: default; }
   .notilinks .zoektoken .icoon { width: 9px; height: 9px; }
   .notipaneel { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 10px 36px 0; }
   .notipaneel::after { content: ''; flex: 0 0 var(--onder); } /* ruimte onderin, ook als je helemaal naar beneden scrolt */
+  /* iPad met het toetsenbord open: lijst en notitie eindigen net boven het toetsenbord */
+  .toetsenbord .notisplit { --onder: 24px; height: calc(var(--vvh, 100vh) - var(--kopH, 52px)); }
   .notipaneel > .nlijstleeg { margin: auto; color: var(--secondary); }
   .notblad { flex: 1 0 auto; display: flex; flex-direction: column; gap: 12px; }
   .notbovenbalk { display: grid; grid-template-columns: 40px minmax(0, 1fr) 40px; align-items: center; min-height: 40px; }

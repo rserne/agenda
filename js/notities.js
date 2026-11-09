@@ -301,9 +301,7 @@ function zichtbareNotities() {
       const hooi = labelSleutel([n.tekst, n.labels.join(' '), n.afspraak ? n.afspraak.titel : ''].join(' '));
       return woorden.every((w) => hooi.includes(w));
     })
-    .sort(naastElkaar()
-      ? (a, b) => b.gewijzigd - a.gewijzigd // iPad en Mac: zoals Notities van Apple, de laatst gewijzigde bovenaan
-      : (a, b) => (b.afspraak ? b.afspraak.start : b.gemaakt) - (a.afspraak ? a.afspraak.start : a.gemaakt));
+    .sort((a, b) => b.gewijzigd - a.gewijzigd); // zoals Notities van Apple: de laatst gewijzigde bovenaan
 }
 // De notitie rechts: een nieuwe, de gekozen, of anders de bovenste uit de lijst
 function gekozenNotitie() {
@@ -328,21 +326,23 @@ function notitieLijstHtml() {
   const lijst = zichtbareNotities();
   const gekozen = naastElkaar() ? gekozenNotitie() : null;
   if (!lijst.length) return `<p class="nleeg nlijstleeg">${levendeNotities().length ? 'Niets gevonden' : 'Nog geen notities'}</p>`;
-  if (naastElkaar()) {
-    let groep = null, html = '';
-    for (const n of lijst) {
-      const g = wijzigGroep(n.gewijzigd);
-      if (g !== groep) { html += `${groep === null ? '' : '</div>'}<h3 class="ngroep">${g}</h3><div class="ngroeplijst">`; groep = g; }
-      const aan = !!gekozen && gekozen.id === n.id;
-      const [titel, voorproef] = notitieKop(n);
-      html += `<button class="notitierij${aan ? ' aan' : ''}" data-notitie="${n.id}" aria-pressed="${aan}"><span class="t1">${esc(titel)}</span>
-        <span class="t2"><span class="ndatum">${esc(wijzigDatum(n.gewijzigd))}</span>${esc(voorproef || 'Geen extra tekst')}</span>${labelChips(n.labels)}</button>`;
-    }
-    return `${html}</div>`;
+  // In groepen naar de laatste wijziging (Vandaag, Gisteren, ...), zoals in Notities van Apple. Op iPad en Mac een lijst
+  // met strepen naast de notitie; op de iPhone een kaart per groep, met een pijltje naar de notitie.
+  const groepen = [];
+  for (const n of lijst) {
+    const g = wijzigGroep(n.gewijzigd);
+    if (!groepen.length || groepen[groepen.length - 1].naam !== g) groepen.push({ naam: g, notities: [] });
+    groepen[groepen.length - 1].notities.push(n);
   }
-  return `<div class="kaart">${lijst.map((n) => `<button class="drij notitierij${gekozen && gekozen.id === n.id ? ' aan' : ''}" data-notitie="${n.id}"${naastElkaar() ? ` aria-pressed="${!!gekozen && gekozen.id === n.id}"` : ''}>
-      <span class="tekst"><div class="t1">${esc(notitieKop(n)[0])}</div>
-      <div class="t2"><span class="num">${esc(notitieDatum(n))}</span>${notitieKop(n)[1] ? ` · ${esc(notitieKop(n)[1])}` : ''}</div>${labelChips(n.labels)}</span>${I.verder}</button>`).join('')}</div>`;
+  const rij = (n) => {
+    const [titel, voorproef] = notitieKop(n);
+    const inhoud = `<span class="t1">${esc(titel)}</span>
+        <span class="t2"><span class="ndatum">${esc(wijzigDatum(n.gewijzigd))}</span>${esc(voorproef || 'Geen extra tekst')}</span>${labelChips(n.labels)}`;
+    if (!naastElkaar()) return `<button class="drij notitierij" data-notitie="${n.id}"><span class="tekst">${inhoud}</span>${I.verder}</button>`;
+    const aan = !!gekozen && gekozen.id === n.id;
+    return `<button class="notitierij${aan ? ' aan' : ''}" data-notitie="${n.id}" aria-pressed="${aan}">${inhoud}</button>`;
+  };
+  return groepen.map((g) => `<h3 class="ngroep">${g.naam}</h3><div class="${naastElkaar() ? 'ngroeplijst' : 'kaart'}">${g.notities.map(rij).join('')}</div>`).join('');
 }
 // Het vak rechts opnieuw vullen (een nieuw element, zodat er geen oude luisteraars blijven hangen)
 function vulNotitiepaneel() {

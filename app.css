@@ -1145,6 +1145,14 @@ label.frij:focus-within .flabel { color: var(--accent); }
 input.nottitel { display: block; width: 100%; min-width: 0; padding: 0; border: 0; outline: none; background: transparent; color: var(--label); font-family: inherit; -webkit-appearance: none; appearance: none; }
 input.nottitel::placeholder { color: var(--secondary); opacity: 0.6; }
 .notitierij { cursor: pointer; }
+/* Tab Notities: kopjes per periode, zoals in Notities van Apple; per notitie de titel, de datum met een voorproef en de labels */
+.ngroep { margin: 8px 4px -6px; font-size: 20px; line-height: 25px; font-weight: 700; letter-spacing: -0.3px; color: var(--label); }
+.notitab:not(.notisplit) #notlijst > .ngroep:first-child { margin-top: 2px; }
+#notlijst { display: flex; flex-direction: column; gap: 14px; }
+.notitierij .t1, .notitierij .t2 { display: block; min-width: 0; }
+.notitab .drij.notitierij .t1 { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.notitab .drij.notitierij .t2 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.notitierij .ndatum { margin-right: 8px; color: var(--label); opacity: 0.8; }
 .notitierij > .icoon { width: 14px; height: 14px; color: var(--secondary); flex-shrink: 0; }
 .nkort { font-size: 15px; line-height: 21px; color: var(--label); white-space: pre-wrap; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
 .nlabels { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
@@ -1210,6 +1218,7 @@ body.notitietab .titelknop, body.insttab .titelknop { cursor: default; }
   .notilinks { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 14px 10px var(--onder); border-right: 0.5px solid var(--separator); }
   .notisplit .nfilter { margin: 2px 10px 4px; gap: 6px; }
   .notisplit .nfilter .chip { height: 30px; padding: 0 12px; font-size: 14px; }
+  .notisplit #notlijst { display: block; }
   .ngroep { margin: 18px 12px 6px; font-size: 20px; line-height: 25px; font-weight: 700; letter-spacing: -0.3px; color: var(--label); }
   .notisplit .nfilter:empty + #notlijst .ngroep:first-child { margin-top: 4px; }
   .notisplit .notitierij { position: relative; display: block; width: 100%; padding: 10px 12px 11px; border: 0; border-radius: 10px; background: none; color: var(--label); font: inherit; text-align: left; }

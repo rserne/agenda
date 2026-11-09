@@ -66,21 +66,25 @@ function verwijderNotitie(n) {
 /* ------------------------------------------------------------------ */
 
 const labelSleutel = (l) => l.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
-const netLabel = (l) => l.replace(/\s+/g, ' ').trim();
+// Labels zijn tags, zoals in Herinneringen van iOS: één woord in kleine letters (spaties worden streepjes), getoond met
+// een hekje. Oudere labels met hoofdletters of spaties tonen we zo ook; bij vergelijken tellen hoofdletters en accenten niet.
+const tagVan = (l) => String(l).replace(/[#,]/g, ' ').trim().toLowerCase().replace(/\s+/g, '-');
+const tagSleutel = (l) => labelSleutel(tagVan(l));
+const toonLabel = (l) => `#${tagVan(l)}`;
 // Alle labels, de meest gebruikte eerst
 function alleLabels() {
   const tel = new Map();
   levendeNotities().forEach((n) => n.labels.forEach((l) => {
-    const k = labelSleutel(l);
-    const t = tel.get(k) || { label: l, n: 0 };
+    const k = tagSleutel(l);
+    const t = tel.get(k) || { label: tagVan(l), n: 0 };
     t.n++; tel.set(k, t);
   }));
   return [...tel.values()].sort((a, b) => b.n - a.n || a.label.localeCompare(b.label, 'nl')).map((t) => t.label);
 }
 // Een label dat al bestaat (ook met andere hoofdletters of accenten) houdt zijn bestaande schrijfwijze
 function bestaandLabel(l) {
-  const k = labelSleutel(l);
-  return alleLabels().find((x) => labelSleutel(x) === k) || netLabel(l);
+  const k = tagSleutel(l);
+  return alleLabels().find((x) => tagSleutel(x) === k) || tagVan(l);
 }
 
 /* ------------------------------------------------------------------ */
@@ -121,7 +125,7 @@ function schermTekst(el) {
   if (!r) return null;
   return t && t.value ? t.value + (r.value ? `\n${r.value}` : '') : r.value;
 }
-const labelChips = (labels) => (labels.length ? `<span class="nlabels">${labels.map((l) => `<span class="nlabel">${esc(l)}</span>`).join('')}</span>` : '');
+const labelChips = (labels) => (labels.length ? `<span class="nlabels">${labels.map((l) => `<span class="nlabel">${esc(toonLabel(l))}</span>`).join('')}</span>` : '');
 
 /* ------------------------------------------------------------------ */
 /*  Notitie bewerken                                                   */
@@ -145,83 +149,98 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
     ? notitieDatum(n)
     : (() => { const d = new Date(n.gewijzigd || n.gemaakt); return `${d.getDate()} ${MONTHS_LONG[d.getMonth()]} ${d.getFullYear()} om ${hhmm(d)}`; })();
   // De titel groot bovenaan: van de afspraak, of bij een losse notitie de eerste regel, die je daar ook typt
+  const labelHtml = `<div class="taglijn"><span class="tags" id="notlabels"></span><input id="notlabel" class="taginvoer" placeholder="Labels" aria-label="Labels" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="done"><div class="aanvullijst" id="notaanvul" hidden></div></div>`;
   const titelHtml = n.afspraak
     ? `<h2 class="dtitel">${esc(n.afspraak.titel || 'Zonder titel')}</h2>`
     : '<input id="nottitel" class="dtitel nottitel" placeholder="Titel" aria-label="Titel" autocomplete="off" autocapitalize="sentences" enterkeyhint="next">';
   if (doel) el.innerHTML = `<div class="notblad">
       <div class="notbovenbalk"><span></span><div class="notmeta num">${meta}</div><div id="notvoet"></div></div>
       ${titelHtml}
-      <div class="notlabelvak">
-        <div class="chips" id="notlabelrij"><span id="notlabels"></span><label class="frij"><input id="notlabel" placeholder="Label toevoegen" aria-label="Label toevoegen" autocomplete="off" autocapitalize="sentences" enterkeyhint="done"></label></div>
-        <div class="aanvullijst" id="notaanvul" hidden></div>
-      </div>
+      ${labelHtml}
       <textarea id="nottekst" placeholder="Notitie" aria-label="Notitie"></textarea>
     </div>`;
   else el.innerHTML = `${doel ? '' : `<div class="detailgreep"><div class="greep"></div>
       <div class="detailnav"><button class="rond glas" data-actie="sluit" aria-label="Sluiten">${I.kruis}</button></div></div>`}
     <div class="detailinhoud">
       <div class="dkop"><div class="dkopinhoud">${titelHtml}${n.afspraak ? `<div class="dmeta"><div class="num">${notitieDatum(n)}</div></div>` : ''}</div></div>
+      ${labelHtml}
       <div class="formkaart tekstkaart">
         <label class="frij boven"><textarea id="nottekst" rows="8" placeholder="Notitie" aria-label="Notitie"></textarea></label>
       </div>
-      <div class="formkaart">
-        <label class="frij"><span class="flabel">Labels</span><input id="notlabel" placeholder="Label toevoegen" autocomplete="off" autocapitalize="sentences" enterkeyhint="done"></label>
-        <div class="aanvullijst" id="notaanvul" hidden></div>
-        <div class="frij kolom" id="notlabelrij" hidden><div class="chips" id="notlabels"></div></div>
-      </div>
       <div class="dvoet" id="notvoet"></div>
     </div>`;
-  const tekst = $('#nottekst', el), invoer = $('#notlabel', el), titelVeld = $('#nottitel', el);
+  const tekst = $('#nottekst', el), titelVeld = $('#nottitel', el), invoer = $('#notlabel', el);
   if (titelVeld) {
     const i = n.tekst.indexOf('\n');
     titelVeld.value = i < 0 ? n.tekst : n.tekst.slice(0, i);
     tekst.value = i < 0 ? '' : n.tekst.slice(i + 1);
   } else tekst.value = n.tekst;
 
-  // Gekozen labels als chips met een kruisje; daarachter voorstellen: de organisatie van het overleg en de meest gebruikte labels
+  // Labels als tags op één regel: typ een woord en een spatie (of Enter), dan wordt het een tag in kleine letters.
+  // Een tik op een tag kiest hem (met een kruisje), nog een tik haalt hem weg; Backspace in een leeg veld ook.
+  let gekozenTag = -1;
   const tekenLabels = () => {
-    const gekozen = new Set(n.labels.map(labelSleutel));
-    const voorstel = [...voorstelOrgs, ...alleLabels()].filter((l, i, a) => !gekozen.has(labelSleutel(l)) && a.findIndex((x) => labelSleutel(x) === labelSleutel(l)) === i).slice(0, 6);
-    $('#notlabels', el).innerHTML = n.labels.map((l, i) => `<button type="button" class="chip label aan" data-weg="${i}" aria-label="Label ${esc(l)} weghalen">${esc(l)}${I.kruis}</button>`).join('')
-      + voorstel.map((l) => `<button type="button" class="chip label voorstel" data-voeg="${esc(l)}" aria-label="Label ${esc(l)} toevoegen">${I.plus}${esc(l)}</button>`).join('');
-    if (doel) {
-      $('#notvoet', el).innerHTML = NOTITIES.includes(n) ? `<button class="notweg" data-actie="verwijder" aria-label="Notitie verwijderen">${I.wissen}</button>` : '';
-      return;
-    }
-    $('#notlabelrij', el).hidden = !n.labels.length && !voorstel.length;
-    $('#notvoet', el).innerHTML = NOTITIES.includes(n) ? `<button class="groteknop rood" data-actie="verwijder">${I.wissen}Notitie verwijderen</button>` : '';
+    $('#notlabels', el).innerHTML = n.labels.map((l, i) => (i === gekozenTag
+      ? `<button type="button" class="tag aan" data-tag="${i}" aria-label="${esc(toonLabel(l))} weghalen">${esc(toonLabel(l))}${I.kruis}</button>`
+      : `<button type="button" class="tag" data-tag="${i}">${esc(toonLabel(l))}</button>`)).join('');
+    $('#notvoet', el).innerHTML = !NOTITIES.includes(n) ? ''
+      : doel ? `<button class="notweg" data-actie="verwijder" aria-label="Notitie verwijderen">${I.wissen}</button>`
+        : `<button class="groteknop rood" data-actie="verwijder">${I.wissen}Notitie verwijderen</button>`;
   };
-  const voegLabel = (l) => {
-    const label = bestaandLabel(l);
-    if (!label || n.labels.some((x) => labelSleutel(x) === labelSleutel(label))) return;
-    wijzigNotitie(n, { labels: [...n.labels, label] });
+  const zetLabels = (labels) => {
+    gekozenTag = -1;
+    wijzigNotitie(n, { labels });
     tekenLabels();
     if (bijWijziging) bijWijziging();
   };
+  const voegTag = (t) => {
+    if (!tagVan(t)) return;
+    const tag = bestaandLabel(t);
+    if (!n.labels.some((x) => tagSleutel(x) === tagSleutel(tag))) zetLabels([...n.labels, tag]);
+  };
+  const haalWeg = (i) => zetLabels(n.labels.filter((_, j) => j !== i));
   tekenLabels();
 
-  // Typen in het labelveld: eerst bestaande labels; bestaat het nog niet, dan als nieuw label
+  // Een spatie of komma maakt van het woord ervoor een tag (vóór de voorstellen, zodat die het nette woord zien)
+  invoer.addEventListener('input', () => {
+    if (gekozenTag >= 0) { gekozenTag = -1; tekenLabels(); }
+    if (!/[\s,]/.test(invoer.value)) return;
+    const delen = invoer.value.split(/[\s,]+/);
+    invoer.value = delen.pop();
+    delen.forEach(voegTag);
+  });
+  // Voorstellen tijdens het typen: wat je typt bovenaan, daaronder bestaande labels; leeg: de organisatie en de meest gebruikte
   koppelSuggesties(invoer, $('#notaanvul', el), {
+    vraagVan: (w) => tagVan(w),
+    leegTonen: true,
     zoek: (vraag) => {
-      const k = labelSleutel(vraag);
-      const gekozen = new Set(n.labels.map(labelSleutel));
-      const bestaand = [...voorstelOrgs, ...alleLabels()].filter((l, i, a) => a.findIndex((x) => labelSleutel(x) === labelSleutel(l)) === i)
-        .filter((l) => !gekozen.has(labelSleutel(l)) && labelSleutel(l).includes(k)).slice(0, 6)
-        .map((l) => ({ t1: l, label: l }));
-      const nieuw = !bestaand.some((c) => labelSleutel(c.label) === k) && !gekozen.has(k) ? [{ t1: netLabel(vraag), t2: 'Nieuw label', label: netLabel(vraag) }] : [];
-      return { nu: [...bestaand, ...nieuw] };
+      const k = tagSleutel(vraag), gekozen = new Set(n.labels.map(tagSleutel));
+      const bestaand = [...voorstelOrgs, ...alleLabels()].map(tagVan).filter((l, i, a) => a.findIndex((x) => tagSleutel(x) === tagSleutel(l)) === i)
+        .filter((l) => !gekozen.has(tagSleutel(l)) && (!k || tagSleutel(l).includes(k)));
+      const precies = bestaand.find((l) => tagSleutel(l) === k);
+      const eerst = !k || gekozen.has(k) ? [] : [precies ? { t1: toonLabel(precies), label: precies } : { t1: toonLabel(vraag), t2: 'Nieuw label', label: vraag }];
+      return { nu: [...eerst, ...bestaand.filter((l) => l !== precies).slice(0, 6).map((l) => ({ t1: toonLabel(l), label: l }))] };
     },
-    kies: (c) => { voegLabel(c.label); invoer.value = ''; },
+    kies: (c) => { voegTag(c.label); invoer.value = ''; },
   });
   invoer.addEventListener('keydown', (ev) => {
-    // Enter zonder gekozen voorstel: het getypte label toevoegen
-    if (ev.key === 'Enter' && !ev.defaultPrevented && invoer.value.trim()) {
+    if (ev.defaultPrevented || ev.isComposing) return;
+    if (ev.key === 'Enter') {
       ev.preventDefault();
-      voegLabel(invoer.value);
+      if (!invoer.value.trim()) { tekst.focus(); return; }
+      voegTag(invoer.value);
       invoer.value = '';
-      invoer.dispatchEvent(new Event('input')); // de voorstellen sluiten
+      invoer.dispatchEvent(new Event('input')); // de voorstellen opnieuw
+    } else if (ev.key === 'Backspace' && !invoer.value && n.labels.length) {
+      ev.preventDefault();
+      if (gekozenTag >= 0) haalWeg(gekozenTag); else { gekozenTag = n.labels.length - 1; tekenLabels(); }
     }
   });
+  invoer.addEventListener('blur', () => setTimeout(() => {
+    if (document.activeElement === invoer) return;
+    if (invoer.value.trim()) { voegTag(invoer.value); invoer.value = ''; }
+    else if (gekozenTag >= 0 && !el.contains(document.activeElement)) { gekozenTag = -1; tekenLabels(); }
+  }, 160));
 
   // Meteen bewaren tijdens het typen; het tekstvak vult de ruimte van het scherm
   const bijTypen = () => {
@@ -260,10 +279,14 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
       if (p) p.sluit(); else if (klaar) klaar();
       return;
     }
-    const weg = t.closest('[data-weg]');
-    if (weg) { wijzigNotitie(n, { labels: n.labels.filter((_, i) => i !== Number(weg.dataset.weg)) }); tekenLabels(); if (bijWijziging) bijWijziging(); return; }
-    const voeg = t.closest('[data-voeg]');
-    if (voeg) voegLabel(voeg.dataset.voeg);
+    const tag = t.closest('[data-tag]');
+    if (tag) {
+      const i = Number(tag.dataset.tag);
+      if (gekozenTag === i) haalWeg(i);
+      else { gekozenTag = i; tekenLabels(); if (isDesktop()) invoer.focus(); }
+      return;
+    }
+    if (t.closest('.taglijn') && !t.closest('button')) invoer.focus(); // een tik naast de tags: verder typen
   });
   const eerst = titelVeld || tekst;
   if (!n.tekst && !isDesktop()) setTimeout(() => eerst.focus(), 350);
@@ -289,7 +312,7 @@ let notZoek = '';
 let notLabel = null;
 let notGekozen = null; // iPad en Mac: de notitie rechts naast de lijst
 let notNieuw = null; // een nieuwe notitie rechts die nog leeg is (en dus nog niet in de lijst staat)
-const isLabel = (a, b) => !!a && !!b && labelSleutel(a) === labelSleutel(b);
+const isLabel = (a, b) => !!a && !!b && tagSleutel(a) === tagSleutel(b);
 const naastElkaar = () => isDesktop();
 
 function zichtbareNotities() {
@@ -298,7 +321,7 @@ function zichtbareNotities() {
     .filter((n) => !notLabel || n.labels.some((l) => isLabel(l, notLabel)))
     .filter((n) => {
       if (!woorden.length) return true;
-      const hooi = labelSleutel([n.tekst, n.labels.join(' '), n.afspraak ? n.afspraak.titel : ''].join(' '));
+      const hooi = labelSleutel([n.tekst, n.labels.map(toonLabel).join(' '), n.afspraak ? n.afspraak.titel : ''].join(' '));
       return woorden.every((w) => hooi.includes(w));
     })
     .sort((a, b) => b.gewijzigd - a.gewijzigd); // zoals Notities van Apple: de laatst gewijzigde bovenaan
@@ -315,7 +338,7 @@ function gekozenNotitie() {
 function filterHtml() {
   const labels = alleLabels();
   if (notLabel && !labels.some((l) => isLabel(l, notLabel))) notLabel = null;
-  return labels.map((l) => `<button type="button" class="chip label${isLabel(l, notLabel) ? ' aan' : ''}" data-label="${esc(l)}" aria-pressed="${isLabel(l, notLabel)}">${esc(l)}</button>`).join('');
+  return labels.map((l) => `<button type="button" class="chip label${isLabel(l, notLabel) ? ' aan' : ''}" data-label="${esc(l)}" aria-pressed="${isLabel(l, notLabel)}">${esc(toonLabel(l))}</button>`).join('');
 }
 function notitiesHtml() {
   const filter = `<div class="chips nfilter" id="notfilter">${filterHtml()}</div>`;

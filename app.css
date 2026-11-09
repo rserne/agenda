@@ -1157,10 +1157,20 @@ input.nottitel::placeholder { color: var(--secondary); opacity: 0.6; }
 .nkort { font-size: 15px; line-height: 21px; color: var(--label); white-space: pre-wrap; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
 .nlabels { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
 .nlabel { background: var(--fill); color: var(--label); border-radius: 7px; padding: 2px 8px; font-size: 12px; font-weight: 600; }
-/* Labels kiezen: gekozen gevuld met een kruisje, voorstellen met een doorgetrokken rand en een plus */
+/* Labels bij een notitie: de gekozen gevuld, daarachter '+ Label' met een doorgetrokken rand */
 .chip.label { gap: 6px; padding: 0 12px; }
 .chip.label .icoon { width: 13px; height: 13px; }
 .chip.label.voorstel { background: transparent; box-shadow: inset 0 0 0 1.5px var(--fill); color: var(--secondary); }
+.taglijn { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-height: 30px; cursor: text; }
+.taglijn .tags { display: contents; }
+.tag { display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 10px; border-radius: 14px; background: var(--fill); color: var(--label); font-size: 15px; font-weight: 500; cursor: pointer; }
+.tag.aan { background: var(--accent); color: var(--onAccent); }
+.tag .icoon { width: 12px; height: 12px; }
+.taginvoer { flex: 1 0 110px; min-width: 0; height: 28px; padding: 0 2px; border: 0; outline: none; background: transparent; color: var(--label); font: inherit; font-size: 16px; -webkit-appearance: none; appearance: none; }
+.taginvoer::placeholder { color: var(--secondary); opacity: 0.8; }
+.taglijn .aanvullijst { top: calc(100% + 4px); left: 0; right: auto; width: min(320px, 100%); }
+.taglijn .aanvuloptie { justify-content: center; min-height: 44px; }
+.notitie .taglijn { padding: 0 4px; }
 .nfilter { margin: 2px 4px 0; }
 .nfilter:empty { display: none; }
 .nlijstleeg { padding: 8px 4px; }
@@ -1243,12 +1253,6 @@ body.notitietab .titelknop, body.insttab .titelknop { cursor: default; }
   .notweg:hover { background: var(--fill); }
   .notweg .icoon { width: 21px; height: 21px; }
   .notblad > .dtitel { margin: 0; font-size: 28px; line-height: 34px; letter-spacing: -0.4px; }
-  .notlabelvak { position: relative; }
-  .notlabelvak .chips { align-items: center; gap: 6px; }
-  #notlabels { display: contents; }
-  .notlabelvak .chip { height: 30px; font-size: 14px; }
-  .notlabelvak .frij { flex: 1 0 160px; min-height: 30px; padding: 0 0 0 4px; border: 0; }
-  .notlabelvak .aanvullijst { left: 0; right: auto; width: min(360px, 100%); }
   .notblad textarea { flex: 1; min-height: 0; width: 100%; padding: 0; border: 0; outline: none; resize: none; background: transparent; color: var(--label); font: inherit; font-size: 17px; line-height: 26px; }
   .notblad textarea::placeholder { color: var(--secondary); opacity: 0.8; }
   .zbnotities { border-top: 0; padding-top: 6px; }

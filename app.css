@@ -1303,6 +1303,7 @@ body.notitietab .titelknop, body.insttab .titelknop { cursor: default; }
   .notweg:hover { background: var(--fill); }
   .notweg .icoon { width: 21px; height: 21px; }
   .notblad > .dtitel { margin: 0; font-size: 28px; line-height: 34px; letter-spacing: -0.4px; }
+  .notblad .punten { max-width: 600px; } /* de deadline dicht bij de tekst, ook in een breed venster */
   .notblad textarea { flex: 1; min-height: 0; width: 100%; padding: 0; border: 0; outline: none; resize: none; background: transparent; color: var(--label); font: inherit; font-size: 17px; line-height: 26px; }
   .notblad textarea::placeholder { color: var(--secondary); opacity: 0.8; }
   .zbnotities { border-top: 0; padding-top: 6px; }

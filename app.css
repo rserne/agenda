@@ -1069,7 +1069,7 @@ label.frij:focus-within .flabel { color: var(--accent); }
   body .notisplit .notitierij .nlabel { font-size: 13px; }
   body .notblad > .dtitel { font-size: 30px; line-height: 36px; }
   body .notblad textarea { font-size: 18px; line-height: 27px; }
-  body .notblad .punttekst, body .notblad .puntnieuw, body .notblad .taginvoer { font-size: 18px; }
+  body .notblad .punttekst { font-size: 18px; }
   body .notblad .tag { font-size: 16px; height: 30px; }
   body .notmeta { font-size: 14px; }
   body .notilinks .zoektoken { height: 28px; font-size: 14px; }
@@ -1200,17 +1200,14 @@ input.nottitel::placeholder { color: var(--secondary); opacity: 0.6; }
 .werkhekje { width: 15px; text-align: center; font-weight: 700; font-size: 16px; }
 .werkvink { width: 15px; height: 15px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px currentColor; }
 .notblad textarea { flex: 1; min-height: 200px; overflow: hidden; width: 100%; padding: 0; border: 0; outline: none; resize: none; background: transparent; color: var(--label); font: inherit; font-size: 18px; line-height: 27px; }
-.notblad .punttekst, .notblad .puntnieuw, .notblad .taginvoer { font-size: 18px; }
+.notblad .punttekst { font-size: 18px; }
 .notblad .tag { font-size: 16px; height: 30px; }
 .notmeta { font-size: 14px; }
 .notblad textarea::placeholder, input.nottitel::placeholder { color: var(--secondary); opacity: 0.7; }
 .notitie .rond[hidden] { display: none; }
 /* Labels (#) en actiepunten (!) elk op een eigen regel, met het teken ervoor, net als de snelkoppelingen in de tekst */
-.regelteken { flex-shrink: 0; width: 22px; text-align: center; color: var(--accent); font-size: 18px; font-weight: 700; line-height: 1; }
-.notblad .puntnieuw { gap: 10px; min-height: 36px; color: var(--secondary); font-size: 16px; }
-.notblad .taglijn { gap: 10px; min-height: 36px; }
-.notblad .taginvoer { padding: 0; }
-.notblad .tags { display: flex; flex-wrap: wrap; gap: 6px 8px; margin-bottom: 8px; }
+.notblad .tags { display: flex; flex-wrap: wrap; gap: 6px 8px; }
+#notlabelsectie { padding-top: 12px; } /* evenveel ruimte boven als onder de tags (de 12 van .notblad) */
 .notblad .tags[hidden] { display: none; }
 .notblad textarea { border-top: 0.5px solid var(--separator); padding-top: 12px; }
 .paneel.notitie .detailinhoud { display: flex; flex-direction: column; }
@@ -1258,18 +1255,16 @@ html.paginaopen .shell, html.paginaopen #tabbalk, html.paginaopen #lagen { visib
 .puntdatum .icoon { width: 17px; height: 17px; opacity: 0.55; }
 .puntdatum.aan { background: var(--fill); color: var(--label); }
 .puntdatum.laat { color: var(--statusNo); }
+.puntweg { flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; margin: 0 -8px 0 -4px; border-radius: 18px; color: var(--secondary); }
+.puntweg .icoon { width: 15px; height: 15px; }
 .puntdatumvak { position: relative; flex-shrink: 0; align-self: stretch; display: flex; align-items: center; }
 .puntkiezer { position: absolute; right: 0; bottom: 0; width: 1px; height: 1px; padding: 0; border: 0; opacity: 0; pointer-events: none; font-size: 16px; }
 /* Op een touchscreen ligt de datumkiezer zelf over de knop: een tik opent dan de kiezer van iOS, zonder tussenstap */
 @media (pointer: coarse) {
   .puntdatumvak .puntkiezer { inset: 0; width: 100%; height: 100%; min-width: 0; margin: 0; pointer-events: auto; -webkit-appearance: none; appearance: none; background: transparent; color: transparent; }
 }
-.notblad .taglijn[hidden], .notblad .puntnieuw[hidden] { display: none; }
-.notblad .tags:has(+ .taglijn[hidden]) { margin-bottom: 0; }
-.puntnieuw { display: flex; align-items: center; gap: 10px; min-height: 42px; color: var(--accent); font-size: 16px; }
-.puntnieuw .icoon { width: 22px; height: 18px; flex-shrink: 0; }
 .puntenkaart { padding: 0 16px; }
-.puntenkaart .punt + .punt, .puntenkaart .punt + .puntnieuw { border-top: 0.5px solid var(--separator); }
+.puntenkaart .punt + .punt { border-top: 0.5px solid var(--separator); }
 /* Te doen: voorop in de labels, met het aantal open actiepunten */
 .chip.tedoen { gap: 6px; }
 .chip.tedoen .icoon { width: 14px; height: 14px; }
@@ -1300,12 +1295,9 @@ html.paginaopen .shell, html.paginaopen #tabbalk, html.paginaopen #lagen { visib
 .chip.label { gap: 6px; padding: 0 12px; }
 .chip.label .icoon { width: 13px; height: 13px; }
 .chip.label.voorstel { background: transparent; box-shadow: inset 0 0 0 1.5px var(--fill); color: var(--secondary); }
-.taglijn { position: relative; display: flex; align-items: center; gap: 6px; min-height: 30px; cursor: text; }
 .tag { display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 10px; border-radius: 14px; background: var(--fill); color: var(--label); font-size: 15px; font-weight: 500; cursor: pointer; }
 .tag.aan { background: var(--accent); color: var(--onAccent); }
 .tag .icoon { width: 12px; height: 12px; }
-.taginvoer { flex: 1; min-width: 0; height: 28px; padding: 0 2px; border: 0; outline: none; background: transparent; color: var(--label); font: inherit; font-size: 16px; -webkit-appearance: none; appearance: none; }
-.taginvoer::placeholder { color: var(--secondary); opacity: 0.8; }
 .nfilters { display: flex; flex-direction: column; gap: 8px; }
 /* Labels om op te filteren: één regel die zijwaarts scrolt, tot aan de rand van het scherm */
 .nfilter { flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; margin: 0 -16px; padding: 0 20px; }
@@ -1423,7 +1415,7 @@ body.notitietab .titelknop, body.insttab .titelknop { cursor: default; }
   .notweg:hover { background: var(--fill); }
   .notweg .icoon { width: 24px; height: 24px; }
   .notblad > .dtitel { margin: 0; font-size: 28px; line-height: 34px; letter-spacing: -0.4px; }
-  .notblad .punttekst, .notblad .puntnieuw, .notblad .taginvoer { font-size: 16px; }
+  .notblad .punttekst { font-size: 16px; }
   .notblad .tag { font-size: 15px; height: 28px; }
   .notblad > .dtitel { font-size: 28px; line-height: 34px; }
   .notmeta { font-size: 13px; }

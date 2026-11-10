@@ -304,9 +304,21 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
     if (was !== NOTITIES.includes(n)) tekenLabels();
     if (bijWijziging) bijWijziging();
   });
+  // De deadline bijwerken zonder de actiepunten opnieuw te tekenen: iOS kiest bij het openen van een lege datumkiezer
+  // meteen vandaag, en opnieuw tekenen zou de kiezer dan direct weer sluiten. Nu blijft hij open en kies je verder.
   const zetDeadline = (k) => {
     const p = puntVan(k), d = k.value || null;
-    if (p && p.deadline !== d) zetPunten(punten(n).map((x) => (x === p ? { ...x, deadline: d } : x)));
+    if (!p || p.deadline === d) return;
+    const was = NOTITIES.includes(n);
+    wijzigNotitie(n, { punten: punten(n).map((x) => (x === p ? { ...x, deadline: d } : x)) });
+    if (doel) el.dataset.punten = JSON.stringify(punten(n));
+    const knop = k.parentElement.querySelector('.puntdatum');
+    knop.className = `puntdatum${d ? ' aan' : ''}${!p.klaar && teLaat(d) ? ' laat' : ''}`;
+    knop.setAttribute('aria-label', d ? `Deadline ${deadlineTekst(d)}` : 'Deadline');
+    knop.innerHTML = d ? esc(deadlineTekst(d)) : I.kalender;
+    k.dataset.deadline = d || '';
+    if (was !== NOTITIES.includes(n)) tekenLabels();
+    if (bijWijziging) bijWijziging();
   };
   puntenEl.addEventListener('change', (ev) => { if (ev.target.classList.contains('puntkiezer')) zetDeadline(ev.target); });
   // Herstel in iOS geeft soms alleen een input-gebeurtenis; een lege waarde verwerken we daarom meteen

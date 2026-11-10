@@ -939,6 +939,12 @@ test('notities op de Mac: zoekscherm met filters, badges en sorteren; een notiti
   await p.locator('#nresultkop [data-nf-wis]').click(); await wacht(200);
   assert.equal(await p.locator('#nresultkop .nbadge').count(), 0);
   assert.equal(await p.locator('#notlijst .notitierij').count(), 2);
+  // Een periode aanvinken laat geen lege periodes verschijnen: elk vak telt alleen zichzelf
+  const perioden = async () => (await p.locator('#nfilters [data-nf-periode]').allInnerTexts()).map((t) => t.split('\n')[0]);
+  const voor = await perioden();
+  await p.locator('#nfilters [data-nf-periode="vandaag"]').click(); await wacht(200);
+  assert.deepEqual(await perioden(), voor);
+  await p.locator('#nfilters [data-nf-periode="vandaag"]').click(); await wacht(200);
   // Sorteren op titel
   await p.locator('#nresultkop select').selectOption('titel'); await wacht(200);
   assert.deepEqual(await p.locator('#notlijst .notitierij .t1').allInnerTexts(), ['Eerste notitie', 'Tweede notitie']);

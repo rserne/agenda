@@ -800,10 +800,11 @@ function tekenFilters() {
   const vindbaar = (n) => !zoek.length || zoek.every((w) => labelSleutel([n.tekst, punten(n).map((p) => p.tekst).join(' '), n.labels.map(toonLabel).join(' '), n.afspraak ? n.afspraak.titel : ''].join(' ')).includes(w));
   const metLabels = (n, extra) => [...notLabels, ...(extra ? [extra] : [])].every((k) => n.labels.some((l) => isLabel(l, k)));
   const levend = levendeNotities().filter(vindbaar);
-  // Tellen: notities, of bij actiepunten de open punten. Bij een vak: wat er overblijft als je het (ook) aanvinkt.
+  // Tellen: notities, of bij actiepunten de open punten. Bij een vak van Periode of Deadline: hoeveel er in dat vak
+  // zelf vallen (los van de andere aangevinkte vakken, zoals in een webwinkel); bij een label: wat er overblijft.
   const tel = (n, { bak = null, label = null, soort = notTeDoen } = {}) => {
     if (!metLabels(n, label)) return 0;
-    const bakken2 = bak ? [...new Set([...notPeriodes, bak])] : (soort === notTeDoen ? notPeriodes : []);
+    const bakken2 = bak ? [bak] : (soort === notTeDoen ? notPeriodes : []);
     if (soort) return openPunten(n).filter((p) => !bakken2.length || bakken2.some((k) => inDeadlineBak(p, k))).length;
     return !bakken2.length || bakken2.some((k) => inNotitieBak(n, k)) ? 1 : 0;
   };

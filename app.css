@@ -1066,7 +1066,6 @@ label.frij:focus-within .flabel { color: var(--accent); }
   body .notilinks > .zoekbalk { height: 42px; border-radius: 12px; }
   body .notisplit .notitierij .t1 { font-size: 18px; line-height: 23px; }
   body .notisplit .notitierij .t2 { font-size: 15px; line-height: 20px; }
-  body .notisplit .notitierij .nlabel { font-size: 13px; }
   body .notblad > .dtitel { font-size: 30px; line-height: 36px; }
   body .notblad textarea { font-size: 18px; line-height: 27px; }
   body .notblad .punttekst { font-size: 18px; }
@@ -1277,14 +1276,14 @@ html.paginaopen .shell, html.paginaopen #tabbalk, html.paginaopen #lagen { visib
 .tddatum.laat, .ngroep.laat { color: var(--statusNo); }
 .tddatum.laat { font-weight: 600; }
 .notitierij { cursor: pointer; }
-/* Tab Notities: kopjes per periode, zoals in Notities van Apple; per notitie de titel, de datum met een voorproef en de labels */
+/* Tab Notities: kopjes per periode, zoals in Notities van Apple; per notitie de titel en de datum met een voorproef */
 .ngroep { margin: 3px 4px 3.5px; font-size: 23px; line-height: 28px; font-weight: 700; letter-spacing: -0.3px; color: var(--label); }
 .notitab:not(.notisplit) #notlijst > .ngroep:first-child { margin-top: -1px; }
 #notlijst { display: flex; flex-direction: column; gap: 14px; }
 .notitierij .t1, .notitierij .t2 { display: block; min-width: 0; }
 .notitab .drij.notitierij .t1 { font-size: 19px; line-height: 24px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .notitab .drij.notitierij .t2 { margin-top: 2px; font-size: 16px; line-height: 21px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.notitab .drij.notitierij .nlabel { font-size: 14px; padding: 3px 9px; }
+.notitab .drij.notitierij { padding: 15px 0; } /* wat meer lucht tussen de notities */
 .notitab .drij.tdrij .t1 { white-space: normal; }
 .notitierij .ndatum { margin-right: 8px; color: var(--label); opacity: 0.8; }
 .notitierij > .icoon { width: 14px; height: 14px; color: var(--secondary); flex-shrink: 0; }
@@ -1382,7 +1381,7 @@ body.notitietab .titelknop, body.insttab .titelknop { cursor: default; }
   .notisplit #notlijst { display: block; }
   .ngroep { margin: 18px 12px 6px; font-size: 20px; line-height: 25px; font-weight: 700; letter-spacing: -0.3px; color: var(--label); }
   .notisplit .nfilter:empty + #notlijst .ngroep:first-child { margin-top: 4px; }
-  .notisplit .notitierij { position: relative; display: block; width: 100%; padding: 10px 12px 11px; border: 0; border-radius: 10px; background: none; color: var(--label); font: inherit; text-align: left; }
+  .notisplit .notitierij { position: relative; display: block; width: 100%; padding: 13px 12px 14px; border: 0; border-radius: 10px; background: none; color: var(--label); font: inherit; text-align: left; }
   /* Een streep onder elke notitie; niet tegen de gekozen notitie aan (of die onder de muis) */
   .notisplit .notitierij::after { content: ''; position: absolute; bottom: 0; left: 12px; right: 12px; border-bottom: 0.5px solid var(--separator); }
   .notisplit .notitierij.aan::after, .notisplit .notitierij:has(+ .notitierij.aan)::after { display: none; }

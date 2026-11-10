@@ -107,7 +107,8 @@ function notitieDatum(n) {
 const dagenGeleden = (ms) => Math.round((vandaag() - startOfDay(new Date(ms))) / 864e5);
 function wijzigGroep(ms) {
   const dagen = dagenGeleden(ms), d = new Date(ms);
-  if (dagen <= 0) return 'Vandaag';
+  if (dagen < 0) return 'Binnenkort'; // een notitie bij een afspraak die nog moet komen
+  if (dagen === 0) return 'Vandaag';
   if (dagen === 1) return 'Gisteren';
   if (dagen < 7) return 'Afgelopen 7 dagen';
   if (dagen < 30) return 'Afgelopen 30 dagen';
@@ -115,8 +116,7 @@ function wijzigGroep(ms) {
 }
 function wijzigDatum(ms) {
   const dagen = dagenGeleden(ms), d = new Date(ms);
-  if (dagen === 0) return hhmm(d);
-  if (dagen === 1) return 'Gisteren';
+  if (dagen === 0 || dagen === 1) return hhmm(d); // het kopje zegt al Vandaag of Gisteren
   if (dagen === -1) return 'Morgen'; // een notitie bij een afspraak die nog moet komen
   if (Math.abs(dagen) < 7) return cap(DAYS_LONG[d.getDay()]);
   return `${d.getDate()}-${d.getMonth() + 1}-${d.getFullYear()}`;
@@ -614,7 +614,7 @@ function zichtbareNotities() {
       const hooi = labelSleutel([n.tekst, punten(n).map((p) => p.tekst).join(' '), n.labels.map(toonLabel).join(' '), n.afspraak ? n.afspraak.titel : ''].join(' '));
       return woorden.every((w) => hooi.includes(w));
     })
-    .sort((a, b) => b.gewijzigd - a.gewijzigd); // zoals Notities van Apple: de laatst gewijzigde bovenaan
+    .sort((a, b) => notitieMoment(b) - notitieMoment(a)); // de nieuwste bovenaan: de afspraak, of de laatste wijziging
 }
 // De notitie rechts: een nieuwe, de gekozen, of anders de bovenste uit de lijst
 function gekozenNotitie() {
@@ -664,18 +664,19 @@ function notitieLijstHtml() {
   const lijst = zichtbareNotities();
   const gekozen = naastElkaar() ? gekozenNotitie() : null;
   if (!lijst.length) return `<p class="nleeg nlijstleeg">${levendeNotities().length ? 'Niets gevonden' : 'Nog geen notities'}</p>`;
-  // In groepen naar de laatste wijziging (Vandaag, Gisteren, ...), zoals in Notities van Apple. Op iPad en Mac een lijst
+  // In groepen (Vandaag, Gisteren, ...) zoals in Notities van Apple, naar hetzelfde moment als de datum in de regel:
+  // de afspraak, of bij een losse notitie de laatste wijziging. Op iPad en Mac een lijst
   // met strepen naast de notitie; op de iPhone een kaart per groep, met een pijltje naar de notitie.
   const groepen = [];
   for (const n of lijst) {
-    const g = wijzigGroep(n.gewijzigd);
+    const g = wijzigGroep(notitieMoment(n).getTime());
     if (!groepen.length || groepen[groepen.length - 1].naam !== g) groepen.push({ naam: g, notities: [] });
     groepen[groepen.length - 1].notities.push(n);
   }
   const rij = (n) => {
     const [titel, voorproef] = notitieKop(n);
     const inhoud = `<span class="t1">${esc(titel)}</span>
-        <span class="t2"><span class="ndatum">${esc(wijzigDatum(notitieMoment(n).getTime()))}</span>${esc(voorproef || 'Geen extra tekst')}</span>${labelChips(n.labels)}`;
+        <span class="t2"><span class="ndatum">${esc(wijzigDatum(notitieMoment(n).getTime()))}</span>${esc(voorproef || 'Geen extra tekst')}</span>`; // de labels staan in de notitie zelf en bij het zoeken
     if (!naastElkaar()) return `<button class="drij notitierij" data-notitie="${n.id}"><span class="tekst">${inhoud}</span>${I.verder}</button>`;
     const aan = !!gekozen && gekozen.id === n.id;
     return `<button class="notitierij${aan ? ' aan' : ''}" data-notitie="${n.id}" aria-pressed="${aan}">${inhoud}</button>`;

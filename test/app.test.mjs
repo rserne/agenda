@@ -965,7 +965,7 @@ test('notities op de Mac: lijst en notitie naast elkaar; typen loopt mee in de l
   // Labels: een woord en een spatie wordt een tag; de lijst loopt mee
   await p.locator('#notipaneel #nottekst').click(); await p.keyboard.press('Control+End'); await p.keyboard.type(' #Overleg '); await wacht(200);
   assert.deepEqual(await p.locator('#notipaneel #notlabels .tag').allInnerTexts(), ['#overleg']);
-  assert.deepEqual(await p.locator('#notlijst .notitierij.aan .nlabel').allInnerTexts(), ['#overleg'], 'de lijst loopt mee');
+  assert.equal(await p.locator('#notlijst .nlabel').count(), 0, 'geen labels in de lijst');
   // Labels staan in het zoekveld, en dat staat op de Mac boven de lijst
   assert.equal(await p.locator('#notfilter').count(), 0);
   assert.equal(await p.locator('.notilinks > #zoekbalk').count(), 1, 'het zoekveld boven de lijst');

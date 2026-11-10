@@ -97,9 +97,11 @@ De Google-sleutel staat alleen op het toestel (localStorage). De ruimtes staan o
 
 | Soort | Wanneer | Kleur |
 |---|---|---|
-| Extern | Externe organisator, of deelnemers buiten je eigen domein. Altijd opvallend, ook als het terugkeert. | koraal |
-| Intern, ad hoc | Alleen eigen domein en geen vast overleg | ijsblauw |
-| Intern, vast | Een herhaalreeks, of dezelfde titel in minstens twee verschillende weken | grijs |
+| Extern | Externe organisator, of deelnemers buiten je eigen domein. Altijd opvallend, ook als het terugkeert. | paars |
+| Intern, ad hoc | Alleen eigen domein en geen vast overleg | grafiet (blauwgrijs) |
+| Intern, vast | Een herhaalreeks, of dezelfde titel in minstens twee verschillende weken | lichtgrijs |
+
+De afspraken hebben eigen kleuren, los van de rest van de app: blauw is vrij en aan te tikken, geel overlap, rood bezet of te laat. Zo heeft elke kleur één betekenis.
 
 **Zonder organisator en deelnemers.** Een gepubliceerde Outlook-agenda bevat geen organisator en geen deelnemers. `js/verrijk.js` leidt daarom de organiserende organisatie af:
 - uit de Teams-link: een klassieke uitnodiging bevat de tenant van de organisator. De tenant die het vaakst voorkomt, is je eigen organisatie; bij elke andere tenant leert de code welk maildomein erbij hoort (bijvoorbeeld tue.nl, dus TUE);

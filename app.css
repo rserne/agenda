@@ -26,22 +26,24 @@
   --weekendText: rgba(60, 60, 67, 0.82); /* ook op de blauwe balk van de gekozen week minstens 4,5:1 */
   --separator: rgba(60, 60, 67, 0.29);
   --accent: #1F72A0; /* 5,3:1 op wit */
-  --externTile: #FFC6C0;
-  --internTile: #D3ECF9;
-  --regularTile: #D1D1D6;
+  /* Afspraken: extern paars, intern grafiet, vast lichtgrijs. Blauw blijft voor vrij en aan te tikken, geel voor overlap,
+     rood voor bezet en te laat; zo heeft elke kleur één betekenis. */
+  --externTile: #E2D5F6;
+  --internTile: #D5DCE5;
+  --regularTile: #E3E3E8;
   --regularTileText: rgba(0, 0, 0, 0.72);
-  --externDot: #D04F42;
-  --externText: #B8392C; /* als tekst: 5,7:1 op wit (de streep mag lichter) */
-  --internDot: #1F72A0;
-  --regularDot: rgba(60, 60, 67, 0.42);
+  --externDot: #8B5CC7;
+  --externText: #6E40A8; /* als tekst: 7,4:1 op wit (de streep mag lichter) */
+  --internDot: #4E5D70;
+  --regularDot: rgba(60, 60, 67, 0.3);
   --regularText: rgba(60, 60, 67, 0.84);
   --cardBorder: rgba(60, 60, 67, 0.18);
   --onSite: rgba(60, 60, 67, 0.7);
   --online: #1F72A0;
   --onlineBg: rgba(44, 134, 184, 0.12);
   --fill: rgba(120, 120, 128, 0.16);
-  --badgeBg: rgba(208, 79, 66, 0.14);
-  --badgeText: #B0372C; /* 5,1:1 op het badgevlak */
+  --badgeBg: rgba(139, 92, 199, 0.14);
+  --badgeText: #6638A0; /* 6,6:1 op het badgevlak */
   --avatarGrey: #6E6E73; /* witte initialen: 5,1:1 */
   /* Glas: doorzichtiger, sterker vervaagd en met een lichte rand bovenin, zoals Liquid Glass van iOS */
   --glass: linear-gradient(180deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0.4));
@@ -69,7 +71,7 @@
   --hm: 1.5; /* sterkte van de heatmap */
   --freeBg: rgba(44, 134, 184, 0.09);
   --overlap: #9A5200; /* 5,1:1 op wit */
-  --bezet: #B8392C; /* helemaal bezet: het warme rood van de heatmap en externe afspraken; 5,7:1 op wit */
+  --bezet: #B8392C; /* helemaal bezet: het warme rood van de heatmap; 5,7:1 op wit */
   --overlapLijn: #E0961A;
   --freeTileBg: rgba(44, 134, 184, 0.1);
   --freeTileBorder: rgba(44, 134, 184, 0.55);
@@ -98,13 +100,13 @@
     --weekendText: rgba(235, 235, 245, 0.72);
     --separator: rgba(84, 84, 88, 0.65);
     --accent: #86C3E1;
-    --externTile: #D6928B;
-    --internTile: #9FBFCF;
+    --externTile: #B9A2E0;
+    --internTile: #A7B3C3;
     --regularTile: #3A3A3C;
     --regularTileText: rgba(255, 255, 255, 0.78);
-    --externDot: #EB8479;
-    --externText: #EB8479;
-    --internDot: #84BEDC;
+    --externDot: #C2A6F2;
+    --externText: #C2A6F2;
+    --internDot: #A3B2C6;
     --regularDot: rgba(235, 235, 245, 0.3);
     --regularText: rgba(235, 235, 245, 0.64);
     --cardBorder: rgba(255, 255, 255, 0.1);
@@ -112,8 +114,8 @@
     --online: #86C3E1;
     --onlineBg: rgba(134, 195, 225, 0.2);
     --fill: rgba(120, 120, 128, 0.28);
-    --badgeBg: rgba(235, 132, 121, 0.2);
-    --badgeText: #EB8479;
+    --badgeBg: rgba(194, 166, 242, 0.2);
+    --badgeText: #C2A6F2;
     --avatarGrey: #3A3A3C;
     --glass: linear-gradient(180deg, rgba(80, 80, 86, 0.42), rgba(50, 50, 54, 0.32));
     --glassBorder: rgba(255, 255, 255, 0.16);

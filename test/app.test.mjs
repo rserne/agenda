@@ -917,62 +917,69 @@ test('actiepunten in de agenda: één blok als eerste van de dag, vandaag ook wa
   assert.deepEqual(p.fouten, []);
 });
 
-test('notities op de Mac: lijst en notitie naast elkaar; typen loopt mee in de lijst, ook als er intussen iets binnenkomt', async ({ browser, url }) => {
+test('notities op de Mac: zoekscherm met filters, badges en sorteren; een notitie opent als eigen scherm', async ({ browser, url }) => {
   const p = await nieuwePagina(browser, MAC);
   await p.goto(url); await wacht(1000);
   await p.evaluate(async () => {
     await laadNotities();
-    const a = maakNotitie(); wijzigNotitie(a, { tekst: 'Eerste notitie', labels: ['Pilot'] });
+    const a = maakNotitie(); wijzigNotitie(a, { tekst: 'Eerste notitie', labels: ['Pilot'], punten: [{ id: 'x', tekst: 'Offerte sturen', klaar: false, deadline: '2026-11-05' }] });
     const b = maakNotitie(); wijzigNotitie(b, { tekst: 'Tweede notitie', labels: ['Klant A'] });
   });
   await p.locator('#zijbalk [data-tab="notities"]').click(); await wacht(700);
-  assert.equal(await p.locator('#notlijst .notitierij.aan').count(), 1, 'de bovenste staat meteen rechts');
+  // Links de filters met aantallen, boven de lijst het zoekveld, het aantal en Sorteren; één lijst zonder kopjes
+  assert.equal(await p.locator('.nresultaten > #zoekbalk').count(), 1, 'het zoekveld boven de resultaten');
+  assert.equal(await p.locator('#notlijst .ngroep').count(), 0, 'één lijst');
+  assert.match(await p.locator('#nresultkop .naantal').innerText(), /^2 notities/);
+  assert.match(await p.locator('#nfilters [data-nf-soort="tedoen"]').innerText(), /Actiepunten\s*1/);
+  // Een label aanvinken: een badge boven de lijst, en Wis alles haalt alles weg
+  await p.locator('#nfilters [data-nf-label="pilot"]').click(); await wacht(200);
+  assert.deepEqual(await p.locator('#nresultkop .nbadge').allInnerTexts(), ['#pilot']);
+  assert.equal(await p.locator('#notlijst .notitierij').count(), 1);
+  await p.locator('#nresultkop [data-nf-wis]').click(); await wacht(200);
+  assert.equal(await p.locator('#nresultkop .nbadge').count(), 0);
+  assert.equal(await p.locator('#notlijst .notitierij').count(), 2);
+  // Sorteren op titel
+  await p.locator('#nresultkop select').selectOption('titel'); await wacht(200);
+  assert.deepEqual(await p.locator('#notlijst .notitierij .t1').allInnerTexts(), ['Eerste notitie', 'Tweede notitie']);
+  // Actiepunten met een deadline vooruit
+  await p.locator('#nfilters [data-nf-soort="tedoen"]').click(); await wacht(200);
+  assert.match(await p.locator('#nfilters').innerText(), /Komende 7 dagen/);
+  assert.equal(await p.locator('#notlijst .tdrij').count(), 1);
+  await p.locator('#nfilters [data-nf-soort="notities"]').click(); await wacht(200);
+  // Een notitie opent als eigen scherm; typen loopt mee in de lijst
+  await p.locator('#notlijst .notitierij', { hasText: 'Eerste notitie' }).click(); await wacht(500);
+  assert.equal(await p.locator('.notpagina.open').count(), 1);
   assert.ok(await p.locator('#nottitel').evaluate((x) => parseFloat(getComputedStyle(x).fontSize)) >= 24, 'de titel groot bovenaan');
-  assert.equal(await p.locator('#notipaneel #nottitel').inputValue(), await p.evaluate(() => zichtbareNotities()[0].tekst));
-  await p.locator('#notlijst .notitierij', { hasText: 'Eerste notitie' }).click(); await wacht(400);
-  assert.equal(await p.locator('#notipaneel #nottitel').inputValue(), 'Eerste notitie');
-  await p.locator('#notipaneel #nottitel').click(); await p.keyboard.press('End');
+  await p.locator('#nottitel').click(); await p.keyboard.press('End');
   await p.keyboard.type(' en meer'); await wacht(200);
-  assert.equal(await p.locator('#notlijst .notitierij.aan .t1').innerText(), 'Eerste notitie en meer', 'de lijst loopt mee');
   // Komt er intussen iets binnen (synchroniseren), dan blijft de notitie staan en kun je verder typen
   await p.evaluate(() => tekenNotities()); await wacht(100);
   await p.keyboard.type('!'); await wacht(200);
-  assert.equal(await p.locator('#notipaneel #nottitel').inputValue(), 'Eerste notitie en meer!');
-  // Nieuw, Notitie: een lege notitie rechts, met de cursor erin; pas na typen staat hij in de lijst
+  assert.equal(await p.locator('#nottitel').inputValue(), 'Eerste notitie en meer!');
+  await p.keyboard.press('Escape'); await wacht(500);
+  assert.ok((await p.locator('#notlijst .notitierij .t1').allInnerTexts()).includes('Eerste notitie en meer!'), 'de lijst loopt mee');
+  // Nieuw, Notitie: een lege notitie als eigen scherm; pas na typen staat hij in de lijst
   await p.locator('#nieuwknop').click(); await wacht(300);
   assert.equal(await p.locator('.keuzemenu [role="menuitem"]').first().innerText(), 'Notitie', 'in Notities bovenaan');
-  await p.locator('.keuzemenu [data-keuze="notitie"]').click(); await wacht(400);
-  assert.equal(await p.locator('#notipaneel #nottitel').inputValue(), '');
-  assert.equal(await p.locator('#notlijst .notitierij').count(), 2);
-  await p.keyboard.type('Derde notitie'); await wacht(300);
+  await p.locator('.keuzemenu [data-keuze="notitie"]').click(); await wacht(500);
+  assert.equal(await p.locator('.notpagina.open #nottitel').inputValue(), '');
+  await p.keyboard.type('Derde notitie'); await p.keyboard.press('Enter'); await p.keyboard.type('Met een tweede regel'); await wacht(300);
+  assert.equal(await p.evaluate(() => NOTITIES.find((n) => n.tekst.startsWith('Derde')).tekst), 'Derde notitie\nMet een tweede regel');
+  await p.keyboard.press('Escape'); await wacht(500);
   assert.equal(await p.locator('#notlijst .notitierij').count(), 3);
-  assert.equal(await p.locator('#notlijst .notitierij.aan .t1').innerText(), 'Derde notitie');
-  // Enter in de titel: verder in de tekst; de lijst toont de tweede regel als voorproef
-  await p.keyboard.press('Enter'); await p.keyboard.type('Met een tweede regel'); await wacht(300);
-  assert.equal(await p.evaluate(() => zichtbareNotities()[0].tekst), 'Derde notitie\nMet een tweede regel');
-  assert.match(await p.locator('#notlijst .notitierij.aan .t2').innerText(), /Met een tweede regel/);
-  // Backspace vooraan in de tekst: die regel gaat terug de titel in
-  await p.keyboard.press('Home'); await p.keyboard.press('Backspace'); await wacht(300);
-  assert.equal(await p.locator('#nottitel').inputValue(), 'Derde notitieMet een tweede regel');
   // Een notitie bij een afspraak: de titel van de afspraak bovenaan en in de lijst
   await p.evaluate(() => { const e = [...zichtbaar.values()].find((x) => !x.allDay); const n = maakNotitie(e); wijzigNotitie(n, { tekst: 'Over de offerte' }); tekenNotities(); });
   await wacht(300);
   const titel = await p.evaluate(() => [...zichtbaar.values()].find((x) => !x.allDay).title);
-  await p.locator('#notlijst .notitierij', { hasText: titel }).click(); await wacht(400);
-  assert.equal(await p.locator('#notipaneel h2.dtitel').innerText(), titel);
-  assert.equal(await p.locator('#notipaneel #nottekst').inputValue(), 'Over de offerte');
-  assert.match(await p.locator('#notlijst .notitierij.aan .t2').innerText(), /Over de offerte/);
-  // Labels: een woord en een spatie wordt een tag; de lijst loopt mee
-  await p.locator('#notipaneel #nottekst').click(); await p.keyboard.press('Control+End'); await p.keyboard.type(' #Overleg '); await wacht(200);
-  assert.deepEqual(await p.locator('#notipaneel #notlabels .tag').allInnerTexts(), ['#overleg']);
+  await p.locator('#notlijst .notitierij', { hasText: titel }).click(); await wacht(500);
+  assert.equal(await p.locator('.notpagina.open h2.dtitel').innerText(), titel);
+  assert.equal(await p.locator('.notpagina.open #nottekst').inputValue(), 'Over de offerte');
+  // Labels: #woord en een spatie wordt een tag, en het verschijnt links bij de filters
+  await p.locator('#nottekst').click(); await p.keyboard.press('Control+End'); await p.keyboard.type(' #Overleg '); await wacht(200);
+  assert.deepEqual(await p.locator('.notpagina.open #notlabels .tag').allInnerTexts(), ['#overleg']);
+  await p.keyboard.press('Escape'); await wacht(500);
   assert.equal(await p.locator('#notlijst .nlabel').count(), 0, 'geen labels in de lijst');
-  // Labels staan in het zoekveld, en dat staat op de Mac boven de lijst
-  assert.equal(await p.locator('#notfilter').count(), 0);
-  assert.equal(await p.locator('.notilinks > #zoekbalk').count(), 1, 'het zoekveld boven de lijst');
-  await p.locator('#notzoek').click(); await wacht(200);
-  assert.ok((await p.locator('#zoekvoorstel .zvlabels .chip').allInnerTexts()).includes('#overleg'));
-  await p.keyboard.press('Escape'); await wacht(200);
-  assert.equal(await p.locator('#zoekvoorstel').isVisible(), false);
+  assert.equal(await p.locator('#nfilters [data-nf-label="overleg"]').count(), 1);
   assert.deepEqual(p.fouten, []);
 });
 

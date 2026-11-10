@@ -114,9 +114,10 @@ function wijzigGroep(ms) {
   if (dagen < 30) return 'Afgelopen 30 dagen';
   return d.getFullYear() === vandaag().getFullYear() ? cap(MONTHS_LONG[d.getMonth()]) : String(d.getFullYear());
 }
-function wijzigDatum(ms) {
+function wijzigDatum(ms, plat = false) {
   const dagen = dagenGeleden(ms), d = new Date(ms);
-  if (dagen === 0 || dagen === 1) return hhmm(d); // het kopje zegt al Vandaag of Gisteren
+  if (dagen === 0 || (dagen === 1 && !plat)) return hhmm(d); // het kopje zegt al Vandaag of Gisteren
+  if (dagen === 1) return 'Gisteren'; // in één lijst zonder kopjes
   if (dagen === -1) return 'Morgen'; // een notitie bij een afspraak die nog moet komen
   if (Math.abs(dagen) < 7) return cap(DAYS_LONG[d.getDay()]);
   return `${d.getDate()}-${d.getMonth() + 1}-${d.getFullYear()}`;
@@ -163,7 +164,7 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
 
   // Drie vormen: in de tab Notities op iPad en Mac rechts naast de lijst (doel), op iPad en Mac verder als venster,
   // en op de iPhone als eigen scherm dat van rechts inschuift (zoals Notities van iOS): omlaag vegen sluit dan niets.
-  const pagina = !doel && !isDesktop();
+  const pagina = !doel && (!isDesktop() || ST.tab === 'notities');
   const el = doel || document.createElement('div');
   if (!doel) {
     el.className = pagina ? 'notpagina notitie' : 'paneel detail nieuw notitie dialoog';
@@ -599,16 +600,44 @@ function notitieSectieHtml(e) {
 
 let notZoek = '';
 let notLabels = []; // de gekozen labels (blokjes in het zoekveld): het eerste, en eventueel labels daarbinnen
+// iPad en Mac: filters zoals in een webwinkel. Periode bij de notities (naar de afspraak of de laatste wijziging),
+// Deadline bij Te doen; de vakken zijn dezelfde als de kopjes in de lijst. Meerdere tegelijk mag.
+let notPeriodes = [];
+let notSorteer = ''; // leeg: de standaard (notities: nieuwste eerst; actiepunten: op deadline)
+const BAKKEN_NOTITIES = [['binnenkort', 'Binnenkort'], ['vandaag', 'Vandaag'], ['week', 'Afgelopen 7 dagen'], ['maand', 'Afgelopen 30 dagen']];
+const BAKKEN_TEDOEN = [['laat', 'Te laat'], ['vandaag', 'Vandaag'], ['week', 'Komende 7 dagen'], ['maand', 'Komende 30 dagen'], ['zonder', 'Zonder deadline']];
+const bakken = () => (notTeDoen ? BAKKEN_TEDOEN : BAKKEN_NOTITIES);
+function deadlineGroep(d) {
+  if (!d) return 'Zonder deadline';
+  const dagen = Math.round((deadlineDag(d) - vandaag()) / 864e5);
+  return dagen < 0 ? 'Te laat' : dagen === 0 ? 'Vandaag' : dagen === 1 ? 'Morgen' : dagen < 7 ? 'Deze week' : 'Later';
+}
+// De vakken overlappen (Vandaag valt ook in Komende 7 dagen); aangevinkte vakken tellen samen (of-of)
+function inNotitieBak(n, k) {
+  const d = dagenGeleden(notitieMoment(n).getTime());
+  return k === 'binnenkort' ? d < 0 : k === 'vandaag' ? d === 0 : k === 'week' ? d >= 0 && d < 7 : d >= 0 && d < 30;
+}
+function inDeadlineBak(pu, k) {
+  if (!pu.deadline) return k === 'zonder';
+  const d = Math.round((deadlineDag(pu.deadline) - vandaag()) / 864e5);
+  return k === 'laat' ? d < 0 : k === 'vandaag' ? d === 0 : k === 'week' ? d >= 0 && d < 7 : k === 'maand' ? d >= 0 && d < 30 : false;
+}
+const inPeriode = (n) => notTeDoen || !notPeriodes.length || notPeriodes.some((k) => inNotitieBak(n, k));
+const puntInPeriode = (pu) => !notTeDoen || !notPeriodes.length || notPeriodes.some((k) => inDeadlineBak(pu, k));
+const SORTEER_NOTITIES = [['nieuw', 'Nieuwste eerst'], ['oud', 'Oudste eerst'], ['titel', 'Titel (A–Z)']];
+const SORTEER_TEDOEN = [['deadline', 'Deadline'], ['nieuw', 'Nieuwste notitie eerst'], ['titel', 'Actiepunt (A–Z)']];
 let notTeDoen = false; // het overzicht van open actiepunten in plaats van de notities
 let notGekozen = null; // iPad en Mac: de notitie rechts naast de lijst
 let notNieuw = null; // een nieuwe notitie rechts die nog leeg is (en dus nog niet in de lijst staat)
 const isLabel = (a, b) => !!a && !!b && tagSleutel(a) === tagSleutel(b);
-const naastElkaar = () => isDesktop();
+// Voorheen op iPad en Mac de lijst en de notitie naast elkaar. Nu overal de lijst, met op iPad en Mac links in de
+// zijbalk de criteria; een notitie opent als eigen scherm, net als op de iPhone.
+const naastElkaar = () => false;
 
 function zichtbareNotities() {
   const woorden = labelSleutel(notZoek).split(/\s+/).filter(Boolean);
   return levendeNotities()
-    .filter((n) => notLabels.every((k) => n.labels.some((l) => isLabel(l, k))))
+    .filter((n) => notLabels.every((k) => n.labels.some((l) => isLabel(l, k))) && inPeriode(n))
     .filter((n) => {
       if (!woorden.length) return true;
       const hooi = labelSleutel([n.tekst, punten(n).map((p) => p.tekst).join(' '), n.labels.map(toonLabel).join(' '), n.afspraak ? n.afspraak.titel : ''].join(' '));
@@ -631,23 +660,21 @@ const zoekbalkEl = $('#zoekbalk');
 const zoekThuis = { ouder: zoekbalkEl.parentNode, na: zoekbalkEl.nextSibling };
 function zoekbalkThuis() { if (zoekbalkEl.parentNode !== zoekThuis.ouder) zoekThuis.ouder.insertBefore(zoekbalkEl, zoekThuis.na); }
 function notitiesHtml() {
+  if (isDesktop()) return `<div class="notitab notizoek"><aside class="nfilters" id="nfilters" aria-label="Filters"></aside><div class="nresultaten"><div class="nresultkop" id="nresultkop"></div><div id="notlijst">${notitieLijstHtml()}</div></div></div>`;
   if (!naastElkaar()) return `<div class="notitab"><div id="notlijst">${notitieLijstHtml()}</div></div>`;
   return `<div class="notitab notisplit"><div class="notilinks"><div id="notlijst">${notitieLijstHtml()}</div></div><div class="notipaneel" id="notipaneel"></div></div>`;
 }
 // Te doen: alle open actiepunten uit de zichtbare notities, geordend op deadline. Onder elk punt de notitie of het
 // overleg waar het bij hoort; een tik opent die notitie.
 function teDoenHtml() {
-  const t = vandaag();
-  const groepVan = (d) => {
-    if (!d) return 'Zonder deadline';
-    const dagen = Math.round((deadlineDag(d) - t) / 864e5);
-    return dagen < 0 ? 'Te laat' : dagen === 0 ? 'Vandaag' : dagen === 1 ? 'Morgen' : dagen < 7 ? 'Deze week' : 'Later';
-  };
   const volgorde = ['Te laat', 'Vandaag', 'Morgen', 'Deze week', 'Later', 'Zonder deadline'];
   const items = [];
-  zichtbareNotities().forEach((n) => openPunten(n).forEach((p) => items.push({ n, p, groep: groepVan(p.deadline) })));
+  zichtbareNotities().forEach((n) => openPunten(n).filter((p) => puntInPeriode(p)).forEach((p) => items.push({ n, p, groep: deadlineGroep(p.deadline) })));
   if (!items.length) return `<p class="nleeg nlijstleeg">Geen open actiepunten</p>`;
-  items.sort((a, b) => volgorde.indexOf(a.groep) - volgorde.indexOf(b.groep) || String(a.p.deadline || '').localeCompare(String(b.p.deadline || '')) || b.n.gemaakt - a.n.gemaakt); // vast: afvinken laat niets verspringen
+  const opDeadline = (a, b) => volgorde.indexOf(a.groep) - volgorde.indexOf(b.groep) || String(a.p.deadline || '').localeCompare(String(b.p.deadline || '')) || b.n.gemaakt - a.n.gemaakt; // vast: afvinken laat niets verspringen
+  const plat = isDesktop();
+  items.sort(plat && notSorteer === 'nieuw' ? (a, b) => notitieMoment(b.n) - notitieMoment(a.n) || opDeadline(a, b)
+    : plat && notSorteer === 'titel' ? (a, b) => a.p.tekst.localeCompare(b.p.tekst, 'nl', { sensitivity: 'base' }) || opDeadline(a, b) : opDeadline);
   const rij = ({ n, p }) => {
     const [titel] = notitieKop(n);
     const bron = titel === p.tekst.trim() ? '' : titel;
@@ -656,6 +683,7 @@ function teDoenHtml() {
       <button type="button" class="puntvink" data-tdvink="${n.id}|${p.id}" aria-label="Afvinken"></button>
       <span class="tekst"><span class="t1">${esc(p.tekst.trim())}</span>${dl || bron ? `<span class="t2">${dl}${esc(bron)}</span>` : ''}</span></div>`;
   };
+  if (plat) return `<div class="kaart">${items.map(rij).join('')}</div>`; // iPad en Mac: één lijst
   return volgorde.filter((g) => items.some((i) => i.groep === g))
     .map((g) => `<h3 class="ngroep${g === 'Te laat' ? ' laat' : ''}">${g}</h3><div class="${naastElkaar() ? 'ngroeplijst' : 'kaart'}">${items.filter((i) => i.groep === g).map(rij).join('')}</div>`).join('');
 }
@@ -676,11 +704,16 @@ function notitieLijstHtml() {
   const rij = (n) => {
     const [titel, voorproef] = notitieKop(n);
     const inhoud = `<span class="t1">${esc(titel)}</span>
-        <span class="t2"><span class="ndatum">${esc(wijzigDatum(notitieMoment(n).getTime()))}</span>${esc(voorproef || 'Geen extra tekst')}</span>`; // de labels staan in de notitie zelf en bij het zoeken
+        <span class="t2"><span class="ndatum">${esc(wijzigDatum(notitieMoment(n).getTime(), isDesktop()))}</span>${esc(voorproef || 'Geen extra tekst')}</span>`; // de labels staan in de notitie zelf en bij het zoeken
     if (!naastElkaar()) return `<button class="drij notitierij" data-notitie="${n.id}"><span class="tekst">${inhoud}</span>${I.verder}</button>`;
     const aan = !!gekozen && gekozen.id === n.id;
     return `<button class="notitierij${aan ? ' aan' : ''}" data-notitie="${n.id}" aria-pressed="${aan}">${inhoud}</button>`;
   };
+  if (isDesktop()) { // iPad en Mac: één lijst, gesorteerd zoals gekozen
+    const op = notSorteer === 'oud' ? (a, b) => notitieMoment(a) - notitieMoment(b)
+      : notSorteer === 'titel' ? (a, b) => notitieKop(a)[0].localeCompare(notitieKop(b)[0], 'nl', { sensitivity: 'base' }) : null;
+    return `<div class="kaart">${(op ? [...lijst].sort(op) : lijst).map(rij).join('')}</div>`;
+  }
   return groepen.map((g) => `<h3 class="ngroep">${g.naam}</h3><div class="${naastElkaar() ? 'ngroeplijst' : 'kaart'}">${g.notities.map(rij).join('')}</div>`).join('');
 }
 // Het vak rechts opnieuw vullen (een nieuw element, zodat er geen oude luisteraars blijven hangen)
@@ -699,10 +732,11 @@ function vulNotitiepaneel() {
 function tekenNotities(volledig = false) {
   if (ST.tab !== 'notities') return;
   const main = $('#inhoud');
-  if (volledig || !$('#notlijst', main) || !!$('#notipaneel', main) !== naastElkaar()) {
+  if (volledig || !$('#notlijst', main) || !!$('#notipaneel', main) !== naastElkaar() || !!$('#nfilters', main) !== isDesktop()) {
     const bezig = document.activeElement === zoekVeld;
     zoekbalkThuis();
     main.innerHTML = notitiesHtml();
+    if (isDesktop()) { $('.nresultaten', main).prepend(zoekbalkEl); if (bezig) zoekVeld.focus(); } // het zoekveld boven de resultaten
     if (naastElkaar()) { $('.notilinks', main).prepend(zoekbalkEl); if (bezig) zoekVeld.focus(); }
     tekenZoek();
     if (naastElkaar()) vulNotitiepaneel();
@@ -743,7 +777,7 @@ voorstelEl.className = 'zoekvoorstel';
 voorstelEl.id = 'zoekvoorstel';
 voorstelEl.hidden = true;
 document.body.append(voorstelEl);
-const binnenSelectie = (n) => notLabels.every((k) => n.labels.some((l) => isLabel(l, k)));
+const binnenSelectie = (n) => notLabels.every((k) => n.labels.some((l) => isLabel(l, k))) && inPeriode(n);
 // De labels om uit te kiezen: zonder keuze alle labels, anders de labels in de notities met de gekozen labels
 function kiesbareLabels() {
   if (!notLabels.length) return alleLabels();
@@ -756,13 +790,71 @@ function kiesbareLabels() {
   return [...tel.values()].sort((a, b) => b.n - a.n || a.label.localeCompare(b.label, 'nl')).map((t) => t.label);
 }
 const hekjeWoord = () => { const m = zoekVeld.value.match(/(?:^|\s)#(\S*)$/); return m ? m[1] : null; };
+// iPad en Mac: zoeken zoals in een webwinkel. Links de filters (Soort, Periode of Deadline, Labels) met aantallen;
+// boven de lijst het zoekveld, de gekozen filters als badges, het aantal resultaten en de sortering.
+let nfAlleLabels = false;
+function tekenFilters() {
+  const kolom = $('#nfilters'), kop = $('#nresultkop');
+  if (!kolom || !kop) return;
+  const zoek = labelSleutel(notZoek).split(/\s+/).filter(Boolean);
+  const vindbaar = (n) => !zoek.length || zoek.every((w) => labelSleutel([n.tekst, punten(n).map((p) => p.tekst).join(' '), n.labels.map(toonLabel).join(' '), n.afspraak ? n.afspraak.titel : ''].join(' ')).includes(w));
+  const metLabels = (n, extra) => [...notLabels, ...(extra ? [extra] : [])].every((k) => n.labels.some((l) => isLabel(l, k)));
+  const levend = levendeNotities().filter(vindbaar);
+  // Tellen: notities, of bij actiepunten de open punten. Bij een vak: wat er overblijft als je het (ook) aanvinkt.
+  const tel = (n, { bak = null, label = null, soort = notTeDoen } = {}) => {
+    if (!metLabels(n, label)) return 0;
+    const bakken2 = bak ? [...new Set([...notPeriodes, bak])] : (soort === notTeDoen ? notPeriodes : []);
+    if (soort) return openPunten(n).filter((p) => !bakken2.length || bakken2.some((k) => inDeadlineBak(p, k))).length;
+    return !bakken2.length || bakken2.some((k) => inNotitieBak(n, k)) ? 1 : 0;
+  };
+  const som = (opties) => levend.reduce((t, n) => t + tel(n, opties), 0);
+  const keus = (soort, attr, aan, tekst, aantal) => `<button type="button" ${attr} class="nfvak${aan ? ' aan' : ''}" role="${soort}" aria-checked="${aan}"><span class="zbkeus${soort === 'radio' ? ' rond' : ''}${aan ? ' aan' : ''}" aria-hidden="true">${aan && soort !== 'radio' ? I.vink : ''}</span><span class="nftekst">${esc(tekst)}</span><span class="aantal">${aantal}</span></button>`;
+  const perioden = bakken().map(([k, t]) => [k, t, som({ bak: k })]).filter(([k, , a]) => a || notPeriodes.includes(k));
+  const labels = alleLabels().map((l) => [l, som({ label: l })]).filter(([l, a]) => a || notLabels.some((k) => isLabel(l, k)));
+  const MAX = 8, zichtbaar = nfAlleLabels ? labels : labels.slice(0, MAX);
+  kolom.innerHTML = `<section class="nfgroep"><h3>Soort</h3>
+      ${keus('radio', 'data-nf-soort="notities"', !notTeDoen, 'Notities', levend.filter((n) => metLabels(n)).length)}
+      ${keus('radio', 'data-nf-soort="tedoen"', notTeDoen, 'Actiepunten', levend.reduce((t, n) => t + (metLabels(n) ? openPunten(n).length : 0), 0))}</section>
+    <section class="nfgroep"><h3>${notTeDoen ? 'Deadline' : 'Periode'}</h3>
+      ${perioden.map(([k, t, a]) => keus('checkbox', `data-nf-periode="${k}"`, notPeriodes.includes(k), t, a)).join('') || '<p class="nfleeg">Geen</p>'}</section>
+    <section class="nfgroep"><h3>Labels</h3>
+      ${zichtbaar.map(([l, a]) => keus('checkbox', `data-nf-label="${esc(l)}"`, notLabels.some((k) => isLabel(l, k)), toonLabel(l), a)).join('') || '<p class="nfleeg">Geen</p>'}
+      ${labels.length > MAX ? `<button type="button" class="nfmeer" data-nf-meer>${nfAlleLabels ? 'Minder labels' : `Alle labels (${labels.length})`}</button>` : ''}</section>`;
+  const aantal = notTeDoen ? som({}) : levend.filter((n) => tel(n)).length;
+  const badges = [...bakken().filter(([k]) => notPeriodes.includes(k)).map(([k, t]) => [`§${k}`, t]), ...notLabels.map((l) => [l, toonLabel(l)])];
+  const opties = notTeDoen ? SORTEER_TEDOEN : SORTEER_NOTITIES;
+  const sorteer = opties.some(([k]) => k === notSorteer) ? notSorteer : opties[0][0];
+  kop.innerHTML = `${badges.length ? `<div class="nbadges">${badges.map(([k, t]) => `<button type="button" class="nbadge" data-nf-weg="${esc(k)}" aria-label="${esc(t)} weghalen">${esc(t)}${I.kruis}</button>`).join('')}<button type="button" class="nwis" data-nf-wis>Wis alles</button></div>` : ''}
+    <div class="nresultregel"><span class="naantal">${aantal} ${notTeDoen ? (aantal === 1 ? 'actiepunt' : 'actiepunten') : (aantal === 1 ? 'notitie' : 'notities')}</span>
+      <label class="nsorteer">Sorteren op <select data-nf-sorteer>${opties.map(([k, t]) => `<option value="${k}"${k === sorteer ? ' selected' : ''}>${t}</option>`).join('')}</select></label></div>`;
+}
+document.addEventListener('click', (ev) => {
+  const k = ev.target.closest('#nfilters button, #nresultkop button');
+  if (!k) return;
+  if (k.dataset.nfSoort) { const td = k.dataset.nfSoort === 'tedoen'; if (td !== notTeDoen) { notTeDoen = td; notSorteer = ''; } }
+  else if (k.dataset.nfPeriode) notPeriodes = notPeriodes.includes(k.dataset.nfPeriode) ? notPeriodes.filter((x) => x !== k.dataset.nfPeriode) : [...notPeriodes, k.dataset.nfPeriode];
+  else if (k.dataset.nfLabel) { const l = k.dataset.nfLabel; notLabels = notLabels.some((x) => isLabel(x, l)) ? notLabels.filter((x) => !isLabel(x, l)) : [...notLabels, l]; }
+  else if (k.dataset.nfWeg) { const w = k.dataset.nfWeg; if (w.startsWith('§')) notPeriodes = notPeriodes.filter((x) => `§${x}` !== w); else notLabels = notLabels.filter((x) => !isLabel(x, w)); }
+  else if (k.dataset.nfMeer !== undefined) { nfAlleLabels = !nfAlleLabels; tekenFilters(); return; }
+  else if (k.dataset.nfWis !== undefined) { notLabels = []; notPeriodes = []; notZoek = ''; zoekVeld.value = ''; }
+  tekenZoek(); nieuwZoeken();
+});
+document.addEventListener('change', (ev) => {
+  if (!ev.target.matches('[data-nf-sorteer]')) return;
+  notSorteer = ev.target.value;
+  tekenZoek(); nieuwZoeken();
+});
+let vorigeTeDoen = false;
 function tekenZoek() {
   notLabels = notLabels.filter((k) => alleLabels().some((l) => isLabel(l, k)));
+  if (notTeDoen !== vorigeTeDoen) { notPeriodes = []; vorigeTeDoen = notTeDoen; } // Periode hoort bij de notities, Deadline bij Te doen
+  tekenFilters();
   const blokje = (tekst, sleutel) => `<button type="button" class="zoektoken" data-token="${esc(sleutel)}" aria-label="${esc(tekst)} weghalen">${esc(tekst)}${I.kruis}</button>`;
   const tokens = $('#zoektokens');
-  tokens.innerHTML = (notTeDoen ? blokje('Te doen', '') : '') + notLabels.map((l) => blokje(toonLabel(l), l)).join('');
+  // Op iPad en Mac staan de filters als badges boven de lijst, niet in het zoekveld
+  tokens.innerHTML = isDesktop() ? '' : (notTeDoen ? blokje('Te doen', '') : '') + bakken().filter(([k]) => notPeriodes.includes(k)).map(([k, t]) => blokje(t, `§${k}`)).join('') + notLabels.map((l) => blokje(toonLabel(l), l)).join('');
   tokens.scrollLeft = tokens.scrollWidth; // het laatste blokje in beeld; de rest door zijwaarts te vegen
-  zoekVeld.placeholder = notTeDoen || notLabels.length ? '' : 'Zoeken';
+  zoekVeld.placeholder = !isDesktop() && (notTeDoen || notPeriodes.length || notLabels.length) ? '' : 'Zoeken';
   if (!voorstelEl.hidden) toonVoorstel();
 }
 function toonVoorstel() {
@@ -787,9 +879,9 @@ zoekVeld.addEventListener('focus', toonVoorstel);
 zoekVeld.addEventListener('input', () => { notZoek = zoekVeld.value; nieuwZoeken(); toonVoorstel(); });
 zoekVeld.addEventListener('blur', () => setTimeout(() => { if (document.activeElement !== zoekVeld) voorstelEl.hidden = true; }, 150));
 zoekVeld.addEventListener('keydown', (ev) => {
-  if (ev.key === 'Backspace' && zoekVeld.selectionStart === 0 && zoekVeld.selectionEnd === 0 && (notLabels.length || notTeDoen)) {
+  if (ev.key === 'Backspace' && zoekVeld.selectionStart === 0 && zoekVeld.selectionEnd === 0 && (notLabels.length || notPeriodes.length || notTeDoen) && !isDesktop()) {
     ev.preventDefault();
-    if (notLabels.length) notLabels.pop(); else notTeDoen = false;
+    if (notLabels.length) notLabels.pop(); else if (notPeriodes.length) notPeriodes.pop(); else notTeDoen = false;
     tekenZoek(); nieuwZoeken();
   } else if (ev.key === 'Escape' || ev.key === 'Enter') { voorstelEl.hidden = true; if (ev.key === 'Enter') zoekVeld.blur(); }
 });
@@ -810,7 +902,7 @@ $('#zoektokens').addEventListener('click', (ev) => {
   const t = ev.target.closest('[data-token]');
   if (!t) return;
   ev.preventDefault();
-  if (t.dataset.token === '') notTeDoen = false; else notLabels = notLabels.filter((k) => !isLabel(k, t.dataset.token));
+  if (t.dataset.token === '') notTeDoen = false; else if (t.dataset.token.startsWith('§')) notPeriodes = notPeriodes.filter((k) => `§${k}` !== t.dataset.token); else notLabels = notLabels.filter((k) => !isLabel(k, t.dataset.token));
   tekenZoek(); nieuwZoeken();
 });
 window.addEventListener('resize', () => { if (!voorstelEl.hidden) toonVoorstel(); });

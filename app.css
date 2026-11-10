@@ -318,11 +318,9 @@ main.kolom.trekt { transition: none; }
 .vbdatum .mnd { color: var(--secondary); font-size: 11px; font-weight: 500; }
 .vbdatum.vandaag .dow, .vbdatum.vandaag .nr, .vbdatum.vandaag .mnd { color: var(--accent); }
 /* Actiepunten in de agenda: één blok als eerste van de dag, met een streep in de accentkleur */
-.puntenrij > .stip.punt { background: var(--accent); }
 .agpunten { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .agpunt { display: flex; align-items: flex-start; gap: 8px; min-width: 0; }
 .agvink { flex-shrink: 0; width: 16px; height: 16px; margin-top: 2px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--secondary); }
-button.puntenrij:active { background: var(--fill); }
 .agpunt.laat .agvink { box-shadow: inset 0 0 0 1.5px var(--statusNo); }
 .agtekst { flex: 1; min-width: 0; text-align: left; color: var(--label); font-size: 15px; line-height: 20px; font-weight: 500; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .aglaat { flex-shrink: 0; margin-top: 2px; color: var(--statusNo); font-size: 12px; font-weight: 600; white-space: nowrap; }
@@ -1021,11 +1019,18 @@ label.frij:focus-within .flabel { color: var(--accent); }
   .dagkolom.voorbij .kolomkop .nr { color: var(--secondary); font-weight: 500; }
   /* Echte rand in plaats van een schaduwrand: die viel bovenaan weg onder de plakkende kolomkop */
   .dagkolom .kaart { padding: 3px; border-radius: 11px; border: 0.5px solid var(--cardBorder); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04); }
+  /* Weekkolommen: de balk met actiepunten compact, net boven de kaart */
+  body.desktop .vbpunten { background: var(--fill); } /* de achtergrond is hier bijna wit; een witte balk zou wegvallen */
+  .dagkolom .vbpunten { margin-bottom: 8px; padding: 8px 10px; border-radius: 10px; }
+  .dagkolom .vbpunten .agpunten { gap: 4px; }
+  .dagkolom .vbpunten .agpunt { gap: 6px; }
+  .dagkolom .vbpunten .agtekst { font-size: 13px; line-height: 17px; }
+  .dagkolom .vbpunten .agvink { width: 12px; height: 12px; margin-top: 2.5px; }
+  .dagkolom .vbpunten .aglaat { margin-top: 1px; font-size: 11px; }
+  .dagkolom .vbpunten .agmeer { padding-left: 18px; font-size: 12px; }
+  @media (hover: hover) { .dagkolom .vbpunten:hover { background: var(--fill); } }
   .krij { display: flex; align-items: stretch; gap: 7px; padding: 6px 7px; width: 100%; text-align: left; border-radius: 7px; }
   button.krij:hover { background: var(--fill); }
-  .krij.puntenrij .agtekst { font-size: 13px; line-height: 17px; }
-  .krij.puntenrij .agvink { width: 13px; height: 13px; }
-  .krij.puntenrij > .stip.punt { width: 3px; height: auto; align-self: stretch; border-radius: 2px; margin: 0; }
   .krij .stip { width: 3px; height: auto; border-radius: 2px; margin: 0; flex-shrink: 0; }
   .krij .rijtekst { gap: 1px; }
   .ktijd { display: flex; align-items: center; gap: 4px; color: var(--secondary); font-size: 11px; font-weight: 500; font-variant-numeric: tabular-nums; }
@@ -1166,6 +1171,10 @@ label.frij:focus-within .flabel { color: var(--accent); }
   .krij { padding: 8px 8px; }
   .krij .ktijd { font-size: 13px; }
   .krij .rijtitel { font-size: 13.5px; line-height: 18px; }
+  .dagkolom .vbpunten { padding: 9px 11px; }
+  .dagkolom .vbpunten .agtekst { font-size: 14px; line-height: 18px; }
+  .dagkolom .vbpunten .agvink { width: 14px; height: 14px; margin-top: 2px; }
+  .dagkolom .vbpunten .aglaat { font-size: 12px; }
   .krij .overlaplabel { font-size: 13px; line-height: 17px; }
   .krij .badge { font-size: 12px; }
   .heledagbalk { font-size: 14px; padding: 6px 10px; }

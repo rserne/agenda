@@ -519,15 +519,15 @@ function agendaPunten(d) {
 // soort: rij (week op de telefoon), krij (week op iPad en Mac) of tegel (Vooruitblik). Een tik opent het overzicht van
 // die dag, waar je afvinkt; in de agenda zelf zijn de rondjes te klein om precies te tikken.
 const AGENDA_MAX = 3;
-function puntenBlokHtml(d, soort) {
+// De actiepunten van een dag als rustige balk boven de afspraken, in Week en Vooruitblik op elk scherm
+function puntenBlokHtml(d) {
   const lijst = agendaPunten(d);
   if (!lijst.length) return '';
   const items = lijst.slice(0, AGENDA_MAX).map(({ p, laat }) => `<span class="agpunt${laat ? ' laat' : ''}"><span class="agvink"></span>
       <span class="agtekst">${esc(p.tekst.trim())}</span>${laat ? `<span class="aglaat">${esc(deadlineTekst(p.deadline))}</span>` : ''}</span>`).join('') // te laat: los erachter, zodat afkappen het niet wegneemt
     + (lijst.length > AGENDA_MAX ? `<span class="agmeer">+ ${lijst.length - AGENDA_MAX}</span>` : '');
   const label = `${lijst.length === 1 ? '1 actiepunt' : `${lijst.length} actiepunten`}${sameDay(d, vandaag()) ? ' vandaag' : ''}`;
-  if (soort === 'balk') return `<button class="vbpunten" data-agdag="${ymd(d)}" aria-label="${label}"><span class="agpunten">${items}</span></button>`;
-  return `<button class="${soort} puntenrij" data-agdag="${ymd(d)}" aria-label="${label}"><span class="stip punt"></span><span class="agpunten">${items}</span></button>`;
+  return `<button class="vbpunten" data-agdag="${ymd(d)}" aria-label="${label}"><span class="agpunten">${items}</span></button>`;
 }
 // Het overzicht van één dag: grote rondjes om af te vinken, de deadline als die voorbij is, en de notitie of het
 // overleg waar het punt bij hoort. Een tik op de tekst opent de notitie.

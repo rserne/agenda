@@ -266,10 +266,13 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
     puntenEl.innerHTML = punten(n).map((p) => `<div class="punt${p.klaar ? ' klaar' : ''}" data-punt="${p.id}">
         <button type="button" class="puntvink" data-actie="vink" aria-label="${p.klaar ? 'Niet afgevinkt maken' : 'Afvinken'}" aria-pressed="${p.klaar}">${I.vink}</button>
         <input class="punttekst" value="${esc(p.tekst)}" placeholder="Actiepunt" aria-label="Actiepunt" autocomplete="off" autocapitalize="sentences" enterkeyhint="next">
-        <span class="puntdatumvak"><button type="button" class="puntdatum${p.deadline ? ' aan' : ''}${!p.klaar && teLaat(p.deadline) ? ' laat' : ''}" data-actie="deadline" aria-label="${p.deadline ? `Deadline ${deadlineTekst(p.deadline)}` : 'Deadline'}">${p.deadline ? esc(deadlineTekst(p.deadline)) : I.kalender}</button><input type="date" class="puntkiezer" value="${p.deadline || ''}" tabindex="-1" aria-label="Deadline"></span>
+        <span class="puntdatumvak"><button type="button" class="puntdatum${p.deadline ? ' aan' : ''}${!p.klaar && teLaat(p.deadline) ? ' laat' : ''}" data-actie="deadline" aria-label="${p.deadline ? `Deadline ${deadlineTekst(p.deadline)}` : 'Deadline'}">${p.deadline ? esc(deadlineTekst(p.deadline)) : I.kalender}</button><input type="date" class="puntkiezer" data-deadline="${p.deadline || ''}" tabindex="-1" aria-label="Deadline"></span>
         <button type="button" class="puntweg" data-actie="punt-weg" aria-label="Actiepunt weghalen">${I.kruis}</button>
       </div>`).join('');
     $('#notpuntsectie', el).hidden = !punten(n).length;
+    // De deadline als waarde, niet als beginwaarde: Herstel in de datumkiezer van iOS gaat terug naar de beginwaarde,
+    // en die is dan leeg. Zo haalt Herstel de deadline weg.
+    puntenEl.querySelectorAll('.puntkiezer').forEach((k) => { k.value = k.dataset.deadline; });
     if (focusId) { const i = puntenEl.querySelector(`[data-punt="${focusId}"] .punttekst`); if (i) { i.focus(); i.setSelectionRange(i.value.length, i.value.length); } }
   };
   const zetPunten = (lijst, focusId = null) => {
@@ -301,10 +304,13 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
     if (was !== NOTITIES.includes(n)) tekenLabels();
     if (bijWijziging) bijWijziging();
   });
-  puntenEl.addEventListener('change', (ev) => {
-    const p = ev.target.classList.contains('puntkiezer') && puntVan(ev.target);
-    if (p) zetPunten(punten(n).map((x) => (x === p ? { ...x, deadline: ev.target.value || null } : x)));
-  });
+  const zetDeadline = (k) => {
+    const p = puntVan(k), d = k.value || null;
+    if (p && p.deadline !== d) zetPunten(punten(n).map((x) => (x === p ? { ...x, deadline: d } : x)));
+  };
+  puntenEl.addEventListener('change', (ev) => { if (ev.target.classList.contains('puntkiezer')) zetDeadline(ev.target); });
+  // Herstel in iOS geeft soms alleen een input-gebeurtenis; een lege waarde verwerken we daarom meteen
+  puntenEl.addEventListener('input', (ev) => { if (ev.target.classList.contains('puntkiezer') && !ev.target.value) zetDeadline(ev.target); });
   puntenEl.addEventListener('keydown', (ev) => {
     const p = ev.target.classList.contains('punttekst') && puntVan(ev.target);
     if (!p || ev.isComposing) return;

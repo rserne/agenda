@@ -829,6 +829,10 @@ test('actiepunten: bovenaan de notitie, met een deadline, via ! in de tekst, en 
   // Een deadline: gisteren, dus te laat
   await p.locator('#notpunten .puntkiezer').first().evaluate((k) => { k.value = '2026-11-03'; k.dispatchEvent(new Event('change', { bubbles: true })); }); await wacht(200);
   assert.equal(await p.locator('#notpunten .puntdatum.laat').innerText(), 'Gisteren');
+  // Herstel in de datumkiezer van iOS gaat terug naar de beginwaarde; die is leeg, dus de deadline gaat weg
+  await p.locator('#notpunten .puntkiezer').first().evaluate((k) => { k.value = k.defaultValue; k.dispatchEvent(new Event('input', { bubbles: true })); }); await wacht(200);
+  assert.equal(await p.locator('#notpunten .puntdatum.aan').count(), 0, 'Herstel haalt de deadline weg');
+  await p.locator('#notpunten .puntkiezer').first().evaluate((k) => { k.value = '2026-11-03'; k.dispatchEvent(new Event('change', { bubbles: true })); }); await wacht(200);
   // Een kruisje haalt een actiepunt weg
   await p.locator('#notpunten .punt', { hasText: '' }).last().locator('.puntweg').tap(); await wacht(200);
   assert.equal(await p.locator('#notpunten .punt').count(), 1);

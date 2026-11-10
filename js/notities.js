@@ -523,10 +523,10 @@ function puntenBlokHtml(d, soort) {
   const lijst = agendaPunten(d);
   if (!lijst.length) return '';
   const items = lijst.slice(0, AGENDA_MAX).map(({ p, laat }) => `<span class="agpunt${laat ? ' laat' : ''}"><span class="agvink"></span>
-      <span class="agtekst">${esc(p.tekst.trim())}${laat ? `<span class="aglaat">${esc(deadlineTekst(p.deadline))}</span>` : ''}</span></span>`).join('')
+      <span class="agtekst">${esc(p.tekst.trim())}</span>${laat ? `<span class="aglaat">${esc(deadlineTekst(p.deadline))}</span>` : ''}</span>`).join('') // te laat: los erachter, zodat afkappen het niet wegneemt
     + (lijst.length > AGENDA_MAX ? `<span class="agmeer">+ ${lijst.length - AGENDA_MAX}</span>` : '');
   const label = `${lijst.length === 1 ? '1 actiepunt' : `${lijst.length} actiepunten`}${sameDay(d, vandaag()) ? ' vandaag' : ''}`;
-  if (soort === 'tegel') return `<button class="tegel puntentegel" data-agdag="${ymd(d)}" aria-label="${label}"><span class="agpunten">${items}</span></button>`;
+  if (soort === 'balk') return `<button class="vbpunten" data-agdag="${ymd(d)}" aria-label="${label}"><span class="agpunten">${items}</span></button>`;
   return `<button class="${soort} puntenrij" data-agdag="${ymd(d)}" aria-label="${label}"><span class="stip punt"></span><span class="agpunten">${items}</span></button>`;
 }
 // Het overzicht van één dag: grote rondjes om af te vinken, de deadline als die voorbij is, en de notitie of het

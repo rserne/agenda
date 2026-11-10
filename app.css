@@ -17,6 +17,7 @@
   --bg: #F2F2F7;
   --fcBg: #F2F2F7;
   --card: #FFFFFF;
+  --puntbalk: #FFFFFF; /* de balk met actiepunten in Vooruitblik */
   --tileEmpty: #FFFFFF;
   --heledagBg: #FFFFFF; /* balk 'hele dag' in Vooruitblik */
   --heledagRand: rgba(60, 60, 67, 0.18);
@@ -88,6 +89,7 @@
     --bg: #000000;
     --fcBg: #1C1C1E;
     --card: #1C1C1E;
+    --puntbalk: rgba(120, 120, 128, 0.22);
     --tileEmpty: #2C2C2E;
     --heledagBg: #2C2C2E; /* donker: een eigen vlak, want een kaart in de kleur van de achtergrond is alleen een rand */
     --heledagRand: transparent;
@@ -320,12 +322,17 @@ main.kolom.trekt { transition: none; }
 .agpunten { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .agpunt { display: flex; align-items: flex-start; gap: 8px; min-width: 0; }
 .agvink { flex-shrink: 0; width: 16px; height: 16px; margin-top: 2px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--secondary); }
-button.puntenrij:active, button.puntentegel:active { background: var(--fill); }
+button.puntenrij:active { background: var(--fill); }
 .agpunt.laat .agvink { box-shadow: inset 0 0 0 1.5px var(--statusNo); }
 .agtekst { flex: 1; min-width: 0; text-align: left; color: var(--label); font-size: 15px; line-height: 20px; font-weight: 500; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.aglaat { margin-left: 6px; color: var(--statusNo); font-size: 12px; font-weight: 600; white-space: nowrap; }
+.aglaat { flex-shrink: 0; margin-top: 2px; color: var(--statusNo); font-size: 12px; font-weight: 600; white-space: nowrap; }
 .agmeer { padding-left: 24px; color: var(--secondary); font-size: 13px; }
-.puntentegel { background: var(--card); box-shadow: inset 0 0 0 1px var(--separator); color: var(--label); gap: 6px; padding-top: 10px; }
+/* Vooruitblik: de actiepunten als rustige balk boven de afspraken, over de volle breedte en zo hoog als nodig */
+.vbpunten { display: flex; width: 100%; margin-bottom: 8px; padding: 10px 14px; border: 0; border-radius: 14px; background: var(--puntbalk); color: var(--label); font: inherit; text-align: left; cursor: pointer; }
+.vbpunten .agpunten { gap: 6px; }
+.vbpunten .agtekst { font-size: 15px; line-height: 20px; font-weight: 400; display: block; white-space: nowrap; text-overflow: ellipsis; }
+.vbpunten .agvink { width: 16px; height: 16px; margin-top: 2px; }
+button.vbpunten:active { background: var(--fill); }
 /* Het overzicht van een dag: grote rondjes om af te vinken */
 .dagpunt { align-items: flex-start; padding: 6px 0; }
 .dagpunt .puntvink { width: 26px; height: 26px; margin-top: 1px; }
@@ -336,8 +343,6 @@ button.puntenrij:active, button.puntentegel:active { background: var(--fill); }
 .dagtekst .t2 { font-size: 13px; line-height: 17px; color: var(--secondary); }
 .dagpunt.klaar .dagtekst .t1 { color: var(--secondary); }
 .dagleeg { padding: 14px 0; }
-.puntentegel .agtekst { font-size: 13px; line-height: 16px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.puntentegel .agvink { width: 13px; height: 13px; }
 .vbinhoud { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
 .vbleeg { padding: 1px 0 0 2px; font-size: 13px; color: var(--secondary); }
 .vbinhoud > .vbrest:first-child { padding-top: 1px; } /* dag met alleen vaste overleggen: op één lijn met de dag */ /* lege dag: net zo ingetogen als '+ 3 vaste overleggen' */

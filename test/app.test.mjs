@@ -880,7 +880,7 @@ test('actiepunten: bovenaan de notitie, met een deadline, via ! in de tekst, en 
   assert.deepEqual(p.fouten, []);
 });
 
-test('actiepunten in de agenda: één blok als eerste van de dag, vandaag ook wat te laat is; niet bij Vrij', async ({ browser, url }) => {
+test('actiepunten in de agenda: een balk boven de dag, vandaag ook wat te laat is; niet bij Vrij', async ({ browser, url }) => {
   const p = await nieuwePagina(browser, TELEFOON);
   await p.goto(url); await wacht(1000);
   await p.evaluate(async () => {
@@ -892,26 +892,27 @@ test('actiepunten in de agenda: één blok als eerste van de dag, vandaag ook wa
       { id: 'd', tekst: 'Al gedaan', klaar: true, deadline: '2026-11-04' }] });
     behoudDag(render);
   }); await wacht(400);
-  const vandaag = p.locator('#inhoud h2.dagkop.vandaag + .kaart');
-  assert.deepEqual(await vandaag.locator('.puntenrij .agtekst').allInnerTexts(), ['Offerte sturenGisteren', 'Planning delen']);
-  assert.equal(await vandaag.locator('.rij').first().evaluate((x) => x.classList.contains('puntenrij')), true, 'als eerste');
-  // Een tik op het blok opent het overzicht van de dag; daar vink je af
-  await vandaag.locator('.puntenrij').tap(); await wacht(700);
+  // Als balk direct onder de dag, boven de afspraken
+  const vandaag = p.locator('#inhoud h2.dagkop.vandaag + .vbpunten');
+  assert.deepEqual(await vandaag.locator('.agtekst').allInnerTexts(), ['Offerte sturen', 'Planning delen']);
+  assert.deepEqual(await vandaag.locator('.aglaat').allInnerTexts(), ['Gisteren'], 'te laat staat er los achter');
+  // Een tik op de balk opent het overzicht van de dag; daar vink je af
+  await vandaag.tap(); await wacht(700);
   assert.equal(await p.locator('.paneel.dagpunten .dtitel').innerText(), 'Actiepunten');
   assert.deepEqual(await p.locator('.paneel.dagpunten .dagtekst .t1').allInnerTexts(), ['Offerte sturen', 'Planning delen']);
   await p.locator('.paneel.dagpunten [data-dagvink$="|a"]').tap(); await wacht(700);
   assert.deepEqual(await p.locator('.paneel.dagpunten .dagtekst .t1').allInnerTexts(), ['Planning delen']);
   await p.keyboard.press('Escape'); await wacht(600);
-  assert.deepEqual(await p.locator('#inhoud h2.dagkop.vandaag + .kaart .puntenrij .agtekst').allInnerTexts(), ['Planning delen']);
+  assert.deepEqual(await p.locator('#inhoud h2.dagkop.vandaag + .vbpunten .agtekst').allInnerTexts(), ['Planning delen']);
   // Bij Vrij niet
   await p.locator('[data-filter="free"]:visible').first().tap(); await wacht(300);
-  assert.equal(await p.locator('#inhoud .puntenrij').count(), 0);
-  // Vooruitblik: een tegel Actiepunten
+  assert.equal(await p.locator('#inhoud .vbpunten').count(), 0);
+  // Vooruitblik: de actiepunten als balk boven de afspraken
   await p.locator('[data-filter="notable"]:visible').first().tap(); await wacht(200);
   await p.evaluate(() => kiesTab('forecast')); await wacht(600);
-  assert.equal(await p.locator('#inhoud .puntentegel').count(), 2);
+  assert.equal(await p.locator('#inhoud .vbpunten').count(), 2);
   // Vanuit het overzicht van de dag opent een tik op de tekst de notitie
-  await p.locator('#inhoud .puntentegel').first().tap(); await wacht(700);
+  await p.locator('#inhoud .vbpunten').first().tap(); await wacht(700);
   await p.locator('.paneel.dagpunten [data-dagnotitie]').first().tap(); await wacht(800);
   assert.equal(await p.locator('#nottitel').inputValue(), 'Overleg pilot');
   assert.deepEqual(p.fouten, []);

@@ -117,7 +117,7 @@ function weekHtml(events) {
   let eerste = true;
   // Lege weekenddagen: samen onder één kop ('21–22 Weekend'), met 'Geen afspraken' eronder, net als een lege werkdag
   const metPunten = ST.filter !== 'free'; // actiepunten bij Opvallend en Alles, niet bij Vrij
-  const punten = (d) => (metPunten ? puntenBlokHtml(d, 'rij') : '');
+  const punten = (d) => (metPunten ? puntenBlokHtml(d, 'balk') : ''); // als balk boven de dag, zoals in Vooruitblik
   const leegWeekend = [5, 6].filter((i) => !eventsForDay(events, addDays(start, i)).length && !punten(addDays(start, i)));
   const weekendBlok = (dagen) => {
     const [a, b] = dagen.map((i) => addDays(start, i));
@@ -144,15 +144,14 @@ function weekHtml(events) {
     const vrij = ST.filter === 'free' && i < 5 && d >= t ? freeSlots(lijst, d) : [];
     const items = [...getoond.map((e) => ({ t: e.start.getTime(), e })), ...vrij.map((f) => ({ t: f.start.getTime(), f }))].sort((a, b) => a.t - b.t);
     let rijen = heleDag.map((e) => `<button class="rij heledag" data-id="${esc(e.id)}"><span class="rijtitel">${esc(e.title)}</span><span class="hint">hele dag</span></button>`).join('');
-    rijen += punten(d); // de actiepunten van de dag als eerste blok
     const ov = overlapVan(lijst);
     rijen += items.map((it) => (it.e ? weekRij(it.e, ov) : vrijRij(it.f))).join('');
     if (verborgen > 0) rijen += `<div class="rij rest"><span class="stip"></span><span>${vastText(verborgen)}</span></div>`;
-    if (!rijen) rijen = '<div class="rij rest"><span>Geen afspraken</span></div>';
+    if (!rijen && !punten(d)) rijen = '<div class="rij rest"><span>Geen afspraken</span></div>';
     // Zoals op de desktop: eerst het dagnummer, dan de dag; vandaag in de accentkleur, voorbije dagen grijs
     const isVandaag = sameDay(d, t);
     const kop = `<span class="nr num">${d.getDate()}</span><span class="dow">${cap(DAYS_LONG[d.getDay()])}</span>${d.getDate() === 1 && !eerste ? `<span class="mnd">${MONTHS_LONG[d.getMonth()]}</span>` : ''}`;
-    html += `<h2 data-dag="${d.getTime()}" class="dagkop${eerste ? ' eerste' : ''}${isVandaag ? ' vandaag' : ''}${d < t ? ' voorbij' : ''}" aria-label="${isVandaag ? 'Vandaag, ' : ''}${DAYS_LONG[d.getDay()]} ${d.getDate()} ${MONTHS_LONG[d.getMonth()]}">${kop}</h2><div class="kaart">${rijen}</div>`;
+    html += `<h2 data-dag="${d.getTime()}" class="dagkop${eerste ? ' eerste' : ''}${isVandaag ? ' vandaag' : ''}${d < t ? ' voorbij' : ''}" aria-label="${isVandaag ? 'Vandaag, ' : ''}${DAYS_LONG[d.getDay()]} ${d.getDate()} ${MONTHS_LONG[d.getMonth()]}">${kop}</h2>${punten(d)}${rijen ? `<div class="kaart">${rijen}</div>` : ''}`;
     eerste = false;
   }
   return html + legendaWeek();
@@ -209,13 +208,14 @@ function vooruitblikHtml(events) {
     const vrij = ST.filter === 'free' && werkdag && d >= t ? freeSlots(lijst, d) : [];
     const items = [...tegels.map((e) => ({ t: e.start.getTime(), e })), ...vrij.map((f) => ({ t: f.start.getTime(), f }))].sort((a, b) => a.t - b.t);
     const ov = overlapVan(lijst);
-    const punten = ST.filter !== 'free' ? puntenBlokHtml(d, 'tegel') : ''; // de actiepunten als eerste tegel
+    const punten = ST.filter !== 'free' ? puntenBlokHtml(d, 'balk') : ''; // de actiepunten als balk boven de afspraken
     html += `<section class="vbdag">
       <div class="vbdatum${isVandaag ? ' vandaag' : ''}"><span class="dow">${DAYS_SHORT[d.getDay()].toUpperCase()}</span><span class="nr">${d.getDate()}</span>${i === 0 || d.getDate() === 1 ? `<span class="mnd">${MONTHS_SHORT[d.getMonth()]}</span>` : ''}</div>
       <div class="vbinhoud">
         ${!heleDag.length && !getimed.length && !vrij.length && !punten ? `<div class="vbleeg">${isVandaag ? (afgelopen ? 'Geen afspraken meer vandaag' : 'Geen afspraken vandaag') : 'Geen afspraken'}</div>` : ''}
+        ${punten}
         ${heleDag.map((e) => `<button class="vbheledag" data-id="${esc(e.id)}"><span class="t">${esc(e.title)}</span><span class="h">hele dag</span></button>`).join('')}
-        ${items.length || punten ? `<div class="tegels">${punten}${items.map((it) => (it.e ? tegel(it.e, d, ov) : vrijeTegel(it.f))).join('')}</div>` : ''}
+        ${items.length ? `<div class="tegels">${items.map((it) => (it.e ? tegel(it.e, d, ov) : vrijeTegel(it.f))).join('')}</div>` : ''}
         ${verborgen > 0 ? `<div class="vbrest">+ ${vastText(verborgen)}</div>` : ''}
       </div>
     </section>`;

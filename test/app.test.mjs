@@ -829,6 +829,10 @@ test('actiepunten: bovenaan de notitie, met een deadline, via ! in de tekst, en 
   // Een deadline: gisteren, dus te laat
   await p.locator('#notpunten .puntkiezer').first().evaluate((k) => { k.value = '2026-11-03'; k.dispatchEvent(new Event('change', { bubbles: true })); }); await wacht(200);
   assert.equal(await p.locator('#notpunten .puntdatum.laat').innerText(), 'Gisteren');
+  assert.equal(await p.locator('#notpuntsectie .puntnieuw').isVisible(), false, 'met actiepunten geen regel ! Actiepunt');
+  // Op een touchscreen tik je direct op de datumkiezer zelf (iOS opent die dan zonder tussenstap)
+  const opDeKnop = await p.evaluate(() => { const r = $('#notpunten .puntdatum').getBoundingClientRect(); return document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2).className; });
+  assert.equal(opDeKnop, 'puntkiezer');
   // Een regel met ! in de tekst wordt bij Enter een actiepunt
   await p.locator('#nottekst').tap(); await p.keyboard.type('Afgesproken: we starten in januari.\n! Team uitnodigen'); await p.keyboard.press('Enter'); await wacht(200);
   assert.equal(await p.locator('#nottekst').inputValue(), 'Afgesproken: we starten in januari.\n');

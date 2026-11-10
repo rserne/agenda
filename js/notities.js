@@ -203,6 +203,8 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
   let gekozenTag = -1;
   const tekenLabels = () => {
     $('#notlabels', el).hidden = !n.labels.length;
+    // Staan er labels, dan verdwijnt '# Label' (behalve zolang je erin typt): een nieuw label typ je met # in de tekst
+    $('.taglijn', el).hidden = n.labels.length > 0 && document.activeElement !== invoer && !(gekozenTag >= 0 && isDesktop());
     $('#notlabels', el).innerHTML = n.labels.map((l, i) => (i === gekozenTag
       ? `<button type="button" class="tag aan" data-tag="${i}" aria-label="${esc(toonLabel(l))} weghalen">${esc(toonLabel(l))}${I.kruis}</button>`
       : `<button type="button" class="tag" data-tag="${i}">${esc(toonLabel(l))}</button>`)).join('');
@@ -247,7 +249,8 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
   invoer.addEventListener('blur', () => setTimeout(() => {
     if (document.activeElement === invoer) return;
     if (invoer.value.trim()) { voegTag(invoer.value); invoer.value = ''; }
-    else if (gekozenTag >= 0 && !el.contains(document.activeElement)) { gekozenTag = -1; tekenLabels(); }
+    else if (gekozenTag >= 0 && !el.contains(document.activeElement)) gekozenTag = -1;
+    tekenLabels();
   }, 160));
 
   // Meteen bewaren tijdens het typen; het tekstvak vult de ruimte van het scherm
@@ -288,9 +291,10 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
     puntenEl.innerHTML = punten(n).map((p) => `<div class="punt${p.klaar ? ' klaar' : ''}" data-punt="${p.id}">
         <button type="button" class="puntvink" data-actie="vink" aria-label="${p.klaar ? 'Niet afgevinkt maken' : 'Afvinken'}" aria-pressed="${p.klaar}">${I.vink}</button>
         <input class="punttekst" value="${esc(p.tekst)}" placeholder="Actiepunt" aria-label="Actiepunt" autocomplete="off" autocapitalize="sentences" enterkeyhint="next">
-        <button type="button" class="puntdatum${p.deadline ? ' aan' : ''}${!p.klaar && teLaat(p.deadline) ? ' laat' : ''}" data-actie="deadline" aria-label="${p.deadline ? `Deadline ${deadlineTekst(p.deadline)}` : 'Deadline'}">${p.deadline ? esc(deadlineTekst(p.deadline)) : I.kalender}</button>
-        <input type="date" class="puntkiezer" value="${p.deadline || ''}" tabindex="-1" aria-hidden="true">
+        <span class="puntdatumvak"><button type="button" class="puntdatum${p.deadline ? ' aan' : ''}${!p.klaar && teLaat(p.deadline) ? ' laat' : ''}" data-actie="deadline" aria-label="${p.deadline ? `Deadline ${deadlineTekst(p.deadline)}` : 'Deadline'}">${p.deadline ? esc(deadlineTekst(p.deadline)) : I.kalender}</button><input type="date" class="puntkiezer" value="${p.deadline || ''}" tabindex="-1" aria-label="Deadline"></span>
       </div>`).join('');
+    // Staan er actiepunten, dan verdwijnt '! Actiepunt': Enter in een punt maakt een nieuw, en ! in de tekst ook
+    $('#notpuntsectie .puntnieuw', el).hidden = punten(n).length > 0;
     if (focusId) { const i = puntenEl.querySelector(`[data-punt="${focusId}"] .punttekst`); if (i) { i.focus(); i.setSelectionRange(i.value.length, i.value.length); } }
   };
   const zetPunten = (lijst, focusId = null) => {

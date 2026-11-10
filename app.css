@@ -1258,7 +1258,14 @@ html.paginaopen .shell, html.paginaopen #tabbalk, html.paginaopen #lagen { visib
 .puntdatum .icoon { width: 17px; height: 17px; opacity: 0.55; }
 .puntdatum.aan { background: var(--fill); color: var(--label); }
 .puntdatum.laat { color: var(--statusNo); }
+.puntdatumvak { position: relative; flex-shrink: 0; align-self: stretch; display: flex; align-items: center; }
 .puntkiezer { position: absolute; right: 0; bottom: 0; width: 1px; height: 1px; padding: 0; border: 0; opacity: 0; pointer-events: none; font-size: 16px; }
+/* Op een touchscreen ligt de datumkiezer zelf over de knop: een tik opent dan de kiezer van iOS, zonder tussenstap */
+@media (pointer: coarse) {
+  .puntdatumvak .puntkiezer { inset: 0; width: 100%; height: 100%; min-width: 0; margin: 0; pointer-events: auto; -webkit-appearance: none; appearance: none; background: transparent; color: transparent; }
+}
+.notblad .taglijn[hidden], .notblad .puntnieuw[hidden] { display: none; }
+.notblad .tags:has(+ .taglijn[hidden]) { margin-bottom: 0; }
 .puntnieuw { display: flex; align-items: center; gap: 10px; min-height: 42px; color: var(--accent); font-size: 16px; }
 .puntnieuw .icoon { width: 22px; height: 18px; flex-shrink: 0; }
 .puntenkaart { padding: 0 16px; }

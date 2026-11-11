@@ -99,7 +99,7 @@ De Google-sleutel staat alleen op het toestel (localStorage). De ruimtes staan o
 |---|---|---|
 | Extern | Externe organisator, of deelnemers buiten je eigen domein. Altijd opvallend, ook als het terugkeert. | paars |
 | Intern, ad hoc | Alleen eigen domein en geen vast overleg | grafiet (blauwgrijs) |
-| Intern, vast | Een herhaalreeks, of dezelfde titel in minstens twee verschillende weken | lichtgrijs |
+| Intern, vast | Een herhaalreeks, of dezelfde titel in minstens twee verschillende weken | geen vulling, een rand van minstens 3:1 |
 
 De afspraken hebben eigen kleuren, los van de rest van de app: blauw is vrij en aan te tikken, geel overlap, rood bezet of te laat. Zo heeft elke kleur één betekenis.
 

@@ -35,7 +35,7 @@ Stel deze niet opnieuw voor, tenzij hij er zelf over begint:
 
 ## Ontwerpkeuzes die vastliggen
 
-- Kleuren komen uit de tokens bovenin `app.css`. Vrij is blauw (`--accent`), gedeeltelijke overlap geel (`--overlap`), helemaal bezet warm rood (`--bezet`). Afspraken hebben eigen kleuren: extern paars, intern ad hoc grafiet, intern vast lichtgrijs; geen blauw, geel of rood.
+- Kleuren komen uit de tokens bovenin `app.css`. Vrij is blauw (`--accent`), gedeeltelijke overlap geel (`--overlap`), helemaal bezet warm rood (`--bezet`). Afspraken hebben eigen kleuren: extern paars, intern ad hoc grafiet, intern vast zonder vulling met een rand (`--vastRand`, minstens 3:1); geen blauw, geel of rood.
 - Pictogrammen in het keuzemenu van de plusknop staan links. Kaders zijn doorgetrokken, niet gestippeld. Tijden worden niet doorgestreept.
 - Invoervelden zijn minstens 16px, anders zoomt iOS in. Een test bewaakt dat.
 - Een afspraak afmaken gebeurt in de Outlook-app (iOS) of Outlook op het web; de app zelf schrijft nooit in de agenda.

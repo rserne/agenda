@@ -29,8 +29,9 @@
   /* Afspraken: extern paars, intern grafiet, vast lichtgrijs. Blauw blijft voor vrij en aan te tikken, geel voor overlap,
      rood voor bezet en te laat; zo heeft elke kleur één betekenis. */
   --externTile: #E2D5F6;
-  --internTile: #D5DCE5;
-  --regularTile: #E3E3E8;
+  --internTile: #CBD4E0;
+  --regularTile: #FFFFFF; /* vast overleg: geen vulling, alleen een rand */
+  --vastRand: rgba(60, 60, 67, 0.6); /* de rand is het kenmerk, dus minstens 3:1 tegen de achtergrond */
   --regularTileText: rgba(0, 0, 0, 0.72);
   --externDot: #8B5CC7;
   --externText: #6E40A8; /* als tekst: 7,4:1 op wit (de streep mag lichter) */
@@ -102,7 +103,8 @@
     --accent: #86C3E1;
     --externTile: #B9A2E0;
     --internTile: #A7B3C3;
-    --regularTile: #3A3A3C;
+    --regularTile: #1C1C1E;
+    --vastRand: rgba(255, 255, 255, 0.34);
     --regularTileText: rgba(255, 255, 255, 0.78);
     --externDot: #C2A6F2;
     --externText: #C2A6F2;
@@ -308,7 +310,7 @@ main.kolom.trekt { transition: none; }
 @media (min-width: 1200px) { #doortrek { display: none; } }
 .legenda { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 16px; padding-top: 30px; }
 .legenda span { display: flex; align-items: center; gap: 6px; color: var(--secondary); font-size: 12px; }
-.legenda .vlak { width: 12px; height: 12px; border-radius: 3px; box-shadow: inset 0 0 0 0.5px var(--separator); }
+.legenda .vlak { width: 12px; height: 12px; border-radius: 3px; box-shadow: inset 0 0 0 1px var(--vastRand); }
 .legenda .stip { width: 3px; height: 13px; border-radius: 2px; }
 
 /* ---------------------------------------------------------------- Vooruitblik */
@@ -357,7 +359,8 @@ button.vbpunten:active { background: var(--fill); }
 .tegel:active { opacity: 0.85; }
 .tegel.ext { background: var(--externTile); }
 .tegel.int { background: var(--internTile); }
-.tegel.reg { background: var(--regularTile); color: var(--regularTileText); }
+/* Vast overleg wijkt: een lege tegel met een rand, zodat ad hoc (gevuld) en vast meteen te onderscheiden zijn */
+.tegel.reg { background: var(--regularTile); color: var(--regularTileText); box-shadow: inset 0 0 0 1px var(--vastRand); }
 .tegelkop { display: flex; align-items: center; justify-content: space-between; }
 .tegel .tt { font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 16px; }
 .tegel .iconen { display: flex; gap: 3px; }

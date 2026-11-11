@@ -1095,7 +1095,7 @@ label.frij:focus-within .flabel { color: var(--accent); }
   .notkoptitel { margin: 0; font-size: 26px; line-height: 32px; font-weight: 700; letter-spacing: -0.4px; }
   body .notilinks > .zoekbalk { height: 42px; border-radius: 21px; padding: 0 14px; }
   body .notilinks > .zoekbalk .icoon { width: 17px; height: 17px; }
-  body .notisplit .drij.notitierij { padding: 13px 14px; }
+  body .notisplit .drij.notitierij { padding: 13px 16px 13px 22px; }
   body .notisplit .drij.notitierij .t1 { font-size: 17px; line-height: 22px; }
   body .notisplit .drij.notitierij .t2 { font-size: 15px; line-height: 20px; }
   body.desktop.zbdicht .notilinks #zoektokens:not(:empty) { display: flex; }
@@ -1222,7 +1222,7 @@ label.frij:focus-within .flabel { color: var(--accent); }
   main .notisplit .notipaneel { --onder: calc(env(safe-area-inset-bottom, 0px) + 24px); } /* de notitie tot de onderrand */
   /* Onder de tabbalk lopen de filters en de lijst weg in een zachte overgang, zoals in iOS, elk in de eigen kleur */
   body:has(.notisplit) .tabbalk::before, body:has(.notisplit) .tabbalk::after { content: ''; position: absolute; z-index: -1; top: -36px; bottom: calc(-8px - env(safe-area-inset-bottom, 0px)); pointer-events: none; transition: left 0.25s ease, width 0.25s ease; }
-  body:has(.notisplit) .tabbalk::before { left: var(--nfW); width: var(--nlW); background: linear-gradient(to bottom, transparent, var(--bg) 65%); }
+  body:has(.notisplit) .tabbalk::before { left: var(--nfW); width: var(--nlW); background: linear-gradient(to bottom, transparent, var(--card) 65%); }
   body:has(.notisplit) .tabbalk::after { left: 0; width: var(--nfW); background: linear-gradient(to bottom, transparent, var(--zbBg) 65%); }
   body.zbdicht:has(.notisplit) .tabbalk::before { left: 0; }
   body.zbdicht:has(.notisplit) .tabbalk::after { width: 0; }
@@ -1416,23 +1416,27 @@ body.notitietab .titelknop, body.insttab .titelknop { cursor: default; }
      notitie die rechts staat, is gekleurd. */
   body.desktop.notitietab main.kolom:has(.notisplit) { padding: 0; max-width: none; }
   .notisplit { --onder: 24px; display: grid; grid-template-columns: 340px minmax(0, 1fr); height: calc(100vh - var(--kopH, 52px)); padding: 0; gap: 0; background: var(--card); }
-  .notilinks { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 14px 12px var(--onder); background: var(--bg); border-right: 0.5px solid var(--separator); }
+  .notilinks { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 14px 10px var(--onder); background: var(--card); border-right: 0.5px solid var(--separator); }
   .notkop { display: none; } /* op de Mac staat de titel in de werkbalk */
   .notisplit #notlijst { display: block; }
-  .ngroep { margin: 18px 4px 6px; font-size: 20px; line-height: 25px; font-weight: 700; letter-spacing: -0.3px; color: var(--label); }
+  .ngroep { margin: 22px 8px 6px; font-size: 20px; line-height: 25px; font-weight: 700; letter-spacing: -0.3px; color: var(--label); }
   .notisplit #notlijst > .ngroep:first-child { margin-top: 2px; }
-  .notisplit .kaart { padding: 0; border-radius: 12px; }
-  .notisplit .drij.notitierij { min-height: 0; padding: 11px 14px 12px; border: 0; background: none; color: var(--label); font: inherit; }
-  .notisplit .drij.notitierij + .drij.notitierij { border-top: 0.5px solid var(--separator); }
-  .notisplit .drij.notitierij.aan, .notisplit .drij.notitierij.aan + .drij.notitierij { border-top-color: transparent; }
-  .notisplit .drij.notitierij.aan { background: var(--selBg); }
-  @media (hover: hover) { .notisplit .drij.notitierij:hover:not(.aan) { background: var(--fill); } }
+  /* Regels op de achtergrond van de kolom; een dunne lijn boven elke regel (ook onder het kopje), behalve rond de
+     gekozen notitie. Die staat als afgerond vlak in de accentkleur, iets breder dan de lijnen. */
+  .notisplit .drij.notitierij { position: relative; min-height: 0; padding: 11px 16px 12px 22px; border: 0; border-radius: 14px; background: none; color: var(--label); font: inherit; }
+  .notisplit .drij.notitierij::before { content: ''; position: absolute; top: 0; left: 8px; right: 8px; border-top: 0.5px solid var(--separator); }
+  .notisplit .drij.notitierij.aan::before, .notisplit .drij.notitierij.aan + .drij.notitierij::before { border-top-color: transparent; }
+  .notisplit .drij.notitierij.aan { background: var(--accent); }
+  @media (hover: hover) { .notisplit .drij.notitierij:hover:not(.aan) { background: var(--fill); } .notisplit .drij.notitierij:hover::before, .notisplit .drij.notitierij:hover + .drij.notitierij::before { border-top-color: transparent; } }
   .notisplit .drij.notitierij .t1 { font-size: 16px; line-height: 21px; }
   .notisplit .drij.notitierij .t2 { font-size: 14px; line-height: 19px; }
-  .notisplit .drij.notitierij.aan .t1 { color: var(--selText); }
+  .notisplit .drij.notitierij.aan .t1, .notisplit .drij.notitierij.aan .t2, .notisplit .drij.notitierij.aan .ndatum, .notisplit .drij.notitierij.aan .tddatum { color: var(--onAccent); }
+  .notisplit .drij.notitierij.aan .t2 { opacity: 0.85; }
+  .notisplit .drij.notitierij.aan .puntvink { box-shadow: inset 0 0 0 1.5px var(--onAccent); }
+  .notisplit .drij.notitierij.aan:hover .t1 { color: var(--onAccent); }
   .notisplit .nlijstleeg { padding: 8px 4px; }
   /* Het zoekveld boven de lijst, dicht bij wat je zoekt; dekkend, zodat de lijst er niet doorheen schemert */
-  .notilinks > .zoekbalk { position: sticky; top: 0; z-index: 3; flex-shrink: 0; height: 36px; margin: 0 0 12px; padding: 0 10px; gap: 6px; border: 0; border-radius: 10px; background: linear-gradient(var(--fill), var(--fill)), var(--bg); box-shadow: 0 0 0 12px var(--bg); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .notilinks > .zoekbalk { position: sticky; top: 0; z-index: 3; flex-shrink: 0; height: 36px; margin: 0 0 12px; padding: 0 10px; gap: 6px; border: 0; border-radius: 10px; background: linear-gradient(var(--fill), var(--fill)), var(--card); box-shadow: 0 0 0 12px var(--card); -webkit-backdrop-filter: none; backdrop-filter: none; }
   .notilinks > .zoekbalk .icoon { width: 15px; height: 15px; }
   .notilinks .zoektoken { height: 24px; padding: 0 7px 0 9px; font-size: 13px; }
   .notilinks .zoektoken .icoon { width: 9px; height: 9px; }

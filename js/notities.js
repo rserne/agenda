@@ -675,7 +675,7 @@ function teDoenHtml() {
       <span class="tekst"><span class="t1">${esc(p.tekst.trim())}</span>${dl || bron ? `<span class="t2">${dl}${esc(bron)}</span>` : ''}</span></div>`;
   };
   return TEDOEN_GROEPEN.filter((g) => items.some((i) => i.groep === g))
-    .map((g) => `<h3 class="ngroep${g === 'Te laat' ? ' laat' : ''}">${g}</h3><div class="kaart">${items.filter((i) => i.groep === g).map(rij).join('')}</div>`).join('');
+    .map((g) => `<h3 class="ngroep${g === 'Te laat' ? ' laat' : ''}">${g}</h3><div class="${naastElkaar() ? 'nrijen' : 'kaart'}">${items.filter((i) => i.groep === g).map(rij).join('')}</div>`).join('');
 }
 function notitieLijstHtml() {
   if (notTeDoen) return teDoenHtml();
@@ -683,8 +683,9 @@ function notitieLijstHtml() {
   const gekozen = naastElkaar() ? gekozenNotitie() : null;
   if (!lijst.length) return `<p class="nleeg nlijstleeg">${levendeNotities().length ? 'Niets gevonden' : 'Nog geen notities'}</p>`;
   // In groepen (Vandaag, Gisteren, ...) zoals in Notities van Apple, naar hetzelfde moment als de datum in de regel:
-  // de afspraak, of bij een losse notitie de laatste wijziging. Een kaart per groep; op de iPhone met een pijltje naar
-  // de notitie, op iPad en Mac zonder, en de notitie die rechts staat is gekleurd.
+  // de afspraak, of bij een losse notitie de laatste wijziging. Op de iPhone een kaart per groep met een pijltje naar
+  // de notitie; op iPad en Mac regels met dunne lijnen ertussen, zoals in Notities van Apple, en de notitie die rechts
+  // staat als gevuld vlak.
   const groepen = [];
   for (const n of lijst) {
     const g = wijzigGroep(notitieMoment(n).getTime());
@@ -699,7 +700,7 @@ function notitieLijstHtml() {
     const aan = !!gekozen && gekozen.id === n.id;
     return `<button class="drij notitierij${aan ? ' aan' : ''}" data-notitie="${n.id}" aria-pressed="${aan}"><span class="tekst">${inhoud}</span></button>`;
   };
-  return groepen.map((g) => `<h3 class="ngroep">${g.naam}</h3><div class="kaart">${g.notities.map(rij).join('')}</div>`).join('');
+  return groepen.map((g) => `<h3 class="ngroep">${g.naam}</h3><div class="${naastElkaar() ? 'nrijen' : 'kaart'}">${g.notities.map(rij).join('')}</div>`).join('');
 }
 // Het vak rechts opnieuw vullen (een nieuw element, zodat er geen oude luisteraars blijven hangen)
 function vulNotitiepaneel() {

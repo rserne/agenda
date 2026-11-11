@@ -603,7 +603,6 @@ function notitieSectieHtml(e) {
 let notZoek = '';
 let notLabels = []; // de gekozen labels: het eerste, en eventueel labels daarbinnen
 let notTeDoen = false; // de open actiepunten in plaats van de notities
-let notBijAfspraak = false; // alleen de notities bij een afspraak
 let notGekozen = null; // iPad en Mac: de notitie rechts naast de lijst
 let notNieuw = null; // een nieuwe notitie rechts die nog leeg is (en dus nog niet in de lijst staat)
 const isLabel = (a, b) => !!a && !!b && tagSleutel(a) === tagSleutel(b);
@@ -625,7 +624,7 @@ function vindbaar(n) {
   const hooi = labelSleutel([n.tekst, punten(n).map((p) => p.tekst).join(' '), n.labels.map(toonLabel).join(' '), n.afspraak ? n.afspraak.titel : ''].join(' '));
   return woorden.every((w) => hooi.includes(w));
 }
-const binnenSelectie = (n) => metLabels(n) && (!notBijAfspraak || !!n.afspraak);
+const binnenSelectie = (n) => metLabels(n);
 function zichtbareNotities() {
   return levendeNotities()
     .filter((n) => binnenSelectie(n) && vindbaar(n))
@@ -759,15 +758,15 @@ function nieuweNotitie() {
 /*  Filters in de zijbalk (iPad liggend en Mac)                        */
 /* ------------------------------------------------------------------ */
 
-// Bovenaan wat je ziet: Alle notities, Actiepunten of Bij afspraak. Daaronder de labels, de meest gebruikte eerst; een
+// Bovenaan wat je ziet: Alle notities of Actiepunten. Daaronder de labels (zonder #), de meest gebruikte eerst; een
 // tik kiest een label, nog een tik haalt het weg. Achter elke keuze staat hoeveel er overblijft als je hem kiest.
 let nfAlleLabels = false;
 const NF_MAX = 8;
 function notFiltersHtml() {
   const inTab = ST.tab === 'notities';
   const levend = levendeNotities().filter(vindbaar);
-  const soort = notTeDoen ? 'tedoen' : notBijAfspraak ? 'afspraak' : 'alle';
-  const telVan = (n, s) => (s === 'tedoen' ? openPunten(n).length : s === 'afspraak' ? Number(!!n.afspraak) : 1);
+  const soort = notTeDoen ? 'tedoen' : 'alle';
+  const telVan = (n, s) => (s === 'tedoen' ? openPunten(n).length : 1);
   const som = (s, label = null) => levend.reduce((t, n) => t + (metLabels(n, label) ? telVan(n, s) : 0), 0);
   const item = (s, icoon, tekst) => {
     const aan = inTab && soort === s;
@@ -777,9 +776,9 @@ function notFiltersHtml() {
   const zichtbaar = nfAlleLabels ? labels : labels.slice(0, NF_MAX);
   const label = ([l, a]) => {
     const aan = notLabels.some((k) => isLabel(l, k));
-    return `<button type="button" data-nf-label="${esc(l)}" class="${aan ? 'aan' : ''}" aria-pressed="${aan}"><span class="nftekst">${esc(toonLabel(l))}</span><span class="aantal">${a}</span></button>`;
+    return `<button type="button" data-nf-label="${esc(l)}" class="${aan ? 'aan' : ''}" aria-pressed="${aan}"><span class="nftekst">${esc(tagVan(l))}</span><span class="aantal">${a}</span></button>`;
   };
-  return `<nav class="zblijst zbnotities" aria-label="Notities"><h3>Notities</h3>${item('alle', I.notitie, 'Alle notities')}${item('tedoen', I.actiepunt, 'Actiepunten')}${item('afspraak', I.kalender, 'Bij afspraak')}</nav>`
+  return `<nav class="zblijst zbnotities" aria-label="Notities"><h3>Notities</h3>${item('alle', I.notitie, 'Alle notities')}${item('tedoen', I.actiepunt, 'Actiepunten')}</nav>`
     + (labels.length ? `<nav class="zblijst zblabels" aria-label="Labels"><h3>Labels</h3>${zichtbaar.map(label).join('')}
       ${labels.length > NF_MAX ? `<button type="button" class="zbmeer" data-nf-meer>${nfAlleLabels ? 'Minder labels' : `Alle labels (${labels.length})`}</button>` : ''}</nav>` : '');
 }
@@ -789,8 +788,8 @@ document.addEventListener('click', (ev) => {
   const k = ev.target.closest('#zbnotfilters button');
   if (!k) return;
   if (k.dataset.nfSoort) {
-    const td = k.dataset.nfSoort === 'tedoen', ba = k.dataset.nfSoort === 'afspraak';
-    if (td !== notTeDoen || ba !== notBijAfspraak) { notTeDoen = td; notBijAfspraak = ba; notGekozen = null; notNieuw = null; }
+    const td = k.dataset.nfSoort === 'tedoen';
+    if (td !== notTeDoen) { notTeDoen = td; notGekozen = null; notNieuw = null; }
   } else if (k.dataset.nfLabel) {
     const l = k.dataset.nfLabel;
     notLabels = notLabels.some((x) => isLabel(x, l)) ? notLabels.filter((x) => !isLabel(x, l)) : [...notLabels, l];
@@ -829,7 +828,7 @@ function tekenZoek() {
   const blokje = (tekst, sleutel) => `<button type="button" class="zoektoken" data-token="${esc(sleutel)}" aria-label="${esc(tekst)} weghalen">${esc(tekst)}${I.kruis}</button>`;
   const tokens = $('#zoektokens');
   tokens.innerHTML = blokjesInZoekveld()
-    ? (notTeDoen ? blokje('Te doen', '') : '') + (notBijAfspraak ? blokje('Bij afspraak', '§afspraak') : '') + notLabels.map((l) => blokje(toonLabel(l), l)).join('')
+    ? (notTeDoen ? blokje('Te doen', '') : '') + notLabels.map((l) => blokje(toonLabel(l), l)).join('')
     : '';
   tokens.scrollLeft = tokens.scrollWidth; // het laatste blokje in beeld; de rest door zijwaarts te vegen
   zoekVeld.placeholder = tokens.childElementCount ? '' : 'Zoeken';
@@ -857,9 +856,9 @@ zoekVeld.addEventListener('focus', toonVoorstel);
 zoekVeld.addEventListener('input', () => { notZoek = zoekVeld.value; nieuwZoeken(); toonVoorstel(); });
 zoekVeld.addEventListener('blur', () => setTimeout(() => { if (document.activeElement !== zoekVeld) voorstelEl.hidden = true; }, 150));
 zoekVeld.addEventListener('keydown', (ev) => {
-  if (ev.key === 'Backspace' && zoekVeld.selectionStart === 0 && zoekVeld.selectionEnd === 0 && blokjesInZoekveld() && (notLabels.length || notBijAfspraak || notTeDoen)) {
+  if (ev.key === 'Backspace' && zoekVeld.selectionStart === 0 && zoekVeld.selectionEnd === 0 && blokjesInZoekveld() && (notLabels.length || notTeDoen)) {
     ev.preventDefault();
-    if (notLabels.length) notLabels.pop(); else if (notBijAfspraak) notBijAfspraak = false; else notTeDoen = false;
+    if (notLabels.length) notLabels.pop(); else notTeDoen = false;
     nieuwZoeken();
   } else if (ev.key === 'Escape' || ev.key === 'Enter') { voorstelEl.hidden = true; if (ev.key === 'Enter') zoekVeld.blur(); }
 });
@@ -869,7 +868,7 @@ voorstelEl.addEventListener('mousedown', (ev) => ev.preventDefault());
 voorstelEl.addEventListener('click', (ev) => {
   const k = ev.target.closest('[data-zv]');
   if (!k) return;
-  if (k.dataset.zv === 'tedoen') { notTeDoen = true; notBijAfspraak = false; notGekozen = null; }
+  if (k.dataset.zv === 'tedoen') { notTeDoen = true; notGekozen = null; }
   else {
     notLabels.push(k.dataset.zv);
     if (hekjeWoord() !== null) { zoekVeld.value = zoekVeld.value.replace(/(?:^|\s)#\S*$/, '').trimEnd(); notZoek = zoekVeld.value; }
@@ -881,7 +880,6 @@ $('#zoektokens').addEventListener('click', (ev) => {
   if (!t) return;
   ev.preventDefault();
   if (t.dataset.token === '') notTeDoen = false;
-  else if (t.dataset.token === '§afspraak') notBijAfspraak = false;
   else notLabels = notLabels.filter((k) => !isLabel(k, t.dataset.token));
   nieuwZoeken();
 });

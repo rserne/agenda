@@ -947,8 +947,8 @@ test('notities op de Mac: filters in de zijbalk, de lijst en rechts de notitie',
   assert.equal(await p.locator('#notlijst .tdrij').count(), 1);
   assert.equal(await p.locator('#notlijst .ngroep').first().innerText(), 'Morgen');
   assert.equal(await p.locator('#notipaneel #nottitel').inputValue(), 'Eerste notitie');
-  await p.locator('#zbnotfilters [data-nf-soort="afspraak"]').click(); await wacht(300);
-  assert.equal(await p.locator('#notlijst').innerText(), 'Niets gevonden');
+  assert.equal(await p.locator('#zbnotfilters [data-nf-soort="afspraak"]').count(), 0, 'geen filter Bij afspraak');
+  assert.match(await p.locator('#zbnotfilters [data-nf-label="pilot"]').innerText(), /^pilot\s*1$/, 'labels zonder #');
   await p.locator('#zbnotfilters [data-nf-soort="alle"]').click(); await wacht(300);
   // Een notitie kiezen: rechts, niet als eigen scherm; typen loopt mee in de lijst
   await p.locator('#notlijst .notitierij', { hasText: 'Eerste notitie' }).click(); await wacht(400);
@@ -970,14 +970,13 @@ test('notities op de Mac: filters in de zijbalk, de lijst en rechts de notitie',
   await p.keyboard.type('Derde notitie'); await p.keyboard.press('Enter'); await p.keyboard.type('Met een tweede regel'); await wacht(300);
   assert.equal(await p.evaluate(() => NOTITIES.find((n) => n.tekst.startsWith('Derde')).tekst), 'Derde notitie\nMet een tweede regel');
   assert.equal(await p.locator('#notlijst .notitierij').count(), 3);
-  // Een notitie bij een afspraak: de titel van de afspraak bovenaan en in de lijst, en Bij afspraak telt hem
+  // Een notitie bij een afspraak: de titel van de afspraak bovenaan en in de lijst
   await p.evaluate(() => { const e = [...DATA.ruw.values()].find((x) => !x.allDay); const n = maakNotitie(e); wijzigNotitie(n, { tekst: 'Over de offerte' }); tekenNotities(); });
   await wacht(300);
   const titel = await p.evaluate(() => [...DATA.ruw.values()].find((x) => !x.allDay).title);
   await p.locator('#notlijst .notitierij', { hasText: titel }).click(); await wacht(500);
   assert.equal(await p.locator('#notipaneel h2.dtitel').innerText(), titel);
   assert.equal(await p.locator('#notipaneel #nottekst').inputValue(), 'Over de offerte');
-  assert.match(await p.locator('#zbnotfilters [data-nf-soort="afspraak"]').innerText(), /Bij afspraak\s*1/);
   // Labels: #woord en een spatie wordt een tag in de notitie, en het label verschijnt links
   await p.locator('#nottekst').click(); await p.keyboard.press('Control+End'); await p.keyboard.type(' #Overleg '); await wacht(200);
   assert.deepEqual(await p.locator('#notipaneel #notlabels .tag').allInnerTexts(), ['#overleg']);

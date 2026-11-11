@@ -1097,7 +1097,7 @@ label.frij:focus-within .flabel { color: var(--accent); }
   body .notilinks > .zoekbalk .icoon { width: 17px; height: 17px; }
   body .notisplit .ngroep { margin: 14px 8px 6px; font-size: 22px; line-height: 28px; letter-spacing: -0.4px; }
   body .notisplit #notlijst > .ngroep:first-child { margin-top: 0; }
-  body .notisplit .drij.notitierij { padding: 6px 16px 6px 24px; } /* zoals in Notities van iOS: een regel van ongeveer 52 punten */
+  body .notisplit .drij.notitierij { padding: 11px 16px 11px 24px; } /* een regel van ongeveer 64 punten */
   body .notisplit .drij.notitierij .t1 { font-size: 17px; line-height: 21px; }
   body .notisplit .drij.notitierij .t2 { font-size: 15px; line-height: 19px; }
   body.desktop.zbdicht .notilinks #zoektokens:not(:empty) { display: flex; }
@@ -1175,7 +1175,7 @@ label.frij:focus-within .flabel { color: var(--accent); }
   .zbweergave { display: none; }
   /* Notities: de filters in de zijbalk, smaller dan de maandkalender en zonder kopje; de werkbalk wijkt, want de titel,
      het knopje van de filters en het zoekveld staan boven de lijst. De agenda toont de filters niet. */
-  :root { --nfW: 250px; --nlW: 370px; }
+  :root { --nfW: 250px; --nlW: 420px; }
   body.notitietab { --zbW: var(--nfW); }
   body:not(.notitietab) .zbnotfilters { display: none; }
   .zbnotfilters { gap: 18px; }
@@ -1417,7 +1417,7 @@ body.notitietab .titelknop, body.insttab .titelknop { cursor: default; }
      lijst tot boven de tabbalk, de notitie tot de onderrand). De lijst in kaarten per periode, zoals op de iPhone; de
      notitie die rechts staat, is gekleurd. */
   body.desktop.notitietab main.kolom:has(.notisplit) { padding: 0; max-width: none; }
-  .notisplit { --onder: 24px; display: grid; grid-template-columns: 340px minmax(0, 1fr); height: calc(100vh - var(--kopH, 52px)); padding: 0; gap: 0; background: var(--card); }
+  .notisplit { --onder: 24px; display: grid; grid-template-columns: 380px minmax(0, 1fr); height: calc(100vh - var(--kopH, 52px)); padding: 0; gap: 0; background: var(--card); }
   .notilinks { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 14px 10px var(--onder); background: var(--card); border-right: 0.5px solid var(--separator); }
   .notkop { display: none; } /* op de Mac staat de titel in de werkbalk */
   .notisplit #notlijst { display: block; }
@@ -1425,13 +1425,13 @@ body.notitietab .titelknop, body.insttab .titelknop { cursor: default; }
   .notisplit #notlijst > .ngroep:first-child { margin-top: 2px; }
   /* Regels op de achtergrond van de kolom; een dunne lijn boven elke regel (ook onder het kopje), behalve rond de
      gekozen notitie. Die staat als afgerond vlak in de accentkleur, iets breder dan de lijnen. */
-  .notisplit .drij.notitierij { position: relative; min-height: 0; padding: 7px 14px 7px 24px; border: 0; border-radius: 14px; background: none; color: var(--label); font: inherit; }
+  .notisplit .drij.notitierij { position: relative; min-height: 0; padding: 10px 14px 10px 24px; border: 0; border-radius: 14px; background: none; color: var(--label); font: inherit; }
   .notisplit .drij.notitierij::before { content: ''; position: absolute; top: 0; left: 8px; right: 8px; border-top: 0.5px solid var(--separator); }
   .notisplit .drij.notitierij.aan::before, .notisplit .drij.notitierij.aan + .drij.notitierij::before { border-top-color: transparent; }
   .notisplit .drij.notitierij.aan { background: var(--accent); }
   @media (hover: hover) { .notisplit .drij.notitierij:hover:not(.aan) { background: var(--fill); } .notisplit .drij.notitierij:hover::before, .notisplit .drij.notitierij:hover + .drij.notitierij::before { border-top-color: transparent; } }
   .notisplit .drij.notitierij .t1 { font-size: 16px; line-height: 21px; }
-  .notisplit .drij.notitierij .t2 { font-size: 14px; line-height: 19px; }
+  .notisplit .drij.notitierij .t2 { margin-top: 2px; font-size: 14px; line-height: 19px; }
   .notisplit .drij.notitierij.aan .t1, .notisplit .drij.notitierij.aan .t2, .notisplit .drij.notitierij.aan .ndatum, .notisplit .drij.notitierij.aan .tddatum { color: var(--onAccent); }
   .notisplit .drij.notitierij.aan .t2 { opacity: 0.85; }
   .notisplit .drij.notitierij.aan .puntvink { box-shadow: inset 0 0 0 1.5px var(--onAccent); }

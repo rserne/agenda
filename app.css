@@ -1050,13 +1050,19 @@ label.frij:focus-within .flabel { color: var(--accent); }
 
   /* Detail: een dialoog midden in beeld */
   .paneel.detail.dialoog {
-    top: 50%; bottom: auto; border-radius: 16px; max-height: min(86vh, 900px); width: min(620px, calc(100% - 64px));
-    min-height: min(420px, 86vh); /* ook bij weinig inhoud een volwaardig venster */
+    top: 50%; bottom: auto; border-radius: 16px; max-height: min(86vh, 900px); width: min(720px, calc(100% - 64px));
+    min-height: min(600px, 86vh); /* ook bij weinig inhoud een volwaardig venster */
     transform: translate(-50%, -48%) scale(0.98); opacity: 0;
     transition: transform 0.2s ease, opacity 0.2s ease;
     box-shadow: 0 24px 64px rgba(0, 0, 0, 0.28), 0 0 0 0.5px rgba(0, 0, 0, 0.1);
   }
   .paneel.detail.dialoog.open { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  .paneel.detail.dialoog:not(.notitie) { max-width: 720px; }
+  /* Donker: het venster licht op tegen de verduisterde achtergrond, zoals een venster in iOS. Een iets lichtere
+     ondergrond, de kaarten erin nog een tint lichter, en een haarlijn langs de rand. */
+  @media (prefers-color-scheme: dark) {
+    .paneel.detail.dialoog { --sheetBg: #1C1C1E; --card: #2C2C2E; background: var(--sheetBg); box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5), 0 0 0 0.5px rgba(255, 255, 255, 0.14); }
+  }
   .paneel.mailtijden.dialoog { height: min(86vh, 900px); }
   .paneel.notitie.dialoog { height: min(86vh, 900px); width: min(760px, calc(100% - 64px)); } /* notitie: een groot venster om in te schrijven */
   /* iPad liggend met het toetsenbord open: het venster gaat naar boven en eindigt net boven het toetsenbord */

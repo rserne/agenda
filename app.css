@@ -1095,9 +1095,11 @@ label.frij:focus-within .flabel { color: var(--accent); }
   .notkoptitel { margin: 0; font-size: 26px; line-height: 32px; font-weight: 700; letter-spacing: -0.4px; }
   body .notilinks > .zoekbalk { height: 42px; border-radius: 21px; padding: 0 14px; }
   body .notilinks > .zoekbalk .icoon { width: 17px; height: 17px; }
-  body .notisplit .drij.notitierij { padding: 13px 16px 13px 22px; }
-  body .notisplit .drij.notitierij .t1 { font-size: 17px; line-height: 22px; }
-  body .notisplit .drij.notitierij .t2 { font-size: 15px; line-height: 20px; }
+  body .notisplit .ngroep { margin: 14px 8px 6px; font-size: 22px; line-height: 28px; letter-spacing: -0.4px; }
+  body .notisplit #notlijst > .ngroep:first-child { margin-top: 0; }
+  body .notisplit .drij.notitierij { padding: 6px 16px 6px 24px; } /* zoals in Notities van iOS: een regel van ongeveer 52 punten */
+  body .notisplit .drij.notitierij .t1 { font-size: 17px; line-height: 21px; }
+  body .notisplit .drij.notitierij .t2 { font-size: 15px; line-height: 19px; }
   body.desktop.zbdicht .notilinks #zoektokens:not(:empty) { display: flex; }
   body .notblad > .dtitel { font-size: 30px; line-height: 36px; }
   body .notblad textarea { font-size: 18px; line-height: 27px; }
@@ -1419,11 +1421,11 @@ body.notitietab .titelknop, body.insttab .titelknop { cursor: default; }
   .notilinks { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 14px 10px var(--onder); background: var(--card); border-right: 0.5px solid var(--separator); }
   .notkop { display: none; } /* op de Mac staat de titel in de werkbalk */
   .notisplit #notlijst { display: block; }
-  .ngroep { margin: 22px 8px 6px; font-size: 20px; line-height: 25px; font-weight: 700; letter-spacing: -0.3px; color: var(--label); }
+  .ngroep { margin: 14px 8px 4px; font-size: 20px; line-height: 25px; font-weight: 700; letter-spacing: -0.3px; color: var(--label); }
   .notisplit #notlijst > .ngroep:first-child { margin-top: 2px; }
   /* Regels op de achtergrond van de kolom; een dunne lijn boven elke regel (ook onder het kopje), behalve rond de
      gekozen notitie. Die staat als afgerond vlak in de accentkleur, iets breder dan de lijnen. */
-  .notisplit .drij.notitierij { position: relative; min-height: 0; padding: 11px 16px 12px 22px; border: 0; border-radius: 14px; background: none; color: var(--label); font: inherit; }
+  .notisplit .drij.notitierij { position: relative; min-height: 0; padding: 7px 14px 7px 24px; border: 0; border-radius: 14px; background: none; color: var(--label); font: inherit; }
   .notisplit .drij.notitierij::before { content: ''; position: absolute; top: 0; left: 8px; right: 8px; border-top: 0.5px solid var(--separator); }
   .notisplit .drij.notitierij.aan::before, .notisplit .drij.notitierij.aan + .drij.notitierij::before { border-top-color: transparent; }
   .notisplit .drij.notitierij.aan { background: var(--accent); }

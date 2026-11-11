@@ -456,7 +456,10 @@ function openDetail(e) {
       if (a.dataset.actie === 'sluit') p.sluit();
       if (a.dataset.actie === 'allen') { allen = !allen; teken(); maakVeegbaar(el, el.querySelector('.detailgreep'), p.sluit); }
       if (a.dataset.actie === 'notities') { meerNotities = !meerNotities; teken(); maakVeegbaar(el, el.querySelector('.detailgreep'), p.sluit); }
-      if (a.dataset.actie === 'eigennotitie') openNotitie({ e, klaar: () => { teken(); maakVeegbaar(el, el.querySelector('.detailgreep'), p.sluit); } });
+      if (a.dataset.actie === 'eigennotitie') {
+        if (isDesktop()) { p.sluit(); toonInNotities({ e }); } // iPad en Mac: in de tab Notities
+        else openNotitie({ e, klaar: () => { teken(); maakVeegbaar(el, el.querySelector('.detailgreep'), p.sluit); } });
+      }
       return;
     }
     const pers = ev.target.closest('[data-persoon]');

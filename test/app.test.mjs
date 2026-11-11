@@ -1016,6 +1016,28 @@ test('notities op de iPad: filters links in te klappen, en de tabbalk nooit over
   // Terug naar Notities: de filters staan weer open
   await p.locator('#tabbalk [data-tab="notities"]').tap(); await wacht(800);
   assert.ok(!(await p.evaluate(() => document.body.classList.contains('zbdicht'))), 'de filters open');
+  // Vanuit een afspraak: de notitie opent in de tab Notities, rechts naast de lijst, met de cursor in de tekst. Het
+  // gekozen label (pilot) gaat uit, anders zou de nieuwe notitie niet in de lijst staan.
+  const vanuitAfspraak = async () => {
+    await p.locator('#tabbalk [data-tab="agenda"]').tap(); await wacht(800);
+    await p.locator('#inhoud [data-id]').first().tap(); await wacht(700);
+    const titel = await p.locator('.paneel.detail.open h2').first().innerText();
+    await p.locator('.paneel.detail.open .rond[data-actie="eigennotitie"]:visible').tap(); await wacht(900);
+    return titel;
+  };
+  const titel = await vanuitAfspraak();
+  assert.equal(await p.evaluate(() => ST.tab), 'notities');
+  assert.equal(await p.locator('.paneel.detail.open').count(), 0, 'het afspraakvenster is dicht');
+  assert.equal(await p.locator('#notipaneel h2.dtitel').innerText(), titel);
+  assert.equal(await p.evaluate(() => document.activeElement.id), 'nottekst', 'meteen typen');
+  await p.keyboard.type('Verslag van het overleg'); await wacht(300);
+  assert.equal(await p.locator('#notlijst .notitierij.aan .t1').innerText(), titel, 'gekozen in de lijst');
+  assert.equal(await p.locator('#zbnotfilters [aria-checked="true"]').count(), 0, 'geen label meer aangevinkt');
+  // Nog een keer vanuit dezelfde afspraak: dezelfde notitie, geen tweede
+  await vanuitAfspraak();
+  assert.equal(await p.locator('#notipaneel #nottekst').inputValue(), 'Verslag van het overleg');
+  assert.equal(await p.evaluate(() => document.activeElement.id), 'nottekst', 'ook bij een bestaande notitie meteen verder typen');
+  assert.equal(await p.evaluate((t) => NOTITIES.filter((n) => !n.weg && n.afspraak && n.afspraak.titel === t).length, titel), 1);
   assert.deepEqual(p.fouten, []);
 });
 

@@ -257,12 +257,14 @@ function renderKop() {
 }
 
 function render() {
-  zoekbalkThuis(); // het zoekveld van de notities terug in de kop, voordat de inhoud opnieuw wordt opgebouwd
+  // Staat de tab Notities al in beeld, dan alleen bijwerken: zo blijft de notitie staan terwijl je typt
+  const notitab = ST.tab === 'notities' && !!$('#inhoud .notitab');
+  if (!notitab) zoekbalkThuis(); // het zoekveld van de notities terug in de kop, voordat de inhoud opnieuw wordt opgebouwd
   document.body.classList.toggle('desktop', isDesktop());
   renderKop();
   renderZijbalk();
   const main = $('#inhoud');
-  if (ST.tab === 'notities') { tekenNotities(true); ST.naarVandaag = false; return; }
+  if (ST.tab === 'notities') { tekenNotities(!notitab); ST.naarVandaag = false; return; }
   if (ST.tab === 'instellingen') {
     // Staat Instellingen al in beeld, dan alleen de agendaregel bijwerken: zo raak je niets kwijt terwijl je typt
     const scherm = $('#instscherm');

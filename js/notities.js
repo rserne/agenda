@@ -12,11 +12,13 @@
 // { id, tekst, labels: [], afspraak: { id, titel, start, end } | null, gemaakt, gewijzigd, weg }
 let NOTITIES = [];
 let notitiesGeladen = null;
+let notitiesKlaar = false;
 function laadNotities() {
   if (!notitiesGeladen) {
     notitiesGeladen = IDB.get('notities')
       .then((l) => { NOTITIES = Array.isArray(l) ? l : []; })
-      .catch(() => { NOTITIES = []; });
+      .catch(() => { NOTITIES = []; })
+      .finally(() => { notitiesKlaar = true; });
   }
   return notitiesGeladen;
 }
@@ -158,7 +160,7 @@ const labelChips = (labels) => (labels.length ? `<span class="nlabels">${labels.
 // doel: op iPad en Mac staat de notitie in de tab Notities naast de lijst, in dit vak, zonder paneel.
 // bijWijziging: wordt aangeroepen bij elke wijziging, zodat de lijst ernaast meeloopt.
 async function openNotitie({ notitie = null, e = null, klaar = null, doel = null, bijWijziging = null } = {}) {
-  await laadNotities();
+  if (!notitiesKlaar) await laadNotities(); // al geladen: meteen opbouwen, zodat je het veld binnen de tik kunt kiezen
   const n = notitie || (e && notitieBij(e.id)) || maakNotitie(e);
 
   // Drie vormen: in de tab Notities op iPad en Mac rechts naast de lijst (doel), op iPad en Mac verder als venster,
@@ -571,7 +573,10 @@ function openDagPunten(d) {
       return;
     }
     const o = ev.target.closest('[data-dagnotitie]');
-    if (o) { const n = NOTITIES.find((x) => x.id === o.dataset.dagnotitie); if (n) openNotitie({ notitie: n, klaar: teken }); }
+    if (o) {
+      const n = NOTITIES.find((x) => x.id === o.dataset.dagnotitie);
+      if (n && isDesktop()) { p.sluit(); toonInNotities({ notitie: n }); } else if (n) openNotitie({ notitie: n, klaar: teken });
+    }
   });
 }
 // Vóór de algemene klikken in de agenda (capture): het blok opent het overzicht van de dag
@@ -740,6 +745,19 @@ function tekenNotities(volledig = false) {
   const opScherm = schermTekst(vak);
   const anderePunten = n && vak.dataset.punten !== undefined && vak.dataset.punten !== JSON.stringify(punten(n));
   if (vak.dataset.id !== (n ? n.id : '') || (n && !bezig && ((opScherm !== null && opScherm !== n.tekst) || anderePunten))) vulNotitiepaneel();
+}
+// iPad en Mac: een notitie vanuit de agenda (bij een afspraak, of uit het overzicht van de dag) opent in de tab
+// Notities, rechts naast de lijst. Zo schrijf je altijd op dezelfde plek. Zoeken en filters gaan uit, zodat de notitie
+// in de lijst staat. Alles gebeurt binnen de tik, zodat iOS het toetsenbord meteen toont.
+function toonInNotities({ notitie = null, e = null } = {}) {
+  if (!notitiesKlaar) { laadNotities().then(() => toonInNotities({ notitie, e })); return; }
+  bewaarNotities({ meteen: true });
+  const n = notitie || (e && notitieBij(e.id)) || null;
+  notTeDoen = false; notLabels = []; notZoek = ''; zoekVeld.value = '';
+  if (n) { notGekozen = n.id; notNieuw = null; } else notNieuw = maakNotitie(e);
+  if (ST.tab === 'notities') tekenNotities(true); else kiesTab('notities');
+  const t = $('#notipaneel #nottekst');
+  if (t) { t.focus(); t.setSelectionRange(t.value.length, t.value.length); }
 }
 // Een nieuwe notitie: op iPad en Mac in de tab Notities meteen rechts, anders als eigen scherm of venster
 function nieuweNotitie() {

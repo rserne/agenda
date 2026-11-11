@@ -5,7 +5,7 @@ import path from 'path';
 import assert from 'assert/strict';
 import ICAL from 'ical.js';
 import { maakOmzetter } from '../js/ical.js';
-import { startServer, laadPlaywright, nieuwePagina, wacht, TELEFOON, MAC, MAP } from './hulp.mjs';
+import { startServer, laadPlaywright, nieuwePagina, wacht, TELEFOON, IPAD, MAC, MAP } from './hulp.mjs';
 import worker from '../cloudflare/worker.js';
 import { nepD1 } from './d1.mjs';
 
@@ -295,7 +295,7 @@ test('bestand op de Mac: na opnieuw openen geen voorbeeldafspraken tussen je eig
   // Opnieuw openen in de tab Notities en met contacten: de zijbalk staat er dan meteen, maar laadt geen
   // voorbeeldweken voordat de agenda uit de opslag komt
   await p.setInputFiles('#contactinvoer', path.join(MAP, 'test', 'contacten.csv')); await wacht(600);
-  await p.locator('#zijbalk [data-tab="notities"]').click(); await wacht(400);
+  await p.locator('#zijbalk [data-nf-soort="alle"]').click(); await wacht(400);
   await p.reload(); await wacht(3000);
   assert.ok(await p.evaluate(() => DATA.ruw.size) > 3);
   assert.deepEqual(await vreemd(), []);
@@ -918,7 +918,7 @@ test('actiepunten in de agenda: een balk boven de dag, vandaag ook wat te laat i
   assert.deepEqual(p.fouten, []);
 });
 
-test('notities op de Mac: zoekscherm met filters, badges en sorteren; een notitie opent als eigen scherm', async ({ browser, url }) => {
+test('notities op de Mac: filters in de zijbalk, de lijst en rechts de notitie', async ({ browser, url }) => {
   const p = await nieuwePagina(browser, MAC);
   await p.goto(url); await wacht(1000);
   await p.evaluate(async () => {
@@ -926,36 +926,33 @@ test('notities op de Mac: zoekscherm met filters, badges en sorteren; een notiti
     const a = maakNotitie(); wijzigNotitie(a, { tekst: 'Eerste notitie', labels: ['Pilot'], punten: [{ id: 'x', tekst: 'Offerte sturen', klaar: false, deadline: '2026-11-05' }] });
     const b = maakNotitie(); wijzigNotitie(b, { tekst: 'Tweede notitie', labels: ['Klant A'] });
   });
-  await p.locator('#zijbalk [data-tab="notities"]').click(); await wacht(700);
-  // Links de filters met aantallen, boven de lijst het zoekveld, het aantal en Sorteren; één lijst zonder kopjes
-  assert.equal(await p.locator('.nresultaten > #zoekbalk').count(), 1, 'het zoekveld boven de resultaten');
-  assert.equal(await p.locator('#notlijst .ngroep').count(), 0, 'één lijst');
-  assert.match(await p.locator('#nresultkop .naantal').innerText(), /^2 notities/);
-  assert.match(await p.locator('#nfilters [data-nf-soort="tedoen"]').innerText(), /Actiepunten\s*1/);
-  // Een label aanvinken: een badge boven de lijst, en Wis alles haalt alles weg
-  await p.locator('#nfilters [data-nf-label="pilot"]').click(); await wacht(200);
-  assert.deepEqual(await p.locator('#nresultkop .nbadge').allInnerTexts(), ['#pilot']);
-  assert.equal(await p.locator('#notlijst .notitierij').count(), 1);
-  await p.locator('#nresultkop [data-nf-wis]').click(); await wacht(200);
-  assert.equal(await p.locator('#nresultkop .nbadge').count(), 0);
+  await p.locator('#zijbalk [data-nf-soort="alle"]').click(); await wacht(700);
+  // In de zijbalk de filters met aantallen, boven de lijst het zoekveld, en rechts de bovenste notitie (gekleurd in de lijst)
+  assert.equal(await p.locator('.notilinks > #zoekbalk').count(), 1, 'het zoekveld boven de lijst');
+  assert.match(await p.locator('#zbnotfilters [data-nf-soort="alle"]').innerText(), /Alle notities\s*2/);
+  assert.match(await p.locator('#zbnotfilters [data-nf-soort="tedoen"]').innerText(), /Actiepunten\s*1/);
   assert.equal(await p.locator('#notlijst .notitierij').count(), 2);
-  // Een periode aanvinken laat geen lege periodes verschijnen: elk vak telt alleen zichzelf
-  const perioden = async () => (await p.locator('#nfilters [data-nf-periode]').allInnerTexts()).map((t) => t.split('\n')[0]);
-  const voor = await perioden();
-  await p.locator('#nfilters [data-nf-periode="vandaag"]').click(); await wacht(200);
-  assert.deepEqual(await perioden(), voor);
-  await p.locator('#nfilters [data-nf-periode="vandaag"]').click(); await wacht(200);
-  // Sorteren op titel
-  await p.locator('#nresultkop select').selectOption('titel'); await wacht(200);
-  assert.deepEqual(await p.locator('#notlijst .notitierij .t1').allInnerTexts(), ['Eerste notitie', 'Tweede notitie']);
-  // Actiepunten met een deadline vooruit
-  await p.locator('#nfilters [data-nf-soort="tedoen"]').click(); await wacht(200);
-  assert.match(await p.locator('#nfilters').innerText(), /Komende 7 dagen/);
+  assert.equal(await p.locator('#notlijst .notitierij.aan').count(), 1);
+  assert.equal(await p.locator('#notipaneel #nottitel').inputValue(), await p.locator('#notlijst .notitierij.aan .t1').innerText());
+  assert.equal(await p.locator('#notlijst .nlabel').count(), 0, 'geen labels in de lijst');
+  // Een label kiezen en weer weghalen; de keuze staat links, niet in het zoekveld
+  await p.locator('#zbnotfilters [data-nf-label="pilot"]').click(); await wacht(200);
+  assert.equal(await p.locator('#zbnotfilters [data-nf-label="pilot"].aan').count(), 1);
+  assert.deepEqual(await p.locator('#notlijst .notitierij .t1').allInnerTexts(), ['Eerste notitie']);
+  assert.equal(await p.locator('#zoektokens .zoektoken').count(), 0);
+  await p.locator('#zbnotfilters [data-nf-label="pilot"]').click(); await wacht(200);
+  assert.equal(await p.locator('#notlijst .notitierij').count(), 2);
+  // Actiepunten per deadline; rechts de notitie van het bovenste punt
+  await p.locator('#zbnotfilters [data-nf-soort="tedoen"]').click(); await wacht(300);
   assert.equal(await p.locator('#notlijst .tdrij').count(), 1);
-  await p.locator('#nfilters [data-nf-soort="notities"]').click(); await wacht(200);
-  // Een notitie opent als eigen scherm; typen loopt mee in de lijst
-  await p.locator('#notlijst .notitierij', { hasText: 'Eerste notitie' }).click(); await wacht(500);
-  assert.equal(await p.locator('.notpagina.open').count(), 1);
+  assert.equal(await p.locator('#notlijst .ngroep').first().innerText(), 'Morgen');
+  assert.equal(await p.locator('#notipaneel #nottitel').inputValue(), 'Eerste notitie');
+  await p.locator('#zbnotfilters [data-nf-soort="afspraak"]').click(); await wacht(300);
+  assert.equal(await p.locator('#notlijst').innerText(), 'Niets gevonden');
+  await p.locator('#zbnotfilters [data-nf-soort="alle"]').click(); await wacht(300);
+  // Een notitie kiezen: rechts, niet als eigen scherm; typen loopt mee in de lijst
+  await p.locator('#notlijst .notitierij', { hasText: 'Eerste notitie' }).click(); await wacht(400);
+  assert.equal(await p.locator('.notpagina').count(), 0, 'geen eigen scherm');
   assert.ok(await p.locator('#nottitel').evaluate((x) => parseFloat(getComputedStyle(x).fontSize)) >= 24, 'de titel groot bovenaan');
   await p.locator('#nottitel').click(); await p.keyboard.press('End');
   await p.keyboard.type(' en meer'); await wacht(200);
@@ -963,30 +960,63 @@ test('notities op de Mac: zoekscherm met filters, badges en sorteren; een notiti
   await p.evaluate(() => tekenNotities()); await wacht(100);
   await p.keyboard.type('!'); await wacht(200);
   assert.equal(await p.locator('#nottitel').inputValue(), 'Eerste notitie en meer!');
-  await p.keyboard.press('Escape'); await wacht(500);
   assert.ok((await p.locator('#notlijst .notitierij .t1').allInnerTexts()).includes('Eerste notitie en meer!'), 'de lijst loopt mee');
-  // Nieuw, Notitie: een lege notitie als eigen scherm; pas na typen staat hij in de lijst
+  // Nieuw, Notitie: rechts een lege notitie; pas na typen staat hij in de lijst
   await p.locator('#nieuwknop').click(); await wacht(300);
   assert.equal(await p.locator('.keuzemenu [role="menuitem"]').first().innerText(), 'Notitie', 'in Notities bovenaan');
   await p.locator('.keuzemenu [data-keuze="notitie"]').click(); await wacht(500);
-  assert.equal(await p.locator('.notpagina.open #nottitel').inputValue(), '');
+  assert.equal(await p.locator('#notipaneel #nottitel').inputValue(), '');
+  assert.equal(await p.locator('#notlijst .notitierij').count(), 2);
   await p.keyboard.type('Derde notitie'); await p.keyboard.press('Enter'); await p.keyboard.type('Met een tweede regel'); await wacht(300);
   assert.equal(await p.evaluate(() => NOTITIES.find((n) => n.tekst.startsWith('Derde')).tekst), 'Derde notitie\nMet een tweede regel');
-  await p.keyboard.press('Escape'); await wacht(500);
   assert.equal(await p.locator('#notlijst .notitierij').count(), 3);
-  // Een notitie bij een afspraak: de titel van de afspraak bovenaan en in de lijst
-  await p.evaluate(() => { const e = [...zichtbaar.values()].find((x) => !x.allDay); const n = maakNotitie(e); wijzigNotitie(n, { tekst: 'Over de offerte' }); tekenNotities(); });
+  // Een notitie bij een afspraak: de titel van de afspraak bovenaan en in de lijst, en Bij afspraak telt hem
+  await p.evaluate(() => { const e = [...DATA.ruw.values()].find((x) => !x.allDay); const n = maakNotitie(e); wijzigNotitie(n, { tekst: 'Over de offerte' }); tekenNotities(); });
   await wacht(300);
-  const titel = await p.evaluate(() => [...zichtbaar.values()].find((x) => !x.allDay).title);
+  const titel = await p.evaluate(() => [...DATA.ruw.values()].find((x) => !x.allDay).title);
   await p.locator('#notlijst .notitierij', { hasText: titel }).click(); await wacht(500);
-  assert.equal(await p.locator('.notpagina.open h2.dtitel').innerText(), titel);
-  assert.equal(await p.locator('.notpagina.open #nottekst').inputValue(), 'Over de offerte');
-  // Labels: #woord en een spatie wordt een tag, en het verschijnt links bij de filters
+  assert.equal(await p.locator('#notipaneel h2.dtitel').innerText(), titel);
+  assert.equal(await p.locator('#notipaneel #nottekst').inputValue(), 'Over de offerte');
+  assert.match(await p.locator('#zbnotfilters [data-nf-soort="afspraak"]').innerText(), /Bij afspraak\s*1/);
+  // Labels: #woord en een spatie wordt een tag in de notitie, en het label verschijnt links
   await p.locator('#nottekst').click(); await p.keyboard.press('Control+End'); await p.keyboard.type(' #Overleg '); await wacht(200);
-  assert.deepEqual(await p.locator('.notpagina.open #notlabels .tag').allInnerTexts(), ['#overleg']);
-  await p.keyboard.press('Escape'); await wacht(500);
-  assert.equal(await p.locator('#notlijst .nlabel').count(), 0, 'geen labels in de lijst');
-  assert.equal(await p.locator('#nfilters [data-nf-label="overleg"]').count(), 1);
+  assert.deepEqual(await p.locator('#notipaneel #notlabels .tag').allInnerTexts(), ['#overleg']);
+  assert.equal(await p.locator('#zbnotfilters [data-nf-label="overleg"]').count(), 1);
+  assert.equal(await p.locator('#notlijst .nlabel').count(), 0, 'ook nu geen labels in de lijst');
+  assert.deepEqual(p.fouten, []);
+});
+
+test('notities op de iPad: filters links in te klappen, en de tabbalk nooit over de notitie', async ({ browser, url }) => {
+  const p = await nieuwePagina(browser, IPAD);
+  await p.goto(url); await wacht(1000);
+  await p.evaluate(async () => { await laadNotities(); const a = maakNotitie(); wijzigNotitie(a, { tekst: `Notitie op de iPad\n${'Een lange regel tekst. '.repeat(300)}`, labels: ['pilot'] }); });
+  await p.locator('#tabbalk [data-tab="notities"]').tap(); await wacht(800);
+  const vak = (s) => p.locator(s).evaluate((x) => { const r = x.getBoundingClientRect(); return { l: r.left, r: r.right, t: r.top, b: r.bottom }; });
+  // Drie kolommen: de filters, de lijst en de notitie. De werkbalk wijkt: titel, knopje en zoekveld staan boven de lijst
+  assert.equal(await p.locator('#kop').isVisible(), false);
+  assert.ok((await vak('#zijbalk')).r > 200, 'de filters staan links');
+  assert.equal(await p.locator('.notkop #zijbalkknop').count(), 1, 'het knopje naast de titel');
+  assert.equal(await p.locator('.notilinks > #zoekbalk').count(), 1);
+  // De tabbalk ligt links, onder de filters en de lijst; de notitie loopt door tot de onderrand
+  const balk = await vak('#tabbalk .kolom'), notitie = await vak('#notipaneel');
+  assert.ok(balk.r <= notitie.l, `de tabbalk (tot ${balk.r}) ligt niet over de notitie (vanaf ${notitie.l})`);
+  assert.ok(notitie.b >= 1024 - 1, 'de notitie tot de onderrand');
+  // Ingeklapt: de tabbalk onder de lijst, nog steeds niet over de notitie; een gekozen label als blokje in het zoekveld
+  await p.locator('#zbnotfilters [data-nf-label="pilot"]').tap(); await wacht(300);
+  assert.equal(await p.locator('#zoektokens .zoektoken').count(), 0, 'met de filters in beeld niet in het zoekveld');
+  await p.locator('#zijbalkknop').tap(); await wacht(700);
+  const balk2 = await vak('#tabbalk .kolom'), notitie2 = await vak('#notipaneel'), lijst = await vak('.notilinks');
+  assert.ok(balk2.l >= lijst.l && balk2.r <= notitie2.l, 'de tabbalk onder de lijst');
+  assert.deepEqual(await p.locator('#zoektokens .zoektoken').allInnerTexts(), ['#pilot']);
+  // Weer open, en naar de agenda: de tabbalk staat daar op dezelfde plek, en de maandkalender is standaard dicht
+  await p.locator('#zijbalkknop').tap(); await wacht(700);
+  const x = (await vak('#tabbalk .kolom')).l;
+  await p.locator('#tabbalk [data-tab="agenda"]').tap(); await wacht(800);
+  assert.equal((await vak('#tabbalk .kolom')).l, x, 'de tabbalk verspringt niet');
+  assert.ok(await p.evaluate(() => document.body.classList.contains('zbdicht')), 'de maandkalender dicht');
+  // Terug naar Notities: de filters staan weer open
+  await p.locator('#tabbalk [data-tab="notities"]').tap(); await wacht(800);
+  assert.ok(!(await p.evaluate(() => document.body.classList.contains('zbdicht'))), 'de filters open');
   assert.deepEqual(p.fouten, []);
 });
 
@@ -1050,7 +1080,7 @@ test('synchroniseren: een notitie van de iPhone staat even later op de Mac; wijz
   await iphone.evaluate(async () => { await laadNotities(); const n = maakNotitie(); wijzigNotitie(n, { tekst: 'Gedeelde notitie', labels: ['Pilot'] }); });
   await wacht(3500);
   assert.deepEqual(await sync(mac), ['Gedeelde notitie'], 'de Mac haalt hem op');
-  await mac.locator('#zijbalk [data-tab="notities"]').click(); await wacht(500);
+  await mac.locator('#zijbalk [data-nf-soort="alle"]').click(); await wacht(500);
   assert.deepEqual(await mac.locator('#notlijst .notitierij .t1').allInnerTexts(), ['Gedeelde notitie']);
   // Op de Mac wijzigen
   await mac.evaluate(() => wijzigNotitie(levendeNotities()[0], { tekst: 'Bijgewerkt op de Mac' }));

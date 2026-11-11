@@ -239,6 +239,7 @@ function renderKop() {
   document.body.classList.toggle('agendatab', agenda);
   document.body.classList.toggle('notitietab', ST.tab === 'notities'); // geen weekkeuze, schakelaar en pijlen; wel zoeken
   document.body.classList.toggle('insttab', ST.tab === 'instellingen');
+  zetZijbalk();
   $('#titelknop').setAttribute('aria-label', agenda ? 'Kies een week' : $('#titel').textContent);
   const wk = $('#weergaveknop');
   wk.innerHTML = ST.tab === 'forecast' ? I.vooruit : I.week;

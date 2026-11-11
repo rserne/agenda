@@ -64,6 +64,15 @@ function koppelDoortrekken() {
 
 // Een tab kiezen. Agenda opent de weergave die je het laatst gebruikte: Week of Vooruitblik.
 // Tik je op Agenda terwijl je al in de agenda bent, dan ga je naar vandaag (zoals in Outlook).
+// iPad: in de agenda de maandkalender, in Notities de filters. In de agenda standaard dicht, zodat de dagkolommen de
+// breedte krijgen; bij Notities standaard open. Je keuze onthoudt de app per tab.
+const zijbalkSleutel = () => (ST.tab === 'notities' ? 'ag_notfilters' : 'ag_zijbalk2');
+function zetZijbalk() {
+  const dicht = (LS.get(zijbalkSleutel()) || (ST.tab === 'notities' ? 'open' : 'dicht')) === 'dicht';
+  document.body.classList.toggle('zbdicht', dicht);
+  $('#zijbalkknop').setAttribute('aria-expanded', String(!dicht));
+}
+
 function kiesTab(t) {
   if (t === 'agenda' && (ST.tab === 'week' || ST.tab === 'forecast')) { verschuif(0); return; }
   if (t === 'agenda') t = LS.get('ag_weergave') || 'week';
@@ -105,11 +114,13 @@ function koppel() {
       .catch(() => alert('In dit bestand vindt de app geen contacten. Kies een csv uit NK2Edit of Outlook, of een vCard (.vcf).'));
   });
   $('#datumregel').addEventListener('click', () => verschuif(0));
-  // iPad: de zijbalk in- en uitklappen; de keuze blijft bewaard
-  const zetZijbalk = (dicht) => { document.body.classList.toggle('zbdicht', dicht); $('#zijbalkknop').setAttribute('aria-expanded', String(!dicht)); };
-  // Standaard dicht: zo krijgen de dagkolommen de breedte. Je keuze onthoudt de app daarna.
-  zetZijbalk((LS.get('ag_zijbalk2') || 'dicht') === 'dicht');
-  $('#zijbalkknop').addEventListener('click', () => { const dicht = !document.body.classList.contains('zbdicht'); zetZijbalk(dicht); LS.set('ag_zijbalk2', dicht ? 'dicht' : 'open'); });
+  // iPad: de zijbalk in- en uitklappen; de keuze blijft bewaard, per tab (zie zetZijbalk)
+  zetZijbalk();
+  $('#zijbalkknop').addEventListener('click', () => {
+    LS.set(zijbalkSleutel(), document.body.classList.contains('zbdicht') ? 'open' : 'dicht');
+    zetZijbalk();
+    if (ST.tab === 'notities') tekenZoek(); // ingeklapt staan de gekozen filters als blokjes in het zoekveld
+  });
 
   // Eén luisteraar voor alle knoppen in kop, zijbalk, tabbalk en inhoud
   document.addEventListener('click', (ev) => {

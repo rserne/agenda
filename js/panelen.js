@@ -282,7 +282,7 @@ function renderZijbalk() {
   z.innerHTML = `<div class="zbbinnen">
     <div class="minikal">${maandRasterHtml(zijMaand, gekozenMaandag(), 'zijbalk')}</div>
     <nav class="zblijst zbweergave" aria-label="Agenda"><h3>Agenda</h3>${item('week', I.week, 'Week')}${item('forecast', I.vooruit, 'Vooruitblik')}</nav>
-    <nav class="zblijst zbweergave zbnotities" aria-label="Notities"><h3>Notities</h3>${item('notities', I.notitie, 'Notities')}</nav>
+    <div class="zbnotfilters" id="zbnotfilters">${notFiltersHtml()}</div>
     ${instellingenRijHtml()}
   </div>`;
   const rasterStart = startOfWeek(zijMaand);

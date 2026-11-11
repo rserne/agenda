@@ -930,6 +930,11 @@ label.frij:focus-within .flabel { color: var(--accent); }
   .zblijst .nftekst { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .zblijst .aantal { color: var(--secondary); font-size: 12px; font-weight: 400; font-variant-numeric: tabular-nums; }
   .zblijst button.zbmeer { color: var(--accent); font-weight: 500; }
+  /* Labels met een vinkvakje: het vakje toont de keuze, de regel krijgt geen kleur */
+  .zblijst button.nflabel.aan { background: none; color: var(--label); font-weight: 400; }
+  .zbkeus { flex: 0 0 18px; display: flex; align-items: center; justify-content: center; width: 18px; height: 18px; border: 1.5px solid var(--secondary); border-radius: 5px; }
+  .zbkeus.aan { border-color: var(--accent); background: var(--accent); }
+  .zblijst .zbkeus .icoon { width: 12px; height: 12px; color: var(--onAccent); }
   .zblijst .instrij { height: auto; min-height: 40px; padding-top: 5px; padding-bottom: 5px; }
   .zblijst .instrij .t1 { font-size: 13px; }
   .zblijst .instrij .t2 { font-size: 11px; line-height: 14px; }
@@ -1124,6 +1129,8 @@ label.frij:focus-within .flabel { color: var(--accent); }
   .zblijst button { height: 44px; font-size: 16px; gap: 11px; border-radius: 10px; }
   .zblijst button .icoon { width: 19px; height: 19px; }
   .zblijst .aantal { font-size: 14px; }
+  .zbkeus { flex-basis: 22px; width: 22px; height: 22px; border-radius: 6px; }
+  .zblijst .zbkeus .icoon { width: 14px; height: 14px; }
 
   .zblijst .instrij { min-height: 56px; }
   .zblijst .instrij .t1 { font-size: 16px; }

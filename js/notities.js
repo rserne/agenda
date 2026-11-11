@@ -758,8 +758,9 @@ function nieuweNotitie() {
 /*  Filters in de zijbalk (iPad liggend en Mac)                        */
 /* ------------------------------------------------------------------ */
 
-// Bovenaan wat je ziet: Alle notities of Actiepunten. Daaronder de labels (zonder #), de meest gebruikte eerst; een
-// tik kiest een label, nog een tik haalt het weg. Achter elke keuze staat hoeveel er overblijft als je hem kiest.
+// Bovenaan wat je ziet: Alle notities of Actiepunten. Daaronder de labels (zonder #), de meest gebruikte eerst, elk met
+// een vinkvakje: vink je er meer aan, dan zie je de notities met al die labels. Achter elke keuze staat hoeveel er
+// overblijft als je hem kiest.
 let nfAlleLabels = false;
 const NF_MAX = 8;
 function notFiltersHtml() {
@@ -776,7 +777,7 @@ function notFiltersHtml() {
   const zichtbaar = nfAlleLabels ? labels : labels.slice(0, NF_MAX);
   const label = ([l, a]) => {
     const aan = notLabels.some((k) => isLabel(l, k));
-    return `<button type="button" data-nf-label="${esc(l)}" class="${aan ? 'aan' : ''}" aria-pressed="${aan}"><span class="nftekst">${esc(tagVan(l))}</span><span class="aantal">${a}</span></button>`;
+    return `<button type="button" data-nf-label="${esc(l)}" class="nflabel${aan ? ' aan' : ''}" role="checkbox" aria-checked="${aan}"><span class="zbkeus${aan ? ' aan' : ''}" aria-hidden="true">${aan ? I.vink : ''}</span><span class="nftekst">${esc(tagVan(l))}</span><span class="aantal">${a}</span></button>`;
   };
   return `<nav class="zblijst zbnotities" aria-label="Notities"><h3>Notities</h3>${item('alle', I.notitie, 'Alle notities')}${item('tedoen', I.actiepunt, 'Actiepunten')}</nav>`
     + (labels.length ? `<nav class="zblijst zblabels" aria-label="Labels"><h3>Labels</h3>${zichtbaar.map(label).join('')}

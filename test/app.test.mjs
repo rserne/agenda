@@ -937,7 +937,7 @@ test('notities op de Mac: filters in de zijbalk, de lijst en rechts de notitie',
   assert.equal(await p.locator('#notlijst .nlabel').count(), 0, 'geen labels in de lijst');
   // Een label kiezen en weer weghalen; de keuze staat links, niet in het zoekveld
   await p.locator('#zbnotfilters [data-nf-label="pilot"]').click(); await wacht(200);
-  assert.equal(await p.locator('#zbnotfilters [data-nf-label="pilot"].aan').count(), 1);
+  assert.equal(await p.locator('#zbnotfilters [data-nf-label="pilot"][role="checkbox"][aria-checked="true"] .zbkeus.aan').count(), 1, 'een vinkvakje dat aan staat');
   assert.deepEqual(await p.locator('#notlijst .notitierij .t1').allInnerTexts(), ['Eerste notitie']);
   assert.equal(await p.locator('#zoektokens .zoektoken').count(), 0);
   await p.locator('#zbnotfilters [data-nf-label="pilot"]').click(); await wacht(200);

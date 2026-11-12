@@ -14,6 +14,7 @@ let notZoek = '';
 let notLabels = []; // de gekozen labels: het eerste, en eventueel labels daarbinnen
 let notTeDoen = false; // de open actiepunten in plaats van de notities
 let notGekozen = null; // iPad en Mac: de notitie rechts naast de lijst
+let notGekozenPunt = null; // bij Actiepunten: het punt waarop je tikte (een notitie kan er meer hebben)
 let notNieuw = null; // een nieuwe notitie rechts die nog leeg is (en dus nog niet in de lijst staat)
 const isLabel = (a, b) => !!a && !!b && tagSleutel(a) === tagSleutel(b);
 const naastElkaar = () => isDesktop();
@@ -73,13 +74,16 @@ function notitiesHtml() {
 function teDoenHtml() {
   const items = teDoenItems();
   if (!items.length) return `<p class="nleeg nlijstleeg">Geen open actiepunten</p>`;
+  // Gekleurd is één punt: het punt waarop je tikte, of anders het eerste punt van de notitie die rechts staat
   const gekozen = naastElkaar() ? gekozenNotitie() : null;
+  const vanGekozen = gekozen ? items.filter((i) => i.n.id === gekozen.id) : [];
+  const aanPunt = (vanGekozen.find((i) => i.p.id === notGekozenPunt) || vanGekozen[0] || {}).p;
   const rij = ({ n, p }) => {
     const [titel] = notitieKop(n);
     const bron = titel === p.tekst.trim() ? '' : titel;
     const dl = p.deadline ? `<span class="tddatum${teLaat(p.deadline) ? ' laat' : ''}">${esc(deadlineTekst(p.deadline))}</span>` : '';
-    const aan = !!gekozen && gekozen.id === n.id;
-    return `<div class="drij notitierij tdrij${aan ? ' aan' : ''}" data-notitie="${n.id}" role="button" tabindex="0">
+    const aan = !!aanPunt && aanPunt.id === p.id;
+    return `<div class="drij notitierij tdrij${aan ? ' aan' : ''}" data-notitie="${n.id}" data-punt="${p.id}" role="button" tabindex="0">
       <button type="button" class="puntvink" data-tdvink="${n.id}|${p.id}" aria-label="Afvinken"></button>
       <span class="tekst"><span class="t1">${esc(p.tekst.trim())}</span>${dl || bron ? `<span class="t2">${dl}${esc(bron)}</span>` : ''}</span></div>`;
   };
@@ -320,6 +324,6 @@ document.addEventListener('click', (ev) => {
   }
   const r = ev.target.closest('[data-notitie]');
   if (!r) return;
-  if (naastElkaar()) { bewaarNotities({ meteen: true }); notGekozen = r.dataset.notitie; notNieuw = null; tekenNotities(); }
+  if (naastElkaar()) { bewaarNotities({ meteen: true }); notGekozen = r.dataset.notitie; notGekozenPunt = r.dataset.punt || null; notNieuw = null; tekenNotities(); }
   else openNotitie({ notitie: NOTITIES.find((n) => n.id === r.dataset.notitie) });
 });

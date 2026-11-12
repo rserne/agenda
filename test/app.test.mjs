@@ -985,8 +985,15 @@ test('notities op de Mac: filters in de zijbalk, de lijst en rechts de notitie',
   assert.equal(await p.locator('#notlijst .tdrij').count(), 1);
   assert.equal(await p.locator('#notlijst .ngroep').first().innerText(), 'Morgen');
   assert.equal(await p.locator('#notipaneel #nottitel').inputValue(), 'Eerste notitie');
+  // Twee punten in dezelfde notitie: alleen het punt waarop je tikt is gekleurd
+  await p.evaluate(() => { const n = NOTITIES.find((x) => x.tekst === 'Eerste notitie'); wijzigNotitie(n, { punten: [...punten(n), { id: 'y', tekst: 'Planning delen', klaar: false, deadline: null }] }); tekenNotities(); });
+  await wacht(200);
+  assert.deepEqual(await p.locator('#notlijst .tdrij.aan .t1').allInnerTexts(), ['Offerte sturen'], 'eerst het eerste punt');
+  await p.locator('#notlijst .tdrij', { hasText: 'Planning delen' }).click(); await wacht(300);
+  assert.deepEqual(await p.locator('#notlijst .tdrij.aan .t1').allInnerTexts(), ['Planning delen']);
+  assert.equal(await p.locator('#notipaneel #nottitel').inputValue(), 'Eerste notitie', 'rechts dezelfde notitie');
   assert.equal(await p.locator('#zbnotfilters [data-nf-soort="afspraak"]').count(), 0, 'geen filter Bij afspraak');
-  assert.match(await p.locator('#zbnotfilters [data-nf-label="pilot"]').innerText(), /^pilot\s*1$/, 'labels zonder #');
+  assert.match(await p.locator('#zbnotfilters [data-nf-label="pilot"]').innerText(), /^pilot\s*2$/, 'labels zonder #, met het aantal open punten');
   await p.locator('#zbnotfilters [data-nf-soort="alle"]').click(); await wacht(300);
   // Een notitie kiezen: rechts, niet als eigen scherm; typen loopt mee in de lijst
   await p.locator('#notlijst .notitierij', { hasText: 'Eerste notitie' }).click(); await wacht(400);

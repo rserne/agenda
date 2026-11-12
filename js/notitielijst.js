@@ -166,11 +166,13 @@ function toonInNotities({ notitie = null, e = null } = {}) {
   notTeDoen = false; notLabels = []; notZoek = ''; zoekVeld.value = '';
   if (n) { notGekozen = n.id; notNieuw = null; } else notNieuw = maakNotitie(e);
   if (ST.tab === 'notities') tekenNotities(true); else kiesTab('notities');
-  const t = !n && $('#notipaneel #nottekst');
+  const t = !n && ($('#notipaneel #nottitel') || $('#notipaneel #nottekst')); // een losse notitie: de titel
   if (t) t.focus();
 }
-// Een nieuwe notitie: op iPad en Mac in de tab Notities meteen rechts, anders als eigen scherm of venster
+// Een nieuwe notitie (plusknop): op iPad en Mac in de tab Notities rechts naast de lijst, ook vanuit de agenda; op de
+// iPhone als eigen scherm
 function nieuweNotitie() {
+  if (naastElkaar() && ST.tab !== 'notities') { toonInNotities(); return; }
   if (ST.tab === 'notities' && naastElkaar()) {
     bewaarNotities({ meteen: true });
     notNieuw = maakNotitie();

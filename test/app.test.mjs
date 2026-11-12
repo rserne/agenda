@@ -1090,6 +1090,13 @@ test('notities op de iPad: filters links in te klappen, en de tabbalk nooit over
   assert.equal(await p.locator('#notipaneel #nottekst').inputValue(), 'Verslag van het overleg');
   assert.notEqual(await p.evaluate(() => document.activeElement.id), 'nottekst', 'een bestaande notitie zonder cursor');
   assert.equal(await p.locator('#notipaneel').evaluate((x) => x.scrollTop), 0, 'en bovenaan');
+  // De plusknop in de agenda: Notitie opent ook in de tab Notities, niet als venster
+  await p.locator('#tabbalk [data-tab="agenda"]').tap(); await wacht(800);
+  await p.locator('#tabbalk .plusknop').tap(); await wacht(400);
+  await p.locator('.keuzemenu [data-keuze="notitie"]').tap(); await wacht(800);
+  assert.equal(await p.evaluate(() => ST.tab), 'notities');
+  assert.equal(await p.locator('.paneel.notitie').count(), 0, 'geen venster');
+  assert.equal(await p.evaluate(() => document.activeElement.id), 'nottitel', 'de cursor in de titel');
   assert.equal(await p.evaluate((t) => NOTITIES.filter((n) => !n.weg && n.afspraak && n.afspraak.titel === t).length, titel), 1);
   assert.deepEqual(p.fouten, []);
 });

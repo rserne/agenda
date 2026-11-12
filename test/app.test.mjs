@@ -1262,6 +1262,24 @@ test('desktop: Nieuw opent een menu; met de pijltjes en Enter kies je', async ({
   assert.equal(await p.locator('.keuzemenu').count(), 0);
 });
 
+test('detail: een tik op een deelnemer opent het visitekaartje, Escape sluit alleen het kaartje', async ({ browser, url }) => {
+  const p = await nieuwePagina(browser, MAC);
+  await p.goto(url); await wacht(1000);
+  // De eerste afspraak in beeld met deelnemers
+  const nr = await p.evaluate(() => [...document.querySelectorAll('#inhoud [data-id]')].findIndex((t) => { const e = zichtbaar.get(t.dataset.id); return e && (e.attendees || []).length > 1 && t.offsetParent; }));
+  assert.ok(nr >= 0, 'een afspraak met deelnemers in beeld');
+  await p.locator('#inhoud [data-id]').nth(nr).click(); await wacht(700);
+  const rij = p.locator('.paneel.detail.open [data-persoon]').first();
+  const naam = (await rij.locator('.t1').innerText()).replace(' (jij)', '');
+  await rij.click(); await wacht(500);
+  assert.equal(await p.locator('.visite.open .naam').innerText(), naam);
+  assert.equal(await p.locator('.visite.open .avatar').count(), 1);
+  await p.keyboard.press('Escape'); await wacht(500);
+  assert.equal(await p.locator('.visite.open').count(), 0, 'het kaartje is dicht');
+  assert.equal(await p.locator('.paneel.detail.open').count(), 1, 'het detail staat er nog');
+  assert.deepEqual(p.fouten, []);
+});
+
 test('desktop: detail als venster, Escape sluit het', async ({ browser, url }) => {
   const p = await nieuwePagina(browser, MAC);
   await p.goto(url); await wacht(1000);

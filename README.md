@@ -163,7 +163,13 @@ Open de app in Safari, tik op Delen, Zet op beginscherm. Geef daarna onder Inste
 | `js/mailtijden.js` | Dagen en tijden uit de tekst van een mail lezen. |
 | `js/indeling.js` | Extern of intern, vast of ad hoc, overlap, vrije blokken en hoe vol een dag is. |
 | `js/weergave.js` | Week, Vooruitblik, de kop en het tekenen van het scherm. |
-| `js/panelen.js` | Weekkiezer, zijbalk, detailscherm, nieuwe afspraak (met aanvullen), de agendakeuze en Instellingen. |
+| `js/panelen.js` | De basis voor panelen: openen, sluiten en omlaag vegen. |
+| `js/weekkiezer.js` | De weekkiezer en de zijbalk met de maandkalender. |
+| `js/detail.js` | Het detailscherm van een afspraak en het visitekaartje van een deelnemer. |
+| `js/nieuw.js` | Nieuwe afspraak (met aanvullen). |
+| `js/instellingen.js` | Instellingen, de agenda-link en de agendakeuze. |
+| `js/mailpaneel.js` | Het paneel Tijden uit een mail. |
+| `js/menus.js` | Het keuzemenu onder de plusknop en het weergavemenu. |
 | `js/notities.js` | Eigen notities: opslag, labels, datums en het herkennen van een deadline. |
 | `js/notitieblad.js` | Een notitie bewerken: als eigen scherm, als venster of rechts naast de lijst. |
 | `js/notitieagenda.js` | De actiepunten bij een dag in de agenda en de notitie in het detailscherm van een afspraak. |
@@ -175,7 +181,7 @@ Open de app in Safari, tik op Delen, Zet op beginscherm. Geef daarna onder Inste
 | `sw.js` | De service worker: de app werkt ook zonder verbinding. |
 | `cloudflare/worker.js`, `wrangler.jsonc` | De Cloudflare Worker: de agenda doorgeven en de notities bewaren. |
 
-De bestanden in `js/` zijn gewone scripts (geen modules) en laden in een vaste volgorde, die in `index.html` staat. Ze delen dezelfde variabelen, dus een functie in `panelen.js` kan `render()` uit `weergave.js` aanroepen.
+De bestanden in `js/` zijn gewone scripts (geen modules) en laden in een vaste volgorde, die in `index.html` staat. Ze delen dezelfde variabelen, dus een functie in `detail.js` kan `render()` uit `weergave.js` aanroepen.
 
 Bovenin `app.js` staan onder meer de werktijd (`WORK_START`, `WORK_END`), de grens voor vrije blokken (`FREE_MIN`), de heatmap (`MID_HOURS`, `FULL_HOURS`), de naam van je eigen organisatie (`OWN_ORG_NAME`) en hoeveel weken de app terug en vooruit kijkt om vaste overleggen te herkennen (`LOOK_AROUND_WEEKS`).
 

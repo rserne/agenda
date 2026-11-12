@@ -885,8 +885,6 @@ label.frij:focus-within .flabel { color: var(--accent); }
 /* ------------------------------------------------------------------ */
 /*  Notities                                                           */
 /* ------------------------------------------------------------------ */
-.notitie .dkop { padding-left: 4px; }
-.paneel.notitie:not(.dialoog) { height: calc(100% - env(safe-area-inset-top, 0px) - 12px); } /* schermvullend: ruimte om te schrijven */
 /* Losse notitie: de eerste regel is de titel, groot bovenaan, net als de titel van een afspraak */
 input.nottitel { display: block; width: 100%; min-width: 0; padding: 0; border: 0; outline: none; background: transparent; color: var(--label); font-family: inherit; -webkit-appearance: none; appearance: none; }
 input.nottitel::placeholder { color: var(--secondary); opacity: 0.6; }
@@ -908,8 +906,6 @@ input.nottitel::placeholder { color: var(--secondary); opacity: 0.6; }
 #notlabelsectie { padding-top: 12px; } /* evenveel ruimte boven als onder de tags (de 12 van .notblad) */
 .notblad .tags[hidden] { display: none; }
 .notblad textarea { border-top: 0.5px solid var(--separator); padding-top: 12px; }
-.paneel.notitie .detailinhoud { display: flex; flex-direction: column; }
-.paneel.notitie .notblad { flex: 1; }
 /* iPhone: de notitie als eigen scherm dat van rechts inschuift */
 .notpagina { position: fixed; top: var(--vvtop, 0px); left: 0; right: 0; height: var(--vvh, 100%); z-index: 65; display: flex; flex-direction: column; overflow-y: auto; overscroll-behavior: contain; background: var(--card); transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.3, 1); box-shadow: -8px 0 24px rgba(0, 0, 0, 0.12); }
 .notpagina.open { transform: none; }
@@ -1003,7 +999,6 @@ html.paginaopen .shell, html.paginaopen #tabbalk, html.paginaopen #lagen { visib
 .keuzemenu.notmenu button .icoon { width: 20px; height: 20px; color: currentColor; }
 .keuzemenu.notmenu button:hover, .keuzemenu.notmenu button:focus-visible { background: var(--fill); color: var(--statusNo); }
 .keuzemenu.notmenu button:hover .icoon, .keuzemenu.notmenu button:focus-visible .icoon { color: var(--statusNo); }
-.paneel.notitie .rond[hidden] { display: none; }
 .nlijstleeg { padding: 8px 4px; }
 .groteknop.rood { color: var(--statusNo); }
 .rond.glas.aan, .kopknop.aan { color: var(--accent); } /* het overleg heeft een notitie */
@@ -1215,18 +1210,17 @@ body.notitietab .titelknop, body.insttab .titelknop { cursor: default; }
     box-shadow: 0 24px 64px rgba(0, 0, 0, 0.28), 0 0 0 0.5px rgba(0, 0, 0, 0.1);
   }
   .paneel.detail.dialoog.open { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-  .paneel.detail.dialoog:not(.notitie) { max-width: 720px; }
+  .paneel.detail.dialoog { max-width: 720px; }
   /* Donker: het venster licht op tegen de verduisterde achtergrond, zoals een venster in iOS. Een iets lichtere
      ondergrond, de kaarten erin nog een tint lichter, en een haarlijn langs de rand. */
   @media (prefers-color-scheme: dark) {
     .paneel.detail.dialoog { --sheetBg: #1C1C1E; --card: #2C2C2E; background: var(--sheetBg); box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5), 0 0 0 0.5px rgba(255, 255, 255, 0.14); }
   }
   .paneel.mailtijden.dialoog { height: min(86vh, 900px); }
-  .paneel.notitie.dialoog { height: min(86vh, 900px); width: min(760px, calc(100% - 64px)); } /* notitie: een groot venster om in te schrijven */
   /* iPad liggend met het toetsenbord open: het venster gaat naar boven en eindigt net boven het toetsenbord */
   .toetsenbord .paneel.detail.dialoog { top: calc(env(safe-area-inset-top, 0px) + 16px); transform: translate(-50%, 0); max-height: calc(100% - var(--tb, 0px) - env(safe-area-inset-top, 0px) - 32px); min-height: 0; }
   .toetsenbord .paneel.detail.dialoog.open { transform: translate(-50%, 0); }
-  .toetsenbord .paneel.mailtijden.dialoog, .toetsenbord .paneel.notitie.dialoog { height: calc(100% - var(--tb, 0px) - env(safe-area-inset-top, 0px) - 32px); }
+  .toetsenbord .paneel.mailtijden.dialoog { height: calc(100% - var(--tb, 0px) - env(safe-area-inset-top, 0px) - 32px); }
   .paneel.detail.dialoog .greep { display: none; }
   .paneel.detail.dialoog .detailnav { padding-top: 14px; }
   .paneel.detail.dialoog .dkop { padding-top: 0; }

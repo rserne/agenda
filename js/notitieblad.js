@@ -15,12 +15,11 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
   if (!notitiesKlaar) await laadNotities(); // al geladen: meteen opbouwen, zodat je het veld binnen de tik kunt kiezen
   const n = notitie || (e && notitieBij(e.id)) || maakNotitie(e);
 
-  // Drie vormen: in de tab Notities op iPad en Mac rechts naast de lijst (doel), op iPad en Mac verder als venster,
-  // en op de iPhone als eigen scherm dat van rechts inschuift (zoals Notities van iOS): omlaag vegen sluit dan niets.
-  const pagina = !doel && !isDesktop();
+  // Twee vormen: op iPad en Mac in de tab Notities rechts naast de lijst (doel), en op de iPhone en de iPad staand als
+  // eigen scherm dat van rechts inschuift (zoals Notities van iOS): omlaag vegen sluit dan niets.
   const el = doel || document.createElement('div');
   if (!doel) {
-    el.className = pagina ? 'notpagina notitie' : 'paneel detail nieuw notitie dialoog';
+    el.className = 'notpagina notitie';
     el.setAttribute('role', 'dialog');
     el.setAttribute('aria-label', 'Notitie');
   }
@@ -40,10 +39,7 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
       <textarea id="nottekst" placeholder="Notitie, #label of ! actiepunt" aria-label="Notitie"></textarea>
     </div>`;
   const menuKnop = (klasse) => `<button class="rond ${klasse}" data-actie="notmenu" aria-label="Meer" aria-haspopup="menu">${I.meer}</button>`;
-  if (doel) el.innerHTML = blad;
-  else if (pagina) el.innerHTML = `<div class="notpaginabalk"><button type="button" class="rond glas terugknop" data-actie="sluit" aria-label="Terug">${I.terug}</button>${menuKnop('glas')}</div>${blad}`;
-  else el.innerHTML = `<div class="detailgreep"><div class="greep"></div><div class="detailnav">${menuKnop('glas')}<button class="rond glas" data-actie="sluit" aria-label="Sluiten">${I.kruis}</button></div></div>
-    <div class="detailinhoud">${blad}</div>`;
+  el.innerHTML = doel ? blad : `<div class="notpaginabalk"><button type="button" class="rond glas terugknop" data-actie="sluit" aria-label="Terug">${I.terug}</button>${menuKnop('glas')}</div>${blad}`;
   const tekst = $('#nottekst', el), titelVeld = $('#nottitel', el);
   if (titelVeld) {
     const i = n.tekst.indexOf('\n');
@@ -236,7 +232,7 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
     if (p) p.sluit(); else if (klaar) klaar();
   };
   const naSluiten = () => { bewaarNotities({ meteen: true }); tekenNotities(); if (klaar) klaar(); };
-  const p = doel ? null : pagina ? openPagina(el, naSluiten) : openPaneel(el, { greepSelector: '.detailgreep', naSluiten });
+  const p = doel ? null : openPagina(el, naSluiten);
   el.addEventListener('click', (ev) => {
     const t = ev.target;
     if (t.closest('[data-actie="sluit"]') && p) { p.sluit(); return; }
@@ -264,7 +260,7 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
     if (gekozenTag >= 0) { gekozenTag = -1; tekenLabels(); } // ergens anders tikken: de tag is niet meer gekozen
   });
   const eerst = titelVeld || tekst;
-  if (!n.tekst && pagina) setTimeout(() => eerst.focus(), 350);
+  if (!n.tekst && !doel) setTimeout(() => eerst.focus(), 350);
   else if (!n.tekst) eerst.focus();
 }
 

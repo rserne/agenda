@@ -1088,7 +1088,8 @@ test('notities op de iPad: filters links in te klappen, en de tabbalk nooit over
   // Nog een keer vanuit dezelfde afspraak: dezelfde notitie, geen tweede
   await vanuitAfspraak();
   assert.equal(await p.locator('#notipaneel #nottekst').inputValue(), 'Verslag van het overleg');
-  assert.equal(await p.evaluate(() => document.activeElement.id), 'nottekst', 'ook bij een bestaande notitie meteen verder typen');
+  assert.notEqual(await p.evaluate(() => document.activeElement.id), 'nottekst', 'een bestaande notitie zonder cursor');
+  assert.equal(await p.locator('#notipaneel').evaluate((x) => x.scrollTop), 0, 'en bovenaan');
   assert.equal(await p.evaluate((t) => NOTITIES.filter((n) => !n.weg && n.afspraak && n.afspraak.titel === t).length, titel), 1);
   assert.deepEqual(p.fouten, []);
 });

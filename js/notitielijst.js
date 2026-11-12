@@ -157,7 +157,8 @@ function tekenNotities(volledig = false) {
 }
 // iPad en Mac: een notitie vanuit de agenda (bij een afspraak, of uit het overzicht van de dag) opent in de tab
 // Notities, rechts naast de lijst. Zo schrijf je altijd op dezelfde plek. Zoeken en filters gaan uit, zodat de notitie
-// in de lijst staat. Alles gebeurt binnen de tik, zodat iOS het toetsenbord meteen toont.
+// in de lijst staat. Een nieuwe notitie krijgt meteen de cursor (binnen de tik, zodat iOS het toetsenbord toont); een
+// bestaande opent bovenaan, zonder cursor, zodat je bij een lange notitie niet onderaan belandt.
 function toonInNotities({ notitie = null, e = null } = {}) {
   if (!notitiesKlaar) { laadNotities().then(() => toonInNotities({ notitie, e })); return; }
   bewaarNotities({ meteen: true });
@@ -165,8 +166,8 @@ function toonInNotities({ notitie = null, e = null } = {}) {
   notTeDoen = false; notLabels = []; notZoek = ''; zoekVeld.value = '';
   if (n) { notGekozen = n.id; notNieuw = null; } else notNieuw = maakNotitie(e);
   if (ST.tab === 'notities') tekenNotities(true); else kiesTab('notities');
-  const t = $('#notipaneel #nottekst');
-  if (t) { t.focus(); t.setSelectionRange(t.value.length, t.value.length); }
+  const t = !n && $('#notipaneel #nottekst');
+  if (t) t.focus();
 }
 // Een nieuwe notitie: op iPad en Mac in de tab Notities meteen rechts, anders als eigen scherm of venster
 function nieuweNotitie() {

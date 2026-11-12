@@ -150,6 +150,56 @@ function deadlineTekst(d) {
   return `${dag.getDate()} ${MONTHS_SHORT[dag.getMonth()]}${dag.getFullYear() !== vandaag().getFullYear() ? ` ${dag.getFullYear()}` : ''}`;
 }
 const teLaat = (d) => !!d && deadlineDag(d) < vandaag();
+
+// Een deadline aan het eind van een actiepunt, zoals "! Offerte sturen eind volgende week": geeft de tekst zonder de
+// deadline en de deadline ('jjjj-mm-dd'), of null. Alleen werkdagen: valt een einde, een midden of een vaste datum in het
+// weekend, dan de vrijdag ervoor; vandaag, morgen of "over 3 dagen" in het weekend wordt de maandag erna. Een losse
+// maand ("over maart") telt niet: dan alleen met begin, medio of eind ervoor.
+function leesDeadline(tekst, ref = vandaag()) {
+  const nu = startOfDay(ref);
+  const weekend = (d) => d.getDay() === 0 || d.getDay() === 6;
+  const terug = (d) => { while (weekend(d)) d = addDays(d, -1); return d; };
+  const vooruit = (d) => { while (weekend(d)) d = addDays(d, 1); return d; };
+  const maandag = (d) => addDays(d, -((d.getDay() + 6) % 7));
+  const maandNr = (w) => MT_MAANDEN[w.toLowerCase().replace('.', '')];
+  const jaarVan = (m, jaar) => (jaar ? (+jaar < 100 ? 2000 + +jaar : +jaar) : nu.getFullYear() + (m < nu.getMonth() ? 1 : 0));
+  // Een vaste datum zonder jaar die al voorbij is, valt in het jaar erna (in december over januari)
+  const datum = (dag, m, jaar) => { let d = new Date(jaarVan(m, jaar), m, +dag); if (!jaar && d < addDays(nu, -7)) d = new Date(d.getFullYear() + 1, m, +dag); return terug(d); };
+  const deelVan = (deel, begin, midden, eind) => (/^begin/i.test(deel || '') ? begin() : /^(medio|half|halverwege|midden)/i.test(deel || '') ? midden() : eind());
+  const inMaand = (deel, j, m) => deelVan(deel, () => vooruit(new Date(j, m, 1)), () => terug(new Date(j, m, 15)), () => terug(new Date(j, m + 1, 0)));
+  const inWeek = (deel, ma) => deelVan(deel, () => ma, () => addDays(ma, 2), () => addDays(ma, 4));
+  const WERKDAGEN = { maandag: 1, dinsdag: 2, woensdag: 3, donderdag: 4, vrijdag: 5 };
+  const TAL = { een: 1, twee: 2, drie: 3, vier: 4, vijf: 5, zes: 6 };
+  const DEEL = '(begin|eind|einde|medio|half|halverwege|midden)(?:\\s+van)?';
+  const DAG = '(maandag|dinsdag|woensdag|donderdag|vrijdag)';
+  const regels = [
+    [`(\\d{1,2})[-/](\\d{1,2})(?:[-/](\\d{2}|\\d{4}))?`, (m) => datum(m[1], +m[2] - 1, m[3])],
+    [`(\\d{1,2})\\s+${MT_MAAND}(?:\\s+(\\d{4}))?`, (m) => datum(m[1], maandNr(m[2]), m[3])],
+    [`${DEEL}\\s+${MT_MAAND}(?:\\s+(\\d{4}))?`, (m) => inMaand(m[1], jaarVan(maandNr(m[2]), m[3]), maandNr(m[2]))],
+    [`(?:${DEEL}\\s+)?(?:de|deze)\\s+maand`, (m) => inMaand(m[1], nu.getFullYear(), nu.getMonth())],
+    [`(?:${DEEL}\\s+)?(?:volgende|komende)\\s+maand`, (m) => inMaand(m[1], nu.getFullYear(), nu.getMonth() + 1)],
+    [`(?:volgende|komende)\\s+week\\s+${DAG}|${DAG}\\s+(?:volgende|komende)\\s+week`, (m) => addDays(maandag(nu), 7 + WERKDAGEN[(m[1] || m[2]).toLowerCase()] - 1)],
+    [`(?:${DEEL}\\s+)?(deze|volgende|komende)\\s+week`, (m) => inWeek(m[1], addDays(maandag(nu), /deze/i.test(m[2]) && !weekend(nu) ? 0 : 7))],
+    [`over\\s+(\\d{1,2}|een|twee|drie|vier|vijf|zes)\\s+(werkdagen|werkdag|dagen|dag|weken|week)`, (m) => {
+      const n = TAL[m[1].toLowerCase()] || +m[1];
+      if (/^werk/i.test(m[2])) { let d = nu; for (let i = 0; i < n; i++) d = vooruit(addDays(d, 1)); return d; }
+      return vooruit(addDays(nu, /^we/i.test(m[2]) ? 7 * n : n));
+    }],
+    [DAG, (m) => addDays(nu, (WERKDAGEN[m[1].toLowerCase()] - nu.getDay() + 7) % 7)],
+    ['overmorgen', () => vooruit(addDays(nu, 2))],
+    ['morgen', () => vooruit(addDays(nu, 1))],
+    ['vandaag', () => vooruit(nu)],
+  ];
+  for (const [patroon, maak] of regels) {
+    const m = tekst.match(new RegExp(`(?:^|\\s)(?:(?:voor|vóór|uiterlijk|op|per|tegen|deadline:?)\\s+)?(?:${patroon})\\s*[.!]?\\s*$`, 'iu'));
+    const rest = m ? tekst.slice(0, m.index).trim() : '';
+    if (!m || !rest) continue; // alleen een datum, zonder actiepunt ervoor: dan is het geen deadline
+    const d = maak(m);
+    if (!(d instanceof Date) || isNaN(d)) continue;
+    return { tekst: rest, deadline: ymd(d) };
+  }
+  return null;
+}
 const labelChips = (labels) => (labels.length ? `<span class="nlabels">${labels.map((l) => `<span class="nlabel">${esc(toonLabel(l))}</span>`).join('')}</span>` : '');
 
 /* ------------------------------------------------------------------ */
@@ -262,7 +312,8 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
   if (typeof ResizeObserver === 'function') { let breedte = 0; new ResizeObserver(() => { if (tekst.clientWidth !== breedte) { breedte = tekst.clientWidth; groei(); } }).observe(tekst); }
 
   // Actiepunten: een rondje om af te vinken, de tekst, en een deadline. Enter maakt een nieuw punt eronder;
-  // Backspace in een leeg punt haalt het weg. Een regel in de tekst die begint met ! wordt bij Enter een actiepunt.
+  // Backspace in een leeg punt haalt het weg. Een regel in de tekst die begint met ! wordt bij Enter een actiepunt;
+  // een deadline aan het eind ("eind maart", "vrijdag", "12-3") wordt de deadline van het punt.
   const puntenEl = $('#notpunten', el);
   const tekenPunten = (focusId = null) => {
     puntenEl.innerHTML = punten(n).map((p) => `<div class="punt${p.klaar ? ' klaar' : ''}" data-punt="${p.id}">
@@ -285,8 +336,8 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
     if (was !== NOTITIES.includes(n)) tekenLabels();
     if (bijWijziging) bijWijziging();
   };
-  const voegPunt = (tekstPunt = '', na = null) => {
-    const p = maakPunt(tekstPunt), lijst = [...punten(n)];
+  const voegPunt = (tekstPunt = '', na = null, deadline = null) => {
+    const p = { ...maakPunt(tekstPunt), deadline }, lijst = [...punten(n)];
     const i = na ? lijst.findIndex((x) => x.id === na) : -1;
     lijst.splice(i >= 0 ? i + 1 : lijst.length, 0, p);
     zetPunten(lijst, tekstPunt ? null : p.id);
@@ -328,7 +379,14 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
   puntenEl.addEventListener('keydown', (ev) => {
     const p = ev.target.classList.contains('punttekst') && puntVan(ev.target);
     if (!p || ev.isComposing) return;
-    if (ev.key === 'Enter') { ev.preventDefault(); if (p.tekst.trim()) voegPunt('', p.id); else tekst.focus(); }
+    if (ev.key === 'Enter') {
+      ev.preventDefault();
+      if (!p.tekst.trim()) { tekst.focus(); return; }
+      // Een deadline aan het eind ("eind maart") wordt de deadline van het punt
+      const dl = !p.deadline && leesDeadline(p.tekst);
+      if (dl) Object.assign(p, dl);
+      voegPunt('', p.id);
+    }
     else if (ev.key === 'Backspace' && !ev.target.value) {
       ev.preventDefault();
       const lijst = punten(n), i = lijst.indexOf(p);
@@ -346,7 +404,9 @@ async function openNotitie({ notitie = null, e = null, klaar = null, doel = null
     tekst.setSelectionRange(begin, begin);
     bijTypen();
     [...m[1].matchAll(/(?:^|\s)#(\p{L}[\p{L}\p{N}_-]*)/gu)].forEach((x) => voegTag(x[1])); // labels in het punt
-    voegPunt(m[1].replace(/(^|\s)#\p{L}[\p{L}\p{N}_-]*/gu, '$1').replace(/\s+/g, ' ').trim());
+    const schoon = m[1].replace(/(^|\s)#\p{L}[\p{L}\p{N}_-]*/gu, '$1').replace(/\s+/g, ' ').trim();
+    const dl = leesDeadline(schoon); // "! Offerte sturen eind volgende week": de deadline gaat in het datumveld
+    voegPunt(dl ? dl.tekst : schoon, null, dl ? dl.deadline : null);
     tekst.focus();
   });
   if (titelVeld) {

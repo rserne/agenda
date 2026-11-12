@@ -548,6 +548,44 @@ Maandag 9 November tussen 13:00 en 16:00
 Woensdag 11 November tussen 15:00 en 17:00
 Donderdag 12 November van 11:00 en 12:00 of ergens tussen 14:00 en 17:00`;
 
+test('actiepunten: een deadline aan het eind van het punt, alleen op werkdagen', async ({ browser, url }) => {
+  const p = await nieuwePagina(browser, TELEFOON);
+  await p.goto(url); await wacht(600);
+  // Vanaf donderdag 12 november 2026 (en vrijdag 13 en zaterdag 14 voor het weekend)
+  const lees = (tekst, dag = 12) => p.evaluate(([t, d]) => leesDeadline(t, new Date(2026, 10, d)), [tekst, dag]);
+  const gevallen = [
+    ['Offerte sturen eind volgende week', 'Offerte sturen', '2026-11-20'],
+    ['Planning delen deze week', 'Planning delen', '2026-11-13'],
+    ['Budget begin maart', 'Budget', '2027-03-01'],
+    ['Budget medio maart', 'Budget', '2027-03-15'],
+    ['Budget eind maart', 'Budget', '2027-03-31'],
+    ['Rapport uiterlijk eind januari', 'Rapport', '2027-01-29'], // 31 januari is een zondag
+    ['Verslag 12 maart', 'Verslag', '2027-03-12'],
+    ['Verslag 12-3-2027', 'Verslag', '2027-03-12'],
+    ['Verslag 14-11', 'Verslag', '2026-11-13'], // zaterdag: de vrijdag ervoor
+    ['Bellen morgen', 'Bellen', '2026-11-13'],
+    ['Bellen dinsdag', 'Bellen', '2026-11-17'],
+    ['Bespreken voor vrijdag', 'Bespreken', '2026-11-13'],
+    ['Agenda maken begin volgende week', 'Agenda maken', '2026-11-16'],
+    ['Agenda maken medio volgende week', 'Agenda maken', '2026-11-18'],
+    ['Facturen eind van de maand', 'Facturen', '2026-11-30'],
+    ['Terugkoppelen over 3 werkdagen', 'Terugkoppelen', '2026-11-17'],
+  ];
+  for (const [invoer, tekst, deadline] of gevallen) assert.deepEqual(await lees(invoer), { tekst, deadline }, invoer);
+  assert.deepEqual(await lees('Bellen morgen', 13), { tekst: 'Bellen', deadline: '2026-11-16' }, 'morgen op vrijdag: maandag');
+  assert.deepEqual(await lees('Klaar deze week', 14), { tekst: 'Klaar', deadline: '2026-11-20' }, 'deze week in het weekend: de week erna');
+  for (const geen of ['Bel Jan over maart', 'eind maart', 'Release 2.0 plannen', 'Begin maart bespreken']) assert.equal(await lees(geen), null, geen);
+  // In een notitie: ! met een deadline aan het eind wordt een punt met die deadline
+  await p.locator('#tabbalk .plusknop').tap(); await wacht(400);
+  await p.locator('.keuzemenu [data-keuze="notitie"]').tap(); await wacht(800);
+  await p.locator('#nottekst').tap();
+  await p.keyboard.type('! Offerte sturen 12-3-2027'); await p.keyboard.press('Enter'); await wacht(300);
+  assert.equal(await p.locator('.punt .punttekst').first().inputValue(), 'Offerte sturen');
+  assert.equal(await p.evaluate(() => NOTITIES[NOTITIES.length - 1].punten[0].deadline), '2027-03-12');
+  assert.equal(await p.locator('.punt .puntdatum').first().innerText(), '12 mrt 2027');
+  assert.deepEqual(p.fouten, []);
+});
+
 test('mail: de lezer haalt dagen, tijden, duur en online uit gewone zinnen', async ({ browser, url }) => {
   const p = await nieuwePagina(browser, TELEFOON);
   await p.goto(url); await wacht(600);

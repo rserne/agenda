@@ -164,7 +164,10 @@ Open de app in Safari, tik op Delen, Zet op beginscherm. Geef daarna onder Inste
 | `js/indeling.js` | Extern of intern, vast of ad hoc, overlap, vrije blokken en hoe vol een dag is. |
 | `js/weergave.js` | Week, Vooruitblik, de kop en het tekenen van het scherm. |
 | `js/panelen.js` | Weekkiezer, zijbalk, detailscherm, nieuwe afspraak (met aanvullen), de agendakeuze en Instellingen. |
-| `js/notities.js` | Eigen notities: opslag, labels, het notitiescherm en het overzicht met zoeken. |
+| `js/notities.js` | Eigen notities: opslag, labels, datums en het herkennen van een deadline. |
+| `js/notitieblad.js` | Een notitie bewerken: als eigen scherm, als venster of rechts naast de lijst. |
+| `js/notitieagenda.js` | De actiepunten bij een dag in de agenda en de notitie in het detailscherm van een afspraak. |
+| `js/notitielijst.js` | De tab Notities: de lijst, de filters in de zijbalk en het zoeken. |
 | `js/synchroniseren.js` | Notities gelijk houden via de Cloudflare Worker, en de regel onder Instellingen. |
 | `js/bediening.js` | Tikken, vegen en doortrekken, het opstarten, de versiecontrole en de service worker. |
 | `js/ical.js`, `js/verrijk.js`, `js/ics-werker.js` | Het inlezen van een .ics-bestand (ook in de Web Worker). |

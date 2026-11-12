@@ -1051,6 +1051,13 @@ test('notities op de iPad: filters links in te klappen, en de tabbalk nooit over
   await p.locator('#tabbalk [data-tab="agenda"]').tap(); await wacht(800);
   assert.equal((await vak('#tabbalk .kolom')).l, x, 'de tabbalk verspringt niet');
   assert.ok(await p.evaluate(() => document.body.classList.contains('zbdicht')), 'de maandkalender dicht');
+  // Instellingen: geen zijbalk en geen knopje, ook niet als de maandkalender in de agenda open staat
+  await p.locator('#zijbalkknop').tap(); await wacht(500);
+  await p.locator('#tabbalk [data-tab="instellingen"]').tap(); await wacht(800);
+  assert.equal(await p.locator('#zijbalkknop').isVisible(), false, 'geen knopje');
+  assert.ok((await vak('#zijbalk')).r <= 1, 'geen zijbalk');
+  await p.locator('#tabbalk [data-tab="agenda"]').tap(); await wacht(800);
+  await p.locator('#zijbalkknop').tap(); await wacht(500); // de maandkalender weer dicht
   // Terug naar Notities: de filters staan weer open
   await p.locator('#tabbalk [data-tab="notities"]').tap(); await wacht(800);
   assert.ok(!(await p.evaluate(() => document.body.classList.contains('zbdicht'))), 'de filters open');

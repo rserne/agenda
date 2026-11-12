@@ -1203,6 +1203,7 @@ label.frij:focus-within .flabel { color: var(--accent); }
   .zbagenda button { margin: 0 -6px; }
 
   .zijbalkknop { display: flex; order: 0; width: 40px; height: 40px; border-radius: 20px; align-items: center; justify-content: center; color: var(--accent); flex-shrink: 0; margin-left: -6px; }
+  body.insttab .zijbalkknop { display: none; } /* Instellingen heeft geen zijbalk */
   .zijbalkknop .icoon { width: 22px; height: 22px; }
   .zijbalkknop:active { background: var(--fill); }
 

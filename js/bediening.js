@@ -64,11 +64,11 @@ function koppelDoortrekken() {
 
 // Een tab kiezen. Agenda opent de weergave die je het laatst gebruikte: Week of Vooruitblik.
 // Tik je op Agenda terwijl je al in de agenda bent, dan ga je naar vandaag (zoals in Outlook).
-// iPad: in de agenda de maandkalender, in Notities de filters. In de agenda standaard dicht, zodat de dagkolommen de
-// breedte krijgen; bij Notities standaard open. Je keuze onthoudt de app per tab.
+// iPad: in de agenda de maandkalender, in Notities de filters, in Instellingen niets. In de agenda standaard dicht, zodat
+// de dagkolommen de breedte krijgen; bij Notities standaard open. Je keuze onthoudt de app per tab.
 const zijbalkSleutel = () => (ST.tab === 'notities' ? 'ag_notfilters' : 'ag_zijbalk2');
 function zetZijbalk() {
-  const dicht = (LS.get(zijbalkSleutel()) || (ST.tab === 'notities' ? 'open' : 'dicht')) === 'dicht';
+  const dicht = ST.tab === 'instellingen' || (LS.get(zijbalkSleutel()) || (ST.tab === 'notities' ? 'open' : 'dicht')) === 'dicht';
   document.body.classList.toggle('zbdicht', dicht);
   $('#zijbalkknop').setAttribute('aria-expanded', String(!dicht));
 }

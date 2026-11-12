@@ -1107,7 +1107,7 @@ label.frij:focus-within .flabel { color: var(--accent); }
   body .notilinks > .zoekbalk { height: 42px; border-radius: 21px; padding: 0 14px; }
   body .notilinks > .zoekbalk .icoon { width: 17px; height: 17px; }
   body .notisplit .ngroep { margin: 14px 8px 6px; font-size: 22px; line-height: 28px; letter-spacing: -0.4px; }
-  body .notisplit #notlijst > .ngroep:first-child { margin-top: 0; }
+  body .notisplit #notlijst > .ngroep:first-child { margin-top: 10px; }
   body .notisplit .drij.notitierij { padding: 11px 16px 11px 24px; } /* een regel van ongeveer 64 punten */
   body .notisplit .drij.notitierij .t1 { font-size: 17px; line-height: 21px; }
   body .notisplit .drij.notitierij .t2 { font-size: 15px; line-height: 19px; }
@@ -1435,7 +1435,7 @@ body.notitietab .titelknop, body.insttab .titelknop { cursor: default; }
   .notkop { display: none; } /* op de Mac staat de titel in de werkbalk */
   .notisplit #notlijst { display: block; }
   .ngroep { margin: 14px 8px 4px; font-size: 20px; line-height: 25px; font-weight: 700; letter-spacing: -0.3px; color: var(--label); }
-  .notisplit #notlijst > .ngroep:first-child { margin-top: 2px; }
+  .notisplit #notlijst > .ngroep:first-child { margin-top: 8px; } /* wat lucht onder het zoekveld */
   /* Regels op de achtergrond van de kolom; een dunne lijn boven elke regel (ook onder het kopje), behalve rond de
      gekozen notitie. Die staat als afgerond vlak in de accentkleur, iets breder dan de lijnen. */
   .notisplit .drij.notitierij { position: relative; min-height: 0; padding: 10px 14px 10px 24px; border: 0; border-radius: 14px; background: none; color: var(--label); font: inherit; }

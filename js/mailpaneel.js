@@ -103,12 +103,11 @@ function mtAntwoord(tijden, duur) {
   };
 }
 
-function openMailTijden() {
-  const el = document.createElement('div');
-  el.className = 'paneel detail nieuw mailtijden' + (isDesktop() ? ' dialoog' : '');
-  el.setAttribute('role', 'dialog');
-  el.setAttribute('aria-label', 'Tijden uit een mail');
-  el.innerHTML = `<div class="detailgreep"><div class="greep"></div>
+// Het paneel in delen: de HTML (mail...Html), het tijdvak met de gekozen tijden erbij (mailVak), en in openMailTijden
+// de toestand (de gelezen tekst, de duur, de gekozen tijden), het tekenen en de tikken.
+
+function mailFormHtml() {
+  return `<div class="detailgreep"><div class="greep"></div>
       <div class="detailnav"><button class="rond glas" data-actie="sluit" aria-label="Sluiten">${I.kruis}</button></div></div>
     <div class="detailinhoud">
       <div class="dkop"><h2 class="dtitel">Tijden uit een mail</h2></div>
@@ -128,6 +127,52 @@ function openMailTijden() {
         <button class="tekstknop" id="minplannen">Inplannen</button>
       </div>
     </div>`;
+}
+
+// Een tijdvak uit de mail naast de agenda (toetsVak), met de gekozen tijden erbij: een gekozen tijd blijft staan zolang
+// hij in het tijdvak valt, ook als hij bij deze duur geen voorstel is
+function mailVak(lijst, o, duur, gekozenTijden) {
+  const u = toetsVak(lijst, o, duur), ms = duur * 6e4;
+  for (const t of gekozenTijden) {
+    if (t >= u.van && t + ms <= Math.max(u.tot, u.van + ms) && !u.tijden.some((x) => x.t === t)) u.tijden.push(metOverlap(t, ms, u.vrij, u.botst));
+  }
+  u.tijden.sort((x, y) => x.t - y.t);
+  return u;
+}
+
+// Onder de tijden van het tijdvak: Al voorbij, of elk overleg dat in het tijdvak valt op een eigen regel. De kleuren van
+// de tijden zeggen de rest.
+function mailStatusHtml(u) {
+  if (u.status === 'voorbij') return '<span class="mstatus grijs">Al voorbij</span>';
+  return (u.botst.length ? `<span class="mstatus sub">Overlap met</span><ul class="moverlap">${u.botst.map((e) => `<li><span class="num">${hhmm(e.start)} – ${hhmm(e.end)}</span><span>${esc(e.title || 'Een afspraak')}</span></li>`).join('')}</ul>` : '');
+}
+
+// Een begintijd om te kiezen: vrij, met overlap (botst) of helemaal bezet (vol)
+function mailChipHtml(x, aan) {
+  const uur = hhmm(new Date(x.t));
+  const uitleg = x.vol ? `helemaal bezet: ${esc(overlapZin(x.botst).replace(/^Overlap met /, ''))}` : x.botst.length ? esc(overlapZin(x.botst).toLowerCase()) : 'vrij';
+  return `<button class="chip num${aan ? ' aan' : ''}${x.vol ? ' vol' : x.botst.length ? ' botst' : ' vrij'}" data-t="${x.t}" aria-pressed="${aan}" aria-label="${uur}, ${uitleg}">${uur}</button>`;
+}
+
+// Eén tijdvak: de tijden uit de mail, de status, het tijdlijntje en de begintijden
+function mailVakHtml(o, u, lijst, gekozenTijden, duur) {
+  const klok = (m) => `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
+  return `<div class="frij kolom mvak"><span class="mkop"><span class="t1 num">${o.heleDag ? 'Hele dag' : `${klok(o.van)} – ${klok(o.tot)}`}</span>${mailStatusHtml(u)}</span>
+          ${tijdlijn(lijst, o, gekozenTijden.filter((t) => t >= u.van && t < u.tot), duur * 6e4)}
+          ${u.tijden.length ? `<div class="chips">${u.tijden.map((x) => mailChipHtml(x, gekozenTijden.includes(x.t))).join('')}</div>` : ''}</div>`;
+}
+
+// Een dag met zijn tijdvakken, en eronder de waarschuwing als weekdag en datum in de mail niet bij elkaar passen
+function mailDagHtml(d, vakkenHtml, waarschuwing) {
+  return `<section class="instsectie"><h3>${esc(cap(`${DAYS_LONG[d.getDay()]} ${d.getDate()} ${MONTHS_LONG[d.getMonth()]}`))}</h3><div class="formkaart">${vakkenHtml}</div>${waarschuwing ? `<p class="insttoelichting fout">${esc(cap(waarschuwing))}. Klopt de datum?</p>` : ''}</section>`;
+}
+
+function openMailTijden() {
+  const el = document.createElement('div');
+  el.className = 'paneel detail nieuw mailtijden' + (isDesktop() ? ' dialoog' : '');
+  el.setAttribute('role', 'dialog');
+  el.setAttribute('aria-label', 'Tijden uit een mail');
+  el.innerHTML = mailFormHtml();
   const p = openPaneel(el, { greepSelector: '.detailgreep' });
   const veld = $('#mtekst', el);
   veld.value = MAILTEKST;
@@ -146,12 +191,7 @@ function openMailTijden() {
     // Zo komt het antwoord in je mail (alleen de tijden, nooit een reden)
     $('#msamen', el).innerHTML = n ? `<div class="mantwoord">${mtAntwoord(gekozen.keys(), duur).html}</div>` : `<div class="leeg">${gelezen.opties.length ? 'Tik op een tijd om hem te kiezen' : 'Nog geen tijden'}</div>`;
   };
-  // Eerst hoe het ervoor staat (in kleur), daaronder altijd waarmee het overlapt
-  // De kleuren van de tijden zeggen genoeg; eronder alleen elk overleg dat in het tijdvak valt, op een eigen regel
-  const statusTekst = (u) => {
-    if (u.status === 'voorbij') return '<span class="mstatus grijs">Al voorbij</span>';
-    return (u.botst.length ? `<span class="mstatus sub">Overlap met</span><ul class="moverlap">${u.botst.map((e) => `<li><span class="num">${hhmm(e.start)} – ${hhmm(e.end)}</span><span>${esc(e.title || 'Een afspraak')}</span></li>`).join('')}</ul>` : '');
-  };
+  // De tijdvakken per dag, elk naast de agenda van die dag
   const teken = async () => {
     const mijn = ++beurt;
     const uit = $('#muitslag', el);
@@ -160,36 +200,23 @@ function openMailTijden() {
     for (const o of gelezen.opties) { const k = ymd(o.dag); if (!per.has(k)) per.set(k, []); per.get(k).push(o); }
     const lijsten = new Map();
     for (const k of per.keys()) lijsten.set(k, await afsprakenOp(parseYmd(k)));
-    if (mijn !== beurt) return;
-    const bestaand = new Set();
+    if (mijn !== beurt) return; // intussen is er opnieuw getekend
+    const gekozenTijden = [...gekozen.keys()];
     tijdInfo.clear();
-    let html = '';
-    if (!gelezen.opties.length) html = `<p class="insttoelichting fout">Geen dagen en tijden gevonden. Staat er bij elke dag een datum of weekdag, zoals "maandag 9 november tussen 13:00 en 16:00"?</p>`;
+    let html = gelezen.opties.length ? '' : `<p class="insttoelichting fout">Geen dagen en tijden gevonden. Staat er bij elke dag een datum of weekdag, zoals "maandag 9 november tussen 13:00 en 16:00"?</p>`;
     for (const [k, os] of per) {
-      const d = parseYmd(k);
-      const waarschuwing = os.find((o) => o.waarschuwing);
-      html += `<section class="instsectie"><h3>${esc(cap(`${DAYS_LONG[d.getDay()]} ${d.getDate()} ${MONTHS_LONG[d.getMonth()]}`))}</h3><div class="formkaart">`;
-      for (const o of os) {
-        const u = toetsVak(lijsten.get(k), o, duur);
-        // Een gekozen tijd blijft staan zolang hij in het tijdvak valt, ook als hij bij deze duur geen voorstel is
-        const ms = duur * 6e4;
-        for (const t of gekozen.keys()) {
-          if (t >= u.van && t + ms <= Math.max(u.tot, u.van + ms) && !u.tijden.some((x) => x.t === t)) {
-            u.tijden.push(metOverlap(t, ms, u.vrij, u.botst));
-          }
-        }
-        u.tijden.sort((x, y) => x.t - y.t);
-        u.tijden.forEach((x) => { bestaand.add(x.t); tijdInfo.set(x.t, { blok: x.blok, botst: x.botst, vol: x.vol }); if (gekozen.has(x.t)) gekozen.set(x.t, { blok: x.blok, botst: x.botst, vol: x.vol }); });
-        const van = `${pad(Math.floor(o.van / 60))}:${pad(o.van % 60)}`, tot = `${pad(Math.floor(o.tot / 60))}:${pad(o.tot % 60)}`;
-        html += `<div class="frij kolom mvak"><span class="mkop"><span class="t1 num">${o.heleDag ? 'Hele dag' : `${van} – ${tot}`}</span>${statusTekst(u)}</span>
-          ${tijdlijn(lijsten.get(k), o, [...gekozen.keys()].filter((t) => t >= u.van && t < u.tot), ms)}
-          ${u.tijden.length ? `<div class="chips">${u.tijden.map((x) => `<button class="chip num${gekozen.has(x.t) ? ' aan' : ''}${x.vol ? ' vol' : x.botst.length ? ' botst' : ' vrij'}" data-t="${x.t}" aria-pressed="${gekozen.has(x.t)}" aria-label="${hhmm(new Date(x.t))}, ${x.vol ? `helemaal bezet: ${esc(overlapZin(x.botst).replace(/^Overlap met /, ''))}` : x.botst.length ? esc(overlapZin(x.botst).toLowerCase()) : 'vrij'}">${hhmm(new Date(x.t))}</button>`).join('')}</div>` : ''}</div>`;
-      }
-      html += `</div>${waarschuwing ? `<p class="insttoelichting fout">${esc(cap(waarschuwing.waarschuwing))}. Klopt de datum?</p>` : ''}</section>`;
+      const vakken = os.map((o) => {
+        const u = mailVak(lijsten.get(k), o, duur, gekozenTijden);
+        // Onthouden wat er bij elke tijd hoort, ook voor de tijden die al gekozen zijn
+        u.tijden.forEach((x) => { const info = { blok: x.blok, botst: x.botst, vol: x.vol }; tijdInfo.set(x.t, info); if (gekozen.has(x.t)) gekozen.set(x.t, { ...info }); });
+        return mailVakHtml(o, u, lijsten.get(k), gekozenTijden, duur);
+      });
+      const metWaarschuwing = os.find((o) => o.waarschuwing);
+      html += mailDagHtml(parseYmd(k), vakken.join(''), metWaarschuwing ? metWaarschuwing.waarschuwing : '');
     }
     if (gelezen.zonderDag.length) html += `<p class="insttoelichting fout">Zonder dag, dus overgeslagen: ${gelezen.zonderDag.map((x) => `"${esc(x)}"`).join(', ')}</p>`;
     uit.innerHTML = html;
-    for (const t of [...gekozen.keys()]) if (!bestaand.has(t)) gekozen.delete(t); // past niet meer (andere duur of tekst)
+    for (const t of gekozenTijden) if (!tijdInfo.has(t)) gekozen.delete(t); // past niet meer (andere duur of tekst)
     tekenSamen();
   };
   // Het veld groeit mee met de tekst (tot een grens; daarna scrolt het)
@@ -211,44 +238,49 @@ function openMailTijden() {
     if (geplakt && gelezen.opties.length) klap(true);
     geplakt = false;
   };
+  const kiesTijd = (chip) => {
+    const tijd = Number(chip.dataset.t);
+    if (gekozen.has(tijd)) gekozen.delete(tijd); else gekozen.set(tijd, tijdInfo.get(tijd) || { blok: null, botst: [] });
+    chip.classList.toggle('aan', gekozen.has(tijd));
+    chip.setAttribute('aria-pressed', String(gekozen.has(tijd)));
+    tekenSamen();
+    teken(); // de gekozen tijd ook in het tijdlijntje
+  };
+  const kopieer = async () => {
+    if (!gekozen.size) return;
+    const { tekst } = mtAntwoord(gekozen.keys(), duur);
+    try {
+      // Alleen platte tekst: in je mail neemt hij het lettertype en de kleur van de mail aan
+      await navigator.clipboard.writeText(tekst);
+      toonStatus('Antwoord gekopieerd.', { soort: 'klaar', duur: 2000 });
+    }
+    catch (e) { toonStatus('Kopiëren lukte niet. Selecteer de tekst boven de knop.', { soort: 'fout', duur: 3500 }); }
+  };
+  // In een vrij blok: Nieuwe afspraak binnen dat blok. Overlapt de tijd: gewoon die dag en tijd, met de overlap erbij.
+  const planIn = () => {
+    if (gekozen.size !== 1) return;
+    const [[tijd, g]] = [...gekozen];
+    const locatie = gelezen.online ? 'Microsoft Teams' : '';
+    p.sluit();
+    setTimeout(() => (g.blok ? openNieuw({ blok: { start: g.blok[0], end: g.blok[1] }, start: tijd, duur, locatie }) : openNieuw({ dag: new Date(tijd), start: tijd, duur, locatie })), 250);
+  };
+
   veld.addEventListener('input', (ev) => {
     if (ev.inputType === 'insertFromPaste' || ev.inputType === 'insertReplacementText' || veld.value.length - MAILTEKST.length > 20) geplakt = true;
     groei(); clearTimeout(wacht); wacht = setTimeout(lees, 200);
   });
   veld.addEventListener('focus', () => { if (veld.classList.contains('ingeklapt')) klap(false); }); // zelf in de tekst tikken: alles tonen
-  el.addEventListener('click', async (ev) => {
-    const t = ev.target;
-    if (t.closest('[data-actie="sluit"]')) { p.sluit(); return; }
-    if (t.closest('#mtoon')) { klap(false); return; }
-    const stap = t.closest('[data-stap]');
-    if (stap) { duur = Math.max(15, Math.min(8 * 60, duur + Number(stap.dataset.stap))); duurZelf = true; tekenDuur(); teken(); return; }
-    const c = t.closest('[data-t]');
-    if (c) {
-      const tijd = Number(c.dataset.t);
-      if (gekozen.has(tijd)) gekozen.delete(tijd); else gekozen.set(tijd, tijdInfo.get(tijd) || { blok: null, botst: [] });
-      c.classList.toggle('aan', gekozen.has(tijd));
-      c.setAttribute('aria-pressed', String(gekozen.has(tijd)));
-      tekenSamen();
-      teken(); // de gekozen tijd ook in het tijdlijntje
-      return;
-    }
-    if (t.closest('#mkopieer') && gekozen.size) {
-      const { tekst } = mtAntwoord(gekozen.keys(), duur);
-      try {
-        // Alleen platte tekst: in je mail neemt hij het lettertype en de kleur van de mail aan
-        await navigator.clipboard.writeText(tekst);
-        toonStatus('Antwoord gekopieerd.', { soort: 'klaar', duur: 2000 });
-      }
-      catch (e) { toonStatus('Kopiëren lukte niet. Selecteer de tekst boven de knop.', { soort: 'fout', duur: 3500 }); }
-      return;
-    }
-    if (t.closest('#minplannen') && gekozen.size === 1) {
-      const [[tijd, g]] = [...gekozen];
-      const locatie = gelezen.online ? 'Microsoft Teams' : '';
-      p.sluit();
-      // In een vrij blok: Nieuwe afspraak binnen dat blok. Overlapt de tijd: gewoon die dag en tijd, met de overlap erbij.
-      setTimeout(() => (g.blok ? openNieuw({ blok: { start: g.blok[0], end: g.blok[1] }, start: tijd, duur, locatie }) : openNieuw({ dag: new Date(tijd), start: tijd, duur, locatie })), 250);
-    }
+  // Tikken: de eerste regel die past. k is het element waarop de regel past.
+  const bijTik = [
+    ['[data-actie="sluit"]', () => p.sluit()],
+    ['#mtoon', () => klap(false)],
+    ['[data-stap]', (k) => { duur = Math.max(15, Math.min(8 * 60, duur + Number(k.dataset.stap))); duurZelf = true; tekenDuur(); teken(); }],
+    ['[data-t]', kiesTijd],
+    ['#mkopieer', kopieer],
+    ['#minplannen', planIn],
+  ];
+  el.addEventListener('click', (ev) => {
+    for (const [kiezer, doe] of bijTik) { const k = ev.target.closest(kiezer); if (k) { doe(k); return; } }
   });
   tekenDuur();
   if (veld.value.trim()) { geplakt = true; lees(); } else tekenSamen(); // eerder geplakte tekst: meteen ingeklapt

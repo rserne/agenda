@@ -133,9 +133,10 @@ function wat() {
   const delen = [...(BESTAND && BESTAND.link ? ['agenda'] : []), 'notities', SYNC.ruimtesOud ? 'ruimtes (werk je Worker bij)' : 'ruimtes'];
   return delen.length === 3 ? `${delen[0]}, ${delen[1]} en ${delen[2]}` : delen.join(' en ');
 }
+// De knop en de statusregel zijn die van Instellingen (instKnopHtml en instStatusHtml in js/instellingen.js)
 function syncStatusHtml() {
-  const knop = (actie, icoon, tekst, uit = false, gevaar = false) => `<button class="frij instknop${gevaar ? ' gevaar' : ''}" data-actie="${actie}"${uit ? ' disabled' : ''}>${icoon}<span>${tekst}</span></button>`;
-  const regel = (t1, t2) => `<div class="frij inststatus">${I.koppel}<span class="tekst"><span class="t1">${t1}</span><span class="t2">${t2}</span></span></div>`;
+  const knop = instKnopHtml;
+  const regel = (t1, t2) => instStatusHtml(I.koppel, t1, t2);
   if (!notitieAdres()) return regel('Niet gekoppeld', 'Voor je Outlook-agenda, en notities en ruimtes op al je toestellen') + knop('koppeling-wijzig', I.plus, 'Koppeling opgeven');
   const [t1, t2] = SYNC.bezig ? ['Synchroniseren…', 'Even geduld']
     : SYNC.geenDatabase ? ['Gekoppeld', 'Je Worker heeft nog geen database']

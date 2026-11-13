@@ -57,8 +57,7 @@ function openDagPunten(d) {
     }).join('');
     $('.formkaart', el).innerHTML = rijen || '<p class="nleeg dagleeg">Alles afgevinkt</p>';
   };
-  el.innerHTML = `<div class="detailgreep"><div class="greep"></div>
-      <div class="detailnav"><button class="rond glas" data-actie="sluit" aria-label="Sluiten">${I.kruis}</button></div></div>
+  el.innerHTML = `${paneelGreepHtml()}
     <div class="detailinhoud">
       <div class="dkop"><div class="dkopinhoud"><h2 class="dtitel">Actiepunten</h2><div class="dmeta"><div>${datum}</div></div></div></div>
       <div class="formkaart puntenkaart"></div>

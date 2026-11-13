@@ -4,6 +4,12 @@
 // Gewoon script (geen module): het deelt de bovenste laag met de andere bestanden; de volgorde staat in index.html.
 'use strict';
 
+// De greep bovenaan een paneel (om het omlaag te vegen), met rechts de sluitknop. knoppen: wat daar nog voor staat.
+function paneelGreepHtml(knoppen = '') {
+  return `<div class="detailgreep"><div class="greep"></div>
+      <div class="detailnav">${knoppen}<button class="rond glas" data-actie="sluit" aria-label="Sluiten">${I.kruis}</button></div></div>`;
+}
+
 /* ------------------------------------------------------------------ */
 /*  Panelen: openen, sluiten en omlaag vegen                           */
 /* ------------------------------------------------------------------ */

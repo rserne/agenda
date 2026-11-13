@@ -94,8 +94,7 @@ function detailPersonen(e) {
 
 // De greep bovenaan (iPhone) met rechts het notitieknopje en sluiten
 function detailGreepHtml(e) {
-  return `<div class="detailgreep"><div class="greep"></div>
-      <div class="detailnav"><button class="rond glas${notitieBij(e.id) ? ' aan' : ''}" data-actie="eigennotitie" aria-label="Notitie">${I.notitie}</button><button class="rond glas" data-actie="sluit" aria-label="Sluiten">${I.kruis}</button></div></div>`;
+  return paneelGreepHtml(`<button class="rond glas${notitieBij(e.id) ? ' aan' : ''}" data-actie="eigennotitie" aria-label="Notitie">${I.notitie}</button>`);
 }
 
 function detailKopHtml(e, kop) {

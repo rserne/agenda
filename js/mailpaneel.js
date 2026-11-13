@@ -107,8 +107,7 @@ function mtAntwoord(tijden, duur) {
 // de toestand (de gelezen tekst, de duur, de gekozen tijden), het tekenen en de tikken.
 
 function mailFormHtml() {
-  return `<div class="detailgreep"><div class="greep"></div>
-      <div class="detailnav"><button class="rond glas" data-actie="sluit" aria-label="Sluiten">${I.kruis}</button></div></div>
+  return `${paneelGreepHtml()}
     <div class="detailinhoud">
       <div class="dkop"><h2 class="dtitel">Tijden uit een mail</h2></div>
       <div class="formkaart">
@@ -116,9 +115,7 @@ function mailFormHtml() {
         <button class="frij instknop" id="mtoon" hidden>Hele tekst tonen</button>
       </div>
       <div class="formkaart">
-        <div class="frij"><span class="flabel">Duur</span><span class="fwaarde stapper">
-          <button class="mini" data-stap="-15" aria-label="Korter">${I.min}</button><span id="mduur" class="num" aria-live="polite"></span><button class="mini" data-stap="15" aria-label="Langer">${I.plus}</button>
-        </span></div>
+        ${duurRijHtml('mduur')}
       </div>
       <div id="muitslag" aria-live="polite"></div>
       <div class="nvast">
@@ -179,11 +176,7 @@ function openMailTijden() {
   let duur = 60, duurZelf = false, gelezen = { opties: [], duur: null, online: false, zonderDag: [] }, beurt = 0, wacht = null;
   const tijdInfo = new Map(); // per getekende begintijd: vrij blok en overlap
   const gekozen = new Map(); // begintijd → { blok: het vrije blok (of null), botst: afspraken die overlappen }
-  const tekenDuur = () => {
-    $('#mduur', el).textContent = duurKort(duur);
-    $('[data-stap="-15"]', el).disabled = duur <= 15;
-    $('[data-stap="15"]', el).disabled = duur >= 8 * 60;
-  };
+  const tekenDuur = () => tekenDuurRij(el, 'mduur', duur, 8 * 60);
   const tekenSamen = () => {
     const n = gekozen.size;
     $('#minplannen', el).hidden = n !== 1; // inplannen kan met precies één tijd; anders is de knop er niet

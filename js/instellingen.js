@@ -11,8 +11,7 @@ function openLinkPaneel(voorstel = '') {
   const el = document.createElement('div');
   el.className = 'paneel detail nieuw linkpaneel' + (isDesktop() ? ' dialoog' : '');
   const huidig = voorstel; // de huidige link tonen we niet
-  el.innerHTML = `<div class="detailgreep"><div class="greep"></div>
-      <div class="detailnav"><button class="rond glas" data-actie="sluit" aria-label="Sluiten">${I.kruis}</button></div></div>
+  el.innerHTML = `${paneelGreepHtml()}
     <div class="detailinhoud">
       <div class="dkop"><h2 class="dtitel">Cloudflare</h2></div>
       <p class="linkuitleg">Plak de link van je Cloudflare Worker, met de sleutel erin.</p>
@@ -51,8 +50,7 @@ function openBronPaneel() {
       <span class="bronicoon">${icoon}</span><span class="tekst"><span class="t1">${titel}</span><span class="t2">${sub}</span></span>${nu === id ? `<span class="bronvink">${I.vink}</span>` : ''}</button>`;
   const el = document.createElement('div');
   el.className = 'paneel detail nieuw bronpaneel' + (isDesktop() ? ' dialoog' : '');
-  el.innerHTML = `<div class="detailgreep"><div class="greep"></div>
-      <div class="detailnav"><button class="rond glas" data-actie="sluit" aria-label="Sluiten">${I.kruis}</button></div></div>
+  el.innerHTML = `${paneelGreepHtml()}
     <div class="detailinhoud">
       <div class="dkop"><h2 class="dtitel">Agenda kiezen</h2></div>
       <div class="formkaart bronlijst">
@@ -81,7 +79,7 @@ function openBronPaneel() {
 /* ------------------------------------------------------------------ */
 
 // Het scherm in delen: de HTML per sectie (inst...Html) en in openInstellingen het bijwerken van de secties en de
-// handelingen. De sectie Cloudflare komt uit js/synchroniseren.js (syncStatusHtml).
+// handelingen. De sectie Cloudflare komt uit js/synchroniseren.js (syncStatusHtml), met dezelfde knop en statusregel.
 
 const instKnopHtml = (actie, icoon, tekst, uit = false, gevaar = false) => `<button class="frij instknop${gevaar ? ' gevaar' : ''}" data-actie="${actie}"${uit ? ' disabled' : ''}>${icoon}<span>${tekst}</span></button>`;
 const instStatusHtml = (icoon, t1, t2) => `<div class="frij inststatus">${icoon}<span class="tekst"><span class="t1">${t1}</span>${t2 ? `<span class="t2">${t2}</span>` : ''}</span></div>`;
@@ -127,8 +125,7 @@ function instGoogleHtml(bewerk = false) {
 
 // Het hele scherm. Als venster met een greep en een titel; als tab zonder (de titel staat dan in de kop).
 function instellingenHtml(alsVenster) {
-  return `${alsVenster ? `<div class="detailgreep"><div class="greep"></div>
-      <div class="detailnav"><button class="rond glas" data-actie="sluit" aria-label="Sluiten">${I.kruis}</button></div></div>` : ''}
+  return `${alsVenster ? paneelGreepHtml() : ''}
     <div class="detailinhoud">
       ${alsVenster ? '<div class="dkop"><h2 class="dtitel">Instellingen</h2></div>' : ''}
       <section class="instsectie"><h3>Cloudflare</h3><div class="formkaart" id="isync">${syncStatusHtml()}</div></section>

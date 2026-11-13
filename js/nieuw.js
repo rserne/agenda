@@ -12,6 +12,19 @@
 // ingevuld (of geeft een .ics-bestand); opslaan en uitnodigen gebeurt in Outlook.
 const duurKort = (m) => (m < 60 ? `${m} min` : freeText(m));
 
+// De regel Duur met korter en langer, in stappen van een kwartier (Nieuwe afspraak en Tijden uit een mail).
+// id: het element met de duur als tekst. tekenDuurRij zet de tekst en schakelt de knoppen uit aan de randen.
+function duurRijHtml(id) {
+  return `<div class="frij"><span class="flabel">Duur</span><span class="fwaarde stapper">
+          <button class="mini" data-stap="-15" aria-label="Korter">${I.min}</button><span id="${id}" class="num" aria-live="polite"></span><button class="mini" data-stap="15" aria-label="Langer">${I.plus}</button>
+        </span></div>`;
+}
+function tekenDuurRij(el, id, duur, max) {
+  $(`#${id}`, el).textContent = duurKort(duur);
+  $('[data-stap="-15"]', el).disabled = duur <= 15;
+  $('[data-stap="15"]', el).disabled = duur >= max;
+}
+
 async function afsprakenOp(dag) {
   const a = startOfDay(dag);
   try { await zorgVoor(startOfWeek(a), addDays(startOfWeek(a), 7)); } catch (e) { /* zonder verbinding: wat er al is */ }
@@ -203,8 +216,7 @@ function nieuwFormHtml(v) {
               <label class="datumlabel"><span id="ndatum"></span><input type="date" id="ndatuminvoer" aria-label="Kies een dag"></label>
               <button class="mini" data-dag="1" aria-label="Dag later">${I.verder}</button>
             </span>`;
-  return `<div class="detailgreep"><div class="greep"></div>
-      <div class="detailnav"><button class="rond glas" data-actie="sluit" aria-label="Sluiten">${I.kruis}</button></div></div>
+  return `${paneelGreepHtml()}
     <div class="detailinhoud">
       <div class="dkop"><h2 class="dtitel">Nieuwe afspraak</h2></div>
       <div class="formkaart">
@@ -214,9 +226,7 @@ function nieuwFormHtml(v) {
       </div>
       <div class="formkaart">
         <div class="frij"><span class="flabel">Dag</span>${dagHtml}</div>
-        <div class="frij"><span class="flabel">Duur</span><span class="fwaarde stapper">
-          <button class="mini" data-stap="-15" aria-label="Korter">${I.min}</button><span id="nduur" class="num" aria-live="polite"></span><button class="mini" data-stap="15" aria-label="Langer">${I.plus}</button>
-        </span></div>
+        ${duurRijHtml('nduur')}
         <div class="frij kolom"><span class="flabel">Begintijd</span><div id="ntijdlijn" role="button" tabindex="0" aria-expanded="false" aria-label="Afspraken van deze dag"></div><div id="nafspraken" hidden></div><div id="ntijden"></div></div>
       </div>
       <div class="formkaart">
@@ -331,11 +341,7 @@ async function openNieuw({ dag = null, blok = null, start = null, duur = null, l
 
   let lijst = []; // de afspraken van de gekozen dag
   let lijstOpen = false; // de afspraken onder de balk in beeld
-  const tekenDuur = () => {
-    $('#nduur', el).textContent = duurKort(v.duur);
-    $('[data-stap="-15"]', el).disabled = v.duur <= 15;
-    $('[data-stap="15"]', el).disabled = v.duur >= v.max;
-  };
+  const tekenDuur = () => tekenDuurRij(el, 'nduur', v.duur, v.max);
   const tekenSamen = () => {
     const ok = v.start != null;
     const link = $('#noutlook', el);

@@ -280,6 +280,7 @@ async function gebruikLink(link) {
   if (LINK_BEZIG) return;
   LINK_BEZIG = true;
   renderZijbalk();
+  tekenSyncStatus(); // het ophalen staat bij Cloudflare
   toonStatus('Agenda ophalen… Dit kan even duren.');
   try {
     const tekst = await haalLinkTekst(link);
@@ -300,6 +301,7 @@ async function gebruikLink(link) {
   } finally {
     LINK_BEZIG = false;
     renderZijbalk();
+    tekenSyncStatus(); // het ophalen staat bij Cloudflare
   }
 }
 
@@ -312,6 +314,7 @@ async function vernieuwLink({ ookAlsVers = false } = {}) {
   const oudBestand = BESTAND;
   LINK_BEZIG = true;
   renderZijbalk();
+  tekenSyncStatus(); // het ophalen staat bij Cloudflare
   try {
     const oud = await IDB.get('ics').catch(() => null);
     if (!oud || oud.link !== oudBestand.link) return;
@@ -342,6 +345,7 @@ async function vernieuwLink({ ookAlsVers = false } = {}) {
   } finally {
     LINK_BEZIG = false;
     renderZijbalk();
+    tekenSyncStatus(); // het ophalen staat bij Cloudflare
   }
 }
 // 'Nu bijwerken': hetzelfde als op de achtergrond, maar met een melding onderin

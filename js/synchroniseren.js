@@ -138,9 +138,11 @@ function syncStatusHtml() {
   const knop = instKnopHtml;
   const regel = (t1, t2) => instStatusHtml(I.koppel, t1, t2);
   if (!notitieAdres()) return regel('Niet gekoppeld', 'Voor je Outlook-agenda, en notities en ruimtes op al je toestellen') + knop('koppeling-wijzig', I.plus, 'Koppeling opgeven');
-  const [t1, t2] = SYNC.bezig ? ['Synchroniseren…', 'Even geduld']
+  // De Outlook-agenda komt ook via de koppeling: ophalen telt als synchroniseren, een fout daarbij ook
+  const fout = SYNC.fout || (BESTAND && BESTAND.link && BESTAND.linkFout);
+  const [t1, t2] = SYNC.bezig || LINK_BEZIG ? ['Synchroniseren…', 'Even geduld']
     : SYNC.geenDatabase ? ['Gekoppeld', 'Je Worker heeft nog geen database']
-      : SYNC.fout ? ['Synchroniseren lukte niet', esc(SYNC.fout)]
+      : fout ? ['Synchroniseren lukte niet', esc(fout)]
         : SYNC.laatst ? ['Gesynchroniseerd', `Om ${hhmm(new Date(SYNC.laatst))} · ${wat()}`] : ['Gekoppeld', 'Nog niet gesynchroniseerd'];
   return regel(t1, t2)
     + knop('sync-nu', I.herhaal, 'Nu synchroniseren', SYNC.bezig || LINK_BEZIG)

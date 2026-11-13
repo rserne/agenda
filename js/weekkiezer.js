@@ -114,8 +114,8 @@ let zijMaand = null;
 // Waar de afspraken vandaan komen: [titel, toelichting]
 function agendaBron() {
   if (BESTAND && BESTAND.link) {
-    // Wanneer hij is bijgewerkt, staat bij Cloudflare; hier alleen als het bezig is of niet lukte
-    return ['Outlook-agenda', LINK_BEZIG ? 'Bijwerken…' : BESTAND.linkFout ? 'Bijwerken lukte niet' : ''];
+    // Het ophalen gaat via Cloudflare: of het bezig is, lukte of mislukte, staat daar
+    return ['Outlook-agenda', ''];
   }
   if (BESTAND) {
     const d = new Date(BESTAND.datum);

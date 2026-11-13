@@ -271,7 +271,11 @@ test('cloudflare: de koppeling staat los van de agenda; met een .ics-bestand gaa
 test('agenda-link: na Nu bijwerken in Instellingen toont de agenda de nieuwe afspraken zodra je terugkeert', async ({ browser, url }) => {
   const p = await nieuwePagina(browser, TELEFOON);
   let ics = fs.readFileSync(ICS, 'utf8');
-  await p.context().route('https://agenda.voorbeeld.workers.dev/**', (r) => r.fulfill({ status: 200, contentType: 'text/calendar', headers: { 'Access-Control-Allow-Origin': '*' }, body: ics }));
+  let traag = false;
+  await p.context().route('https://agenda.voorbeeld.workers.dev/**', async (r) => {
+    if (traag) await wacht(1000);
+    r.fulfill({ status: 200, contentType: 'text/calendar', headers: { 'Access-Control-Allow-Origin': '*' }, body: ics });
+  });
   await p.goto(url); await wacht(800);
   await p.evaluate((l) => gebruikLink(l), LINK); await wacht(4000);
   // In Outlook krijgt een zichtbare afspraak een andere naam
@@ -279,7 +283,12 @@ test('agenda-link: na Nu bijwerken in Instellingen toont de agenda de nieuwe afs
   ics = ics.split(`SUMMARY:${titel}`).join('SUMMARY:Bijgewerkt overleg');
   await p.locator('#tabbalk [data-tab="instellingen"]').tap(); await wacht(900);
   assert.equal(await p.locator('#instscherm [data-actie="ics-nu"]').count(), 0, 'geen Nu bijwerken meer bij de agenda');
-  await p.locator('#instscherm [data-actie="sync-nu"]').tap(); await wacht(3000);
+  traag = true;
+  await p.locator('#instscherm [data-actie="sync-nu"]').tap(); await wacht(400);
+  // Het ophalen gaat via Cloudflare: daar staat dat het bezig is, niet bij de agenda
+  assert.match(await p.locator('#isync').innerText(), /Synchroniseren…/);
+  assert.equal((await p.locator('#iagenda .inststatus').innerText()).trim(), 'Outlook-agenda');
+  await wacht(3000);
   assert.equal(await p.locator('#statustekst').innerText(), 'Je agenda is bijgewerkt.');
   await p.locator('#tabbalk [data-tab="agenda"]').tap(); await wacht(800);
   assert.match(await p.locator('#inhoud').innerText(), /Bijgewerkt overleg/);

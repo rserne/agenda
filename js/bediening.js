@@ -14,7 +14,7 @@ const TREK_DREMPEL = 70;
 function koppelDoortrekken() {
   let y0 = null, trek = 0;
   const ind = $('#doortrek'), tekst = $('#doortrek .dttekst');
-  const kan = () => (ST.tab === 'week' || ST.tab === 'forecast') && !isDesktop() && !panelen.length;
+  const kan = () => (ST.tab === 'week' || ST.tab === 'forecast') && !isDesktop() && !panelen.length && !ZOEK.open;
   const onderaan = () => window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 4;
   const volgende = () => {
     const s = addDays(periode().start, 7);
@@ -74,6 +74,7 @@ function zetZijbalk() {
 }
 
 function kiesTab(t) {
+  zoekenDichtBijNavigeren();
   if (t === 'agenda' && (ST.tab === 'week' || ST.tab === 'forecast')) { verschuif(0); return; }
   if (t === 'agenda') t = LS.get('ag_weergave') || 'week';
   if (t === 'week' || t === 'forecast') LS.set('ag_weergave', t);
@@ -86,6 +87,7 @@ function kiesTab(t) {
 }
 
 function verschuif(n, tab) {
+  zoekenDichtBijNavigeren();
   if (tab) { ST.tab = tab; LS.set('ag_tab', tab); LS.set('ag_weergave', tab); }
   if (n === 0) {
     const t = vandaag();

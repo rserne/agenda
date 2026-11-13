@@ -34,6 +34,8 @@
           <span class="titel" id="titel">Week</span>
           <svg class="icoon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
         </button>
+        <!-- iPhone en iPad staand: zoeken in de agenda (op de desktop staat het zoekveld altijd in de werkbalk) -->
+        <button class="zoekknop glas" id="zoekknop" aria-label="Zoeken in de agenda" aria-pressed="false"></button>
         <!-- Week of Vooruitblik: het icoon van de huidige weergave, een tik opent het menu. Naar vandaag: tik nog eens op de tab Agenda -->
         <button class="weergaveknop glas" id="weergaveknop" aria-label="Weergave" aria-haspopup="menu" aria-expanded="false"></button>
         <div class="capsule glas" id="capsule"></div>
@@ -49,6 +51,9 @@
     </div>
     <!-- Tab Notities: zoeken op de plek van de schakelaar -->
     <label class="zoekbalk glas" id="zoekbalk"><svg class="icoon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg><span class="zoektokens" id="zoektokens"></span><input type="search" id="notzoek" placeholder="Zoeken" aria-label="Zoeken in notities" autocomplete="off" enterkeyhint="search"></label>
+    <!-- Agenda: zoeken in de afspraken; op de telefoon op de plek van de schakelaar, op de desktop in de werkbalk -->
+    <label class="zoekbalk glas" id="agendazoek"><svg class="icoon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg><input type="search" id="agzoek" placeholder="Zoek in je agenda" aria-label="Zoeken in de agenda" autocomplete="off" enterkeyhint="search"><button type="button" class="zoekwis" id="zoekwis" aria-label="Wissen" hidden></button></label>
+    <button type="button" class="zoekannuleer" id="zoekannuleer">Annuleer</button>
     </div>
   </div>
 </header>
@@ -104,6 +109,7 @@
 <script src="js/panelen.js"></script>
 <script src="js/weekkiezer.js"></script>
 <script src="js/detail.js"></script>
+<script src="js/zoeken.js"></script>
 <script src="js/nieuw.js"></script>
 <script src="js/instellingen.js"></script>
 <script src="js/mailpaneel.js"></script>

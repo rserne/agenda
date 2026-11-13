@@ -59,11 +59,13 @@ function vrijRij(f) {
 // Desktop: de werkdagen naast elkaar in kolommen, weekenddagen alleen als er iets staat
 function kolomRij(e, ov) {
   const onSite = e.mode === 'physical' || e.mode === 'hybrid';
-  return `<button class="krij${e.notable ? '' : ' vast'}${overlapt(e, ov) ? ' overlapt' : ''}" data-id="${esc(e.id)}">
+  // Tijdens het zoeken: de gevonden woorden gemarkeerd, en een rand om de afspraak die je in de resultaten koos
+  const z = zoekt();
+  return `<button class="krij${e.notable ? '' : ' vast'}${overlapt(e, ov) ? ' overlapt' : ''}${z && e.id === ZOEK.gekozen ? ' gevonden' : ''}" data-id="${esc(e.id)}">
     <span class="stip ${e.kind}"></span>
     <span class="rijtekst">
       <span class="ktijd num">${hhmm(e.start)} – ${hhmm(e.end)}${onSite ? `<span class="speld" aria-label="op locatie">${I.speld}</span>` : ''}</span>
-      <span class="rijtitel">${esc(e.title || 'Zonder titel')}</span>
+      <span class="rijtitel">${z ? markeer(e.title || 'Zonder titel', zoekWoorden(ZOEK.q)) : esc(e.title || 'Zonder titel')}</span>
       ${overlapLabel(e, ov)}${badgesHtml(e)}
     </span>
   </button>`;
@@ -89,7 +91,8 @@ function weekKolommenHtml(events) {
     breedtes.push(smal ? 'minmax(64px, 0.35fr)' : 'minmax(0, 1fr)');
     const heleDag = lijst.filter((e) => e.allDay);
     const getimed = lijst.filter((e) => !e.allDay);
-    const getoond = ST.filter === 'notable' ? getimed.filter((e) => e.notable) : getimed;
+    // Een gevonden vast overleg staat ook bij Opvallend in beeld
+    const getoond = ST.filter === 'notable' ? getimed.filter((e) => e.notable || (e.id === ZOEK.gekozen && zoekt())) : getimed;
     const verborgen = getimed.length - getoond.length;
     const vrij = ST.filter === 'free' && i < 5 && d >= t ? freeSlots(lijst, d) : [];
     const items = [...getoond.map((e) => ({ t: e.start.getTime(), e })), ...vrij.map((f) => ({ t: f.start.getTime(), f }))].sort((a, b) => a.t - b.t);
@@ -254,6 +257,7 @@ function renderKop() {
     b.classList.toggle('aan', aan);
     b.setAttribute('aria-selected', aan);
   });
+  zetZoekKop();
 }
 
 function render() {
@@ -273,6 +277,8 @@ function render() {
     ST.naarVandaag = false;
     return;
   }
+  // Telefoon en tablet: tijdens het zoeken staan de resultaten op de plek van de week
+  if (zoekt() && !isDesktop()) { main.innerHTML = zoekHtml(); ST.naarVandaag = false; return; }
   const { start, eind } = periode();
   const events = afsprakenTussen(start, eind);
   zichtbaar.clear();
@@ -282,7 +288,14 @@ function render() {
   if (geenData && ST.laden) { main.innerHTML = '<div class="laden">Agenda laden…</div>'; return; }
   if (geenData && ST.fout) { main.innerHTML = meldingHtml('Agenda niet beschikbaar', ST.fout, 'Opnieuw proberen'); $('#inhoud .knop').onclick = () => laad(); return; }
   // De agenda kies je in de weekkiezer (tik op de titel) of op de desktop in de zijbalk
-  main.innerHTML = ST.tab === 'week' ? weekHtml(events) : vooruitblikHtml(events);
+  const html = ST.tab === 'week' ? weekHtml(events) : vooruitblikHtml(events);
+  if (zoekt()) {
+    // Desktop: de resultaten in een paneel rechts van de week; het paneel blijft op dezelfde plek gescrold
+    const oud = $('#inhoud .zoekpaneel');
+    const y = oud ? oud.scrollTop : 0;
+    main.innerHTML = `<div class="zoeksplit"><div class="zoekweek">${html}</div><aside class="zoekpaneel" aria-label="Zoekresultaten">${zoekHtml()}</aside></div>`;
+    $('#inhoud .zoekpaneel').scrollTop = y;
+  } else main.innerHTML = html;
   if (ST.naarVandaag) scrollNaarVandaag();
 }
 

@@ -1033,6 +1033,48 @@ body:not(.desktop) #capsule button[data-nav="0"] { display: none; }
 .zoekbalk input::placeholder { color: var(--secondary); opacity: 0.8; }
 .zoekbalk input::-webkit-search-decoration { -webkit-appearance: none; }
 body.notitietab .zoekbalk { display: flex; }
+
+/* Zoeken in de agenda. iPhone en iPad staand: het vergrootglas in de kop opent het zoekveld op de plek van de schakelaar,
+   met Annuleer erachter; de resultaten staan dan op de plek van de week. Desktop: het veld staat in de werkbalk (verderop). */
+.zoekknop { display: none; flex-shrink: 0; width: 36px; height: 36px; border-radius: 18px; align-items: center; justify-content: center; color: var(--label); }
+.zoekknop .icoon { width: 19px; height: 19px; }
+body.agendatab:not(.desktop) .zoekknop { display: flex; margin-right: -6px; } /* een paar met het weergaveknopje */
+body.agendatab:not(.desktop) .kopregel { gap: 10px; } /* zo past 'Week 45' er nog naast */
+body.zoekt .zoekknop { background: var(--selBg); color: var(--accent); }
+#agendazoek, .zoekannuleer { display: none; }
+body.zoekt #agendazoek { display: flex; }
+body.zoekt .zoekannuleer { display: block; flex-shrink: 0; padding: 0 2px; color: var(--accent); font-size: 17px; }
+body.zoekt #schakelaar, body.zoekt #capsule { display: none; }
+#agzoek::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; }
+.zoekwis { flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; margin-right: -8px; color: var(--secondary); opacity: 0.7; }
+.zoekwis[hidden] { display: none; }
+.zoekwis .icoon { width: 18px; height: 18px; }
+/* De resultaten: Komend en Geweest, met per afspraak de datum, het streepje van de soort, de titel en tijd en plek */
+.zoekres { padding: 0 0 calc(var(--barH) + 40px); }
+.zoekkop { margin: 14px 0 6px; padding: 0 16px; color: var(--secondary); font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.2px; }
+.zoekres > .zoekkop:first-child { margin-top: 4px; }
+.kaart.zoekkaart { padding: 4px; }
+.zrij { display: flex; align-items: stretch; gap: 12px; width: 100%; padding: 10px 12px 10px 6px; text-align: left; border-radius: 12px; }
+button.zrij:active { background: var(--fill); }
+.zrij.aan { background: var(--selBg); }
+.zdatum { flex-shrink: 0; width: 38px; display: flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.zdow, .zmnd { color: var(--secondary); font-size: 12px; white-space: nowrap; }
+.zdow { font-weight: 600; }
+.znr { color: var(--label); font-size: 22px; font-weight: 700; }
+.zrij > .stip { width: 3px; height: auto; align-self: stretch; border-radius: 2px; margin: 0; }
+.zrij .rijtekst { gap: 3px; }
+.zrij .rijtitel { font-size: 16px; line-height: 21px; }
+.zrij .badges { margin-top: 2px; }
+.zmeta { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--secondary); font-size: 14px; }
+.zmeta > .num { flex-shrink: 0; }
+.zplek { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.zplek .icoon { width: 12px; height: 12px; flex-shrink: 0; color: var(--onSite); }
+.zplek span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.zrij mark, .krij mark { background: var(--selBg); color: var(--selText); border-radius: 3px; }
+.zreeks { display: flex; align-items: center; gap: 5px; min-height: 34px; margin: -8px 0 2px 71px; padding: 0 8px 2px 0; color: var(--accent); font-size: 14px; text-align: left; }
+.zreeks .icoon { width: 14px; height: 14px; flex-shrink: 0; }
+.zoekniets { margin: 24px 0 0; text-align: center; color: var(--secondary); font-size: 15px; }
+.zoekvoet { margin: 14px 0 0; text-align: center; color: var(--secondary); font-size: 13px; }
 body.notitietab #schakelaar, body.notitietab #capsule, body.notitietab #datumregel, body.notitietab .titelknop .icoon { display: none; }
 body.insttab .balkregel, body.insttab #capsule, body.insttab #datumregel, body.insttab .titelknop .icoon, body.insttab .kop #schakelaar { display: none; }
 body.notitietab .titelknop, body.insttab .titelknop { cursor: default; }
@@ -1457,4 +1499,53 @@ body.notitietab .titelknop, body.insttab .titelknop { cursor: default; }
   body.zbdicht:has(.notisplit) .tabbalk::before { left: 0; }
   body.zbdicht:has(.notisplit) .tabbalk::after { width: 0; }
   body.desktop main.kolom > .legenda { position: static; background: none; padding: 28px 2px 0; }
+}
+
+/* ================================================================ Zoeken in de agenda op de desktop
+   Het zoekveld staat in de werkbalk, vóór de schakelaar. De resultaten staan in een paneel rechts van de week; een tik
+   op een resultaat zet de week op die afspraak, met een rand eromheen. */
+@media (min-width: 1200px) {
+  body.desktop.agendatab .kop #agendazoek { display: flex; order: 2; margin-left: auto; width: auto; flex: 0 1 240px; min-width: 150px; }
+  body.desktop.agendatab .kop #schakelaar { margin-left: 0; }
+  body.desktop .kop .zoekwis { width: 22px; height: 22px; margin-right: -6px; }
+  body.desktop .kop .zoekwis .icoon { width: 14px; height: 14px; }
+  .zoeksplit { display: grid; grid-template-columns: minmax(0, 1fr) var(--zpW, 320px); gap: 16px; align-items: start; }
+  .zoekpaneel { position: sticky; top: calc(var(--kopH, 52px) + 14px); max-height: calc(100vh - var(--kopH, 52px) - 28px); overflow-y: auto; overscroll-behavior: contain; padding: 2px 6px 12px; border-radius: 14px; background: var(--card); border: 0.5px solid var(--cardBorder); }
+  .zoekpaneel .zoekres { padding: 0; }
+  .zoekpaneel .zoekkop { margin: 14px 0 4px; padding: 0 8px; font-size: 11px; }
+  .zoekpaneel .kaart.zoekkaart { padding: 0; border: 0; border-radius: 0; background: none; }
+  .zoekpaneel .zrij { gap: 10px; padding: 7px 8px 7px 4px; border-radius: 8px; }
+  @media (hover: hover) { .zoekpaneel button.zrij:hover:not(.aan) { background: var(--fill); } }
+  .zoekpaneel .zdatum { width: 30px; }
+  .zoekpaneel .zdow, .zoekpaneel .zmnd { font-size: 11px; }
+  .zoekpaneel .znr { font-size: 18px; }
+  .zoekpaneel .zrij .rijtitel { font-size: 13.5px; line-height: 18px; }
+  .zoekpaneel .zmeta { font-size: 12px; }
+  .zoekpaneel .zrij .badge { font-size: 10.5px; padding: 1px 6px; border-radius: 4px; }
+  .zoekpaneel .zreeks { min-height: 26px; margin: -6px 0 2px 57px; font-size: 12px; }
+  .zoekpaneel .zreeks .icoon { width: 12px; height: 12px; }
+  .zoekpaneel .zoekniets { font-size: 13px; }
+  .zoekpaneel .zoekvoet { font-size: 12px; }
+  .krij.gevonden { background: var(--selBg); box-shadow: 0 0 0 2px var(--accent); }
+  .zoekweek .krij .badge { min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; } /* de kolommen zijn smaller naast het paneel */
+}
+@media (min-width: 1440px) { body.desktop.agendatab .kop #agendazoek { flex-basis: 280px; } }
+/* iPad liggend: alles op vingermaat, en het weergaveknopje direct naast het zoekveld */
+@media (min-width: 1200px) and (pointer: coarse) {
+  body.desktop.agendatab .kop .weergaveknop { margin-left: 0; }
+  body.desktop.agendatab .kop #agendazoek { flex-basis: 300px; min-width: 180px; }
+  body.desktop .kop .zoekwis { width: 32px; height: 32px; margin-right: -8px; }
+  body.desktop .kop .zoekwis .icoon { width: 18px; height: 18px; }
+  .zoeksplit { --zpW: 380px; }
+  .zoekpaneel { max-height: calc(100vh - var(--kopH, 64px) - 28px - env(safe-area-inset-bottom, 0px)); }
+  .zoekpaneel .zrij { gap: 12px; padding: 10px; border-radius: 10px; }
+  .zoekpaneel .zdatum { width: 36px; }
+  .zoekpaneel .zdow, .zoekpaneel .zmnd { font-size: 12px; }
+  .zoekpaneel .znr { font-size: 22px; }
+  .zoekpaneel .zrij .rijtitel { font-size: 16px; line-height: 21px; }
+  .zoekpaneel .zmeta { font-size: 14px; }
+  .zoekpaneel .zrij .badge { font-size: 12px; padding: 2px 7px; border-radius: 6px; }
+  .zoekpaneel .zreeks { min-height: 34px; margin: -8px 0 2px 71px; font-size: 14px; }
+  .zoekpaneel .zreeks .icoon { width: 14px; height: 14px; }
+  .zoekpaneel .zoekkop { font-size: 13px; }
 }

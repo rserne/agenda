@@ -197,12 +197,16 @@ npx playwright install chromium   # eenmalig
 npm test                          # de tests, in een echte browser
 npm run schermen -- basis         # schermafbeeldingen in de map basis/
 npm run schermen -- na basis      # nieuwe afbeeldingen in na/ en vergelijken met basis/
+npm run meting -- basis           # metingen van de panelen in de map basis/
+npm run meting -- na basis        # opnieuw meten in na/ en vergelijken met basis/
 python3 -m http.server 8080       # en open http://localhost:8080/
 ```
 
 `npm test` start de app met een vaste klok (woensdag 4 november 2026, 9:00) en de voorbeeldgegevens. De tests controleren onder meer het opstarten, wisselen van filter, doortrekken naar de volgende week en de volgende zeven dagen, het detailscherm, de weekkiezer, een nieuwe afspraak, het inladen van een .ics-bestand (met en zonder Web Worker), de agenda-link, de contacten, ruimtes en plaatsen (Google nagebootst), Instellingen, tijden uit een mail, notities, het synchroniseren (met de echte Worker-code op een nagebootste D1-database, `test/d1.mjs`) en de desktop. Zet je een deel van een naam erachter, dan draaien alleen die tests, bijvoorbeeld `npm test -- desktop`.
 
 `npm run schermen` maakt 76 schermafbeeldingen: telefoon, telefoon met .ics, iPad liggend en staand, en Mac, elk in licht en donker. Maak voor een grote wijziging eerst een basis en vergelijk daarna; zo zie je meteen of er iets verschuift.
+
+`npm run meting` controleert het gedrag van de panelen, waar een schermafbeelding niet genoeg is. Elke meting opent een scherm, doet een vaste reeks handelingen en legt na elke handeling vast wat er staat: de HTML, de velden, de focus en wat de app bewaart of aanroept. Er zijn er vijf, in `test/metingen/`: het detailscherm met het visitekaartje, Nieuwe afspraak, Tijden uit een mail, Instellingen, en de overige panelen met de statusregel van Cloudflare; samen ruim 1100 stappen per toestel, op iPhone en Mac. Bij een verschil meldt de meting in welk scherm en na welke handeling het zit, met wat er was en wat er nu staat. Een volle ronde duurt ongeveer zes minuten; met `--alleen=nieuw,mail` meet je alleen die schermen. Maak de basis vóór je een paneel verbouwt, op de code die nog werkt. Verandert het gedrag met opzet, dan is het verschil dat de meting meldt precies wat je wilde; maak daarna een nieuwe basis.
 
 `test/voorbeeld.ics` is een feed in Outlook-stijl met verzonnen namen: herhaalreeksen, een verplaatste keer, een uitzondering, een hele dag, een afgezegde en een vrije afspraak.
 

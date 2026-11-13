@@ -5,7 +5,8 @@
   "description": "Agenda-PWA: je week in één oogopslag, uit een .ics-bestand of je gepubliceerde Outlook-agenda",
   "scripts": {
     "test": "node test/app.test.mjs",
-    "schermen": "node test/schermen.mjs"
+    "schermen": "node test/schermen.mjs",
+    "meting": "node test/meting.mjs"
   },
   "dependencies": {
     "ical.js": "1.5.0"

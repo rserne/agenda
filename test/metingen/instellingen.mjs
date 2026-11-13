@@ -9,7 +9,7 @@ export const samenvatting = (u) => `${u.res.length} reeksen, ${u.res.reduce((t, 
 
 export async function inPagina() {
   const slaap = (ms) => new Promise((ok) => setTimeout(ok, ms));
-  const plat = (h) => h.replace(/\s+/g, ' ');
+  const plat = (h) => h.replace(/\s+/g, ' ').split(APP_VERSIE).join('VERSIE'); // het versienummer telt niet mee
   const roep = [];
   let gekoppeld = false, ja = true, sleutelGoed = true;
   // Alles wat het scherm buiten zichzelf aanroept: alleen vastleggen

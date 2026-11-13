@@ -340,6 +340,9 @@ async function openNieuw({ dag = null, blok = null, start = null, duur = null, l
   el.innerHTML = nieuwFormHtml(v);
 
   let lijst = []; // de afspraken van de gekozen dag
+  let klaar = false; // naar Outlook gegaan of als .ics gedownload: dan sluit het paneel zonder vraag
+  // Iets getypt dat er bij het openen niet stond? Dan vraagt het paneel bij het sluiten of je wilt stoppen.
+  const ingevuld = () => v.titel.trim() !== '' || v.deelnemers.trim() !== '' || v.notitie.trim() !== '' || v.locatie.trim() !== locatie.trim();
   let lijstOpen = false; // de afspraken onder de balk in beeld
   const tekenDuur = () => tekenDuurRij(el, 'nduur', v.duur, v.max);
   const tekenSamen = () => {
@@ -390,7 +393,7 @@ async function openNieuw({ dag = null, blok = null, start = null, duur = null, l
   $('#ntijdlijn', el).addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); wisselLijst(); } });
   if (locatie) { v.locatie = locatie; $('input[name="locatie"]', el).value = locatie; }
   tekenDuur();
-  const p = openPaneel(el, { greepSelector: '.detailgreep' });
+  const p = openPaneel(el, { greepSelector: '.detailgreep', magSluiten: () => klaar || !ingevuld() || confirm('Stoppen met deze afspraak? Je invoer gaat verloren.') });
   tekenTijden();
   koppelDeelnemers($('input[name="deelnemers"]', el), $('#naanvul', el));
   koppelLocatie($('input[name="locatie"]', el), $('#nlocaties', el), (ruimte) => { v.ruimte = ruimte; });
@@ -398,7 +401,7 @@ async function openNieuw({ dag = null, blok = null, start = null, duur = null, l
   el.addEventListener('input', (ev) => {
     const n = ev.target.name;
     if (n === 'locatie' && v.ruimte && ev.target.value.trim() !== v.ruimte.naam) v.ruimte = null; // zelf iets anders getypt: geen ruimte meer
-    if (n) { v[n] = ev.target.value; tekenSamen(); }
+    if (n) { v[n] = ev.target.value; klaar = false; tekenSamen(); }
     if (ev.target.id === 'neigen' && ev.target.value) {
       const [h, m] = ev.target.value.split(':').map(Number);
       v.start = new Date(v.dag.getFullYear(), v.dag.getMonth(), v.dag.getDate(), h, m).getTime();
@@ -418,9 +421,9 @@ async function openNieuw({ dag = null, blok = null, start = null, duur = null, l
     ['[data-dag]', (k) => zetDag(addDays(v.dag, Number(k.dataset.dag)))],
     ['[data-naar]', (k) => zetDag(new Date(Number(k.dataset.naar)))],
     ['.datumlabel', (k, ev) => { const i = $('#ndatuminvoer', el); if (i.showPicker) { ev.preventDefault(); try { i.showPicker(); } catch (e) { /* niet overal toegestaan */ } } }],
-    ['#nics', () => { if (v.start != null) downloadIcs(v); }],
+    ['#nics', () => { if (v.start != null) { downloadIcs(v); klaar = true; } }],
     // Outlook neemt het over: het paneel gaat dicht, net nadat de link is gevolgd
-    ['#noutlook', (k, ev) => { if (v.start == null) ev.preventDefault(); else setTimeout(p.sluit, 400); }],
+    ['#noutlook', (k, ev) => { if (v.start == null) ev.preventDefault(); else { klaar = true; setTimeout(p.sluit, 400); } }],
   ];
   el.addEventListener('click', (ev) => {
     for (const [kiezer, doe] of bijTik) { const k = ev.target.closest(kiezer); if (k) { doe(k, ev); return; } }

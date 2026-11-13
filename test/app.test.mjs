@@ -665,6 +665,75 @@ test('mail: tijden naast de agenda, kiezen, antwoord kopiëren en inplannen', as
   assert.deepEqual(p.fouten, []);
 });
 
+test('nieuwe afspraak en tijden uit een mail: sluiten met invoer vraagt eerst, en niets blijft staan', async ({ browser, url }) => {
+  const p = await nieuwePagina(browser, TELEFOON);
+  await p.goto(url); await wacht(800);
+  const vragen = []; let stoppen = false;
+  p.on('dialog', (d) => { vragen.push(d.message()); if (stoppen) d.accept(); else d.dismiss(); });
+  await p.evaluate(() => { navigator.clipboard.writeText = async () => {}; });
+  const open = async (keuze) => { await p.locator('#tabbalk .plusknop').tap(); await wacht(400); await p.locator(`.keuzemenu [data-keuze="${keuze}"]`).tap(); await wacht(700); };
+  // Op de telefoon sluit je door te vegen of naast het paneel te tikken; hier een tik op de achtergrond
+  const sluit = async () => { await p.evaluate(() => [...document.querySelectorAll('.achtergrond.open')].pop().click()); await wacht(600); };
+  const isOpen = (paneel) => p.locator(`${paneel}.open`).count();
+
+  // Nieuwe afspraak zonder invoer: sluit zonder vraag (een andere duur of tijd telt niet als invoer)
+  await open('nieuw');
+  await p.locator('.paneel.nieuw [data-stap="15"]').tap(); await wacht(300);
+  await sluit('.paneel.nieuw');
+  assert.equal(await isOpen('.paneel.nieuw'), 0);
+  assert.deepEqual(vragen, []);
+  // Met invoer: eerst de vraag. Toch niet stoppen: het paneel blijft staan, met wat je had ingevuld.
+  await open('nieuw');
+  await p.fill('.paneel.nieuw input[name="titel"]', 'Overleg over de pilot'); await wacht(200);
+  await sluit('.paneel.nieuw');
+  assert.equal(vragen.length, 1);
+  assert.match(vragen[0], /^Stoppen met deze afspraak\?/);
+  assert.equal(await isOpen('.paneel.nieuw'), 1, 'het paneel blijft open');
+  assert.equal(await p.inputValue('.paneel.nieuw.open input[name="titel"]'), 'Overleg over de pilot');
+  // Ook met Escape komt de vraag; nu wel stoppen
+  stoppen = true;
+  await p.keyboard.press('Escape'); await wacht(600);
+  assert.equal(vragen.length, 2);
+  assert.equal(await isOpen('.paneel.nieuw'), 0);
+  // De volgende keer is het paneel leeg
+  await open('nieuw');
+  assert.equal(await p.inputValue('.paneel.nieuw.open input[name="titel"]'), '');
+  // Klaar (als .ics gedownload): sluiten zonder vraag
+  await p.fill('.paneel.nieuw.open input[name="titel"]', 'Nog een overleg'); await wacht(200);
+  await p.locator('.paneel.nieuw.open [data-start]').first().tap(); await wacht(300);
+  await p.locator('.paneel.nieuw.open #nics').tap(); await wacht(400);
+  await sluit('.paneel.nieuw');
+  assert.equal(vragen.length, 2, 'geen vraag meer');
+  assert.equal(await isOpen('.paneel.nieuw'), 0);
+
+  // Tijden uit een mail: leeg sluit zonder vraag, met tekst komt de vraag
+  await open('mail');
+  await sluit('.paneel.mailtijden');
+  assert.equal(vragen.length, 2);
+  await open('mail');
+  await p.fill('#mtekst', 'Woensdag 11 november tussen 15:00 en 17:00'); await wacht(1200);
+  stoppen = false;
+  await sluit('.paneel.mailtijden');
+  assert.equal(vragen.length, 3);
+  assert.match(vragen[2], /^Stoppen met deze tijden\?/);
+  assert.equal(await isOpen('.paneel.mailtijden'), 1);
+  stoppen = true;
+  await sluit('.paneel.mailtijden');
+  assert.equal(await isOpen('.paneel.mailtijden'), 0);
+  // De tekst blijft niet staan: de volgende keer is het veld leeg
+  await open('mail');
+  assert.equal(await p.inputValue('.paneel.mailtijden.open #mtekst'), '');
+  // Klaar (het antwoord gekopieerd): sluiten zonder vraag
+  await p.fill('.paneel.mailtijden.open #mtekst', 'Woensdag 11 november tussen 15:00 en 17:00'); await wacht(1200);
+  await p.locator('.paneel.mailtijden.open .chip').first().tap(); await wacht(300);
+  await p.locator('.paneel.mailtijden.open #mkopieer').tap(); await wacht(400);
+  const aantal = vragen.length;
+  await sluit('.paneel.mailtijden');
+  assert.equal(vragen.length, aantal, 'geen vraag na het kopiëren');
+  assert.equal(await isOpen('.paneel.mailtijden'), 0);
+  assert.deepEqual(p.fouten, []);
+});
+
 test('mail: bij een drukke middag het begin en einde van elk overleg als voorstel', async ({ browser, url }) => {
   const p = await nieuwePagina(browser, TELEFOON);
   await p.goto(url); await wacht(600);

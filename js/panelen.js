@@ -22,13 +22,15 @@ function tekenNaBijwerken() {
   if (panelen.length) tekenNaSluiten = true;
   else behoudDag(render);
 }
-function openPaneel(el, { greepSelector, boven = false, naSluiten = null } = {}) {
+// magSluiten: voor een paneel met invoer. Het wordt gevraagd bij elke manier van sluiten (knop, Escape, vegen, een tik
+// ernaast); geeft het false terug, dan blijft het paneel open.
+function openPaneel(el, { greepSelector, boven = false, naSluiten = null, magSluiten = null } = {}) {
   const achter = document.createElement('div');
   achter.className = 'achtergrond' + (boven ? ' boven' : '');
   const lagen = $('#lagen');
   lagen.append(achter, el);
   const p = { el, achter, sluit: null };
-  p.sluit = () => {
+  const dicht = () => {
     el.classList.remove('open');
     achter.classList.remove('open');
     const weg = () => { el.remove(); achter.remove(); };
@@ -42,6 +44,7 @@ function openPaneel(el, { greepSelector, boven = false, naSluiten = null } = {})
     }
     if (naSluiten) naSluiten();
   };
+  p.sluit = () => { if (magSluiten && panelen.includes(p) && !magSluiten()) return; dicht(); };
   achter.addEventListener('click', p.sluit);
   panelen.push(p);
   document.body.style.overflow = 'hidden';

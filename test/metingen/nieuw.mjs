@@ -1,7 +1,8 @@
 // Meting: nieuwe afspraak
 // Zeven beginsituaties (plusknop, een dag, een vrij blok, een tijd die botst, een zaterdag), en per situatie een vaste
 // reeks handelingen: duur, begintijden, andere tijd, dag wisselen, invullen, suggesties voor deelnemers en locatie,
-// Google-plaatsen met en zonder fout, .ics en Outlook. Na elke handeling de HTML, de velden, de Outlook-link en de focus.
+// Google-plaatsen met en zonder fout, .ics en Outlook. Na elke handeling de HTML, de velden, de Outlook-link en de focus,
+// en of het paneel bij het sluiten vroeg of je wilt stoppen.
 // Alle namen, adressen en sleutels hierin zijn verzonnen. inPagina draait in de browser, binnen de app.
 
 export const titel = 'Nieuwe afspraak';
@@ -20,6 +21,8 @@ export async function inPagina() {
     return [{ naam: `${vraag} Plein`, sub: 'Plaats', tekst: `${vraag} Plein, Plaats` }, { naam: `${vraag}sweg 1`, sub: '', tekst: '' }];
   };
   const ics = [];
+  let stoppen = true; const vragen = [];
+  window.confirm = (vraag) => { vragen.push(`${vraag} → ${stoppen}`); return stoppen; };
   window.downloadIcs = (v) => ics.push(JSON.stringify(v));
   let klik = null;
   document.addEventListener('click', (ev) => { if (ev.target.closest && ev.target.closest('#noutlook')) { klik = ev.defaultPrevented; ev.preventDefault(); } });
@@ -50,7 +53,7 @@ export async function inPagina() {
       await slaap(ms);
       const a = document.activeElement;
       log.push({ stap, html: plat(el.innerHTML), velden: [...el.querySelectorAll('input,textarea')].map((i) => `${i.name || i.id}=${i.value}`).join(' | '),
-        href: q('#noutlook').getAttribute('href'), focus: a ? (a.name || a.id || a.tagName) : '', open: el.classList.contains('open'), ics: ics.length, sessies: new Set(sessies).size, klik });
+        href: q('#noutlook').getAttribute('href'), focus: a ? (a.name || a.id || a.tagName) : '', open: el.classList.contains('open'), ics: ics.length, sessies: new Set(sessies).size, klik, vragen: vragen.length });
     };
     const klikOp = async (s, stap, n = 0) => { const k = el.querySelectorAll(s)[n]; if (!k || k.disabled) { log.push({ stap: `${stap}: niet mogelijk` }); return false; } k.click(); await snap(stap); return true; };
     const typ = async (veld, waarde, stap, ms) => { veld.focus(); veld.value = waarde; veld.dispatchEvent(new Event('input', { bubbles: true })); await snap(stap, ms); };
@@ -90,6 +93,8 @@ export async function inPagina() {
     await snap('een uur', 300);
     // Velden
     await typ(q('[name="titel"]'), 'Overleg & <test>', 'onderwerp');
+    // Sluiten met invoer: eerst de vraag. Toch niet stoppen: het paneel blijft staan.
+    stoppen = false; document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); await snap('Escape met invoer, toch niet stoppen', 400); stoppen = true;
     await typ(q('[name="notitie"]'), 'Regel 1\nRegel 2; met, tekens', 'notitie');
     // Deelnemers: suggesties
     const dv = q('[name="deelnemers"]');
@@ -128,5 +133,5 @@ export async function inPagina() {
     if (el.classList.contains('open')) { q('[data-actie="sluit"]').click(); await snap('gesloten', 100); }
     res.push({ titel, klasse: el.className, log });
   }
-  return { res, ics };
+  return { res, ics, vragen };
 }

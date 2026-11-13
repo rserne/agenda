@@ -1,7 +1,8 @@
 // Meting: tijden uit een mail
 // Acht teksten (meerdere dagen, een tijd die voorbij is, een verkeerde weekdag, een regel zonder dag, geen tijden, hele
 // dag), en per tekst typen, plakken, in- en uitklappen, duur, tijden kiezen, kopiëren (ook mislukt) en inplannen. Na
-// elke handeling de HTML, het tekstveld, de focus en wat er naar het klembord, de statusregel en Nieuwe afspraak ging.
+// elke handeling de HTML, het tekstveld, de focus en wat er naar het klembord, de statusregel en Nieuwe afspraak ging,
+// en of het paneel bij het sluiten vroeg of je wilt stoppen.
 // Alle namen, adressen en sleutels hierin zijn verzonnen. inPagina draait in de browser, binnen de app.
 
 export const titel = 'Tijden uit een mail';
@@ -11,7 +12,9 @@ export async function inPagina() {
   const slaap = (ms) => new Promise((ok) => setTimeout(ok, ms));
   const plat = (h) => h.replace(/\s+/g, ' ');
   const klembord = [], meldingen = [], gepland = [];
-  let faal = false;
+  let faal = false, stoppen = true;
+  const vragen = [];
+  window.confirm = (vraag) => { vragen.push(`${vraag} → ${stoppen}`); return stoppen; };
   Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async (t) => { if (faal) throw new Error('nee'); klembord.push(t); } } });
   window.toonStatus = (...a) => meldingen.push(JSON.stringify(a));
   window.openNieuw = (o) => gepland.push(JSON.stringify(o));
@@ -42,18 +45,21 @@ export async function inPagina() {
     const snap = async (stap, ms = 150) => {
       await slaap(ms);
       const a = document.activeElement;
-      log.push({ stap, html: plat(el.innerHTML), veld: `${veld.value.length}|${veld.className}|${veld.style.height}`, onthouden: MAILTEKST.length, focus: a ? (a.id || a.name || a.tagName) : '',
-        open: el.classList.contains('open'), klembord: klembord.length, meldingen: meldingen.length, gepland: gepland.length });
+      log.push({ stap, html: plat(el.innerHTML), veld: `${veld.value.length}|${veld.className}|${veld.style.height}`, focus: a ? (a.id || a.name || a.tagName) : '',
+        open: el.classList.contains('open'), klembord: klembord.length, meldingen: meldingen.length, gepland: gepland.length, vragen: vragen.length });
     };
     const klikOp = async (s, stap, n = 0) => { const k = el.querySelectorAll(s)[n]; if (!k || k.disabled || k.hidden) { log.push({ stap: `${stap}: niet mogelijk` }); return false; } k.click(); await snap(stap); return true; };
     const typ = async (waarde, soort, stap) => { veld.focus(); veld.value = waarde; veld.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: soort })); await snap(stap, 450); };
-    await snap('open (met de vorige tekst)', 450);
-    await klikOp('#mtoon', 'hele tekst tonen');
-    await typ('', 'deleteContentBackward', 'leeg gemaakt');
+    await snap('open', 450);
     await typ(tekst.slice(0, 12), 'insertText', 'eerste letters getypt');
+    // Sluiten met tekst: eerst de vraag. Toch niet stoppen: het paneel blijft staan.
+    stoppen = false; document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); await snap('Escape met tekst, toch niet stoppen', 400); stoppen = true;
+    await typ('', 'deleteContentBackward', 'leeg gemaakt');
+    await typ(tekst.slice(0, 12), 'insertText', 'opnieuw de eerste letters');
     await typ(tekst, 'insertFromPaste', 'geplakt');
     veld.blur(); await snap('veld verlaten');
     veld.focus(); await snap('in het veld getikt');
+    await typ(tekst, 'insertFromPaste', 'opnieuw geplakt'); await klikOp('#mtoon', 'hele tekst tonen');
     for (const s of ['15', '15', '-15', '-15', '-15']) await klikOp(`[data-stap="${s}"]`, `duur ${s}`);
     for (const soort of ['vrij', 'botst', 'vol']) await klikOp(`.chip.${soort}`, `kies een tijd: ${soort}`);
     await klikOp('.chip', 'laatste tijd', el.querySelectorAll('.chip').length - 1);
@@ -74,5 +80,5 @@ export async function inPagina() {
     if (el.classList.contains('open')) { q('[data-actie="sluit"]').click(); await snap('gesloten', 100); }
     res.push({ titel, klasse: el.className, log });
   }
-  return { res, klembord, meldingen, gepland };
+  return { res, klembord, meldingen, gepland, vragen };
 }

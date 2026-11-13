@@ -8,8 +8,6 @@
 /*  Tijden uit een mail                                                */
 /* ------------------------------------------------------------------ */
 
-let MAILTEKST = ''; // de geplakte tekst, zolang de app open is
-
 // Een tijdvak uit de mail naast de agenda: wat is er vrij, waar past de duur, en wat zit in de weg
 function toetsVak(lijst, o, duur) {
   const a = new Date(o.dag); a.setHours(0, o.van, 0, 0);
@@ -170,9 +168,10 @@ function openMailTijden() {
   el.setAttribute('role', 'dialog');
   el.setAttribute('aria-label', 'Tijden uit een mail');
   el.innerHTML = mailFormHtml();
-  const p = openPaneel(el, { greepSelector: '.detailgreep' });
   const veld = $('#mtekst', el);
-  veld.value = MAILTEKST;
+  let klaar = false; // het antwoord gekopieerd of ingepland: dan sluit het paneel zonder vraag
+  let vorigeTekst = ''; // de tekst die het laatst is gelezen
+  const p = openPaneel(el, { greepSelector: '.detailgreep', magSluiten: () => klaar || !veld.value.trim() || confirm('Stoppen met deze tijden? De tekst gaat verloren.') });
   let duur = 60, duurZelf = false, gelezen = { opties: [], duur: null, online: false, zonderDag: [] }, beurt = 0, wacht = null;
   const tijdInfo = new Map(); // per getekende begintijd: vrij blok en overlap
   const gekozen = new Map(); // begintijd → { blok: het vrije blok (of null), botst: afspraken die overlappen }
@@ -223,7 +222,7 @@ function openMailTijden() {
   let geplakt = false;
   const lees = () => {
     groei();
-    MAILTEKST = veld.value;
+    vorigeTekst = veld.value;
     gelezen = leesMailTijden(veld.value);
     if (!duurZelf) duur = gelezen.duur || 60;
     tekenDuur();
@@ -245,6 +244,7 @@ function openMailTijden() {
     try {
       // Alleen platte tekst: in je mail neemt hij het lettertype en de kleur van de mail aan
       await navigator.clipboard.writeText(tekst);
+      klaar = true;
       toonStatus('Antwoord gekopieerd.', { soort: 'klaar', duur: 2000 });
     }
     catch (e) { toonStatus('Kopiëren lukte niet. Selecteer de tekst boven de knop.', { soort: 'fout', duur: 3500 }); }
@@ -254,12 +254,14 @@ function openMailTijden() {
     if (gekozen.size !== 1) return;
     const [[tijd, g]] = [...gekozen];
     const locatie = gelezen.online ? 'Microsoft Teams' : '';
+    klaar = true;
     p.sluit();
     setTimeout(() => (g.blok ? openNieuw({ blok: { start: g.blok[0], end: g.blok[1] }, start: tijd, duur, locatie }) : openNieuw({ dag: new Date(tijd), start: tijd, duur, locatie })), 250);
   };
 
   veld.addEventListener('input', (ev) => {
-    if (ev.inputType === 'insertFromPaste' || ev.inputType === 'insertReplacementText' || veld.value.length - MAILTEKST.length > 20) geplakt = true;
+    if (ev.inputType === 'insertFromPaste' || ev.inputType === 'insertReplacementText' || veld.value.length - vorigeTekst.length > 20) geplakt = true;
+    klaar = false; // een nieuwe tekst: opnieuw beginnen
     groei(); clearTimeout(wacht); wacht = setTimeout(lees, 200);
   });
   veld.addEventListener('focus', () => { if (veld.classList.contains('ingeklapt')) klap(false); }); // zelf in de tekst tikken: alles tonen
@@ -276,6 +278,6 @@ function openMailTijden() {
     for (const [kiezer, doe] of bijTik) { const k = ev.target.closest(kiezer); if (k) { doe(k); return; } }
   });
   tekenDuur();
-  if (veld.value.trim()) { geplakt = true; lees(); } else tekenSamen(); // eerder geplakte tekst: meteen ingeklapt
-  if (!isDesktop() || !veld.value) setTimeout(() => { if (!veld.value) veld.focus(); }, 350);
+  tekenSamen();
+  setTimeout(() => { if (!veld.value) veld.focus(); }, 350);
 }

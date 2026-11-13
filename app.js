@@ -3,7 +3,7 @@
 // Geen bouwstap: de bestanden draaien zoals ze zijn op GitHub Pages.
 // Hoog APP_VERSIE hier en VERSION in sw.js samen op bij elke uitgave.
 'use strict';
-const APP_VERSIE = '2026-11-13-7';
+const APP_VERSIE = '2026-11-13-8';
 
 /* ------------------------------------------------------------------ */
 /*  Instellingen                                                       */

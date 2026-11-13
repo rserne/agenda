@@ -1502,32 +1502,30 @@ body.notitietab .titelknop, body.insttab .titelknop { cursor: default; }
 }
 
 /* ================================================================ Zoeken in de agenda op de desktop
-   Het zoekveld staat in de werkbalk, vóór de schakelaar. De resultaten staan in een paneel rechts van de week; een tik
-   op een resultaat zet de week op die afspraak, met een rand eromheen. */
+   Het zoekveld staat in de werkbalk, vóór de schakelaar. De resultaten staan in een lijst direct onder het zoekveld; een
+   tik op een resultaat sluit de lijst en zet de week op die afspraak, met een rand eromheen. */
 @media (min-width: 1200px) {
   body.desktop.agendatab .kop #agendazoek { display: flex; order: 2; margin-left: auto; width: auto; flex: 0 1 240px; min-width: 150px; }
   body.desktop.agendatab .kop #schakelaar { margin-left: 0; }
   body.desktop .kop .zoekwis { width: 22px; height: 22px; margin-right: -6px; }
   body.desktop .kop .zoekwis .icoon { width: 14px; height: 14px; }
-  .zoeksplit { display: grid; grid-template-columns: minmax(0, 1fr) var(--zpW, 320px); gap: 16px; align-items: start; }
-  .zoekpaneel { position: sticky; top: calc(var(--kopH, 52px) + 14px); max-height: calc(100vh - var(--kopH, 52px) - 28px); overflow-y: auto; overscroll-behavior: contain; padding: 2px 6px 12px; border-radius: 14px; background: var(--card); border: 0.5px solid var(--cardBorder); }
-  .zoekpaneel .zoekres { padding: 0; }
-  .zoekpaneel .zoekkop { margin: 14px 0 4px; padding: 0 8px; font-size: 11px; }
-  .zoekpaneel .kaart.zoekkaart { padding: 0; border: 0; border-radius: 0; background: none; }
-  .zoekpaneel .zrij { gap: 10px; padding: 7px 8px 7px 4px; border-radius: 8px; }
-  @media (hover: hover) { .zoekpaneel button.zrij:hover:not(.aan) { background: var(--fill); } }
-  .zoekpaneel .zdatum { width: 30px; }
-  .zoekpaneel .zdow, .zoekpaneel .zmnd { font-size: 11px; }
-  .zoekpaneel .znr { font-size: 18px; }
-  .zoekpaneel .zrij .rijtitel { font-size: 13.5px; line-height: 18px; }
-  .zoekpaneel .zmeta { font-size: 12px; }
-  .zoekpaneel .zrij .badge { font-size: 10.5px; padding: 1px 6px; border-radius: 4px; }
-  .zoekpaneel .zreeks { min-height: 26px; margin: -6px 0 2px 57px; font-size: 12px; }
-  .zoekpaneel .zreeks .icoon { width: 12px; height: 12px; }
-  .zoekpaneel .zoekniets { font-size: 13px; }
-  .zoekpaneel .zoekvoet { font-size: 12px; }
+  .zoeklijst { display: block; padding: 2px 6px 12px; overscroll-behavior: contain; }
+  .zoeklijst .zoekres { padding: 0; }
+  .zoeklijst .zoekkop { margin: 14px 0 4px; padding: 0 8px; font-size: 11px; }
+  .zoeklijst .kaart.zoekkaart { padding: 0; border: 0; border-radius: 0; background: none; }
+  .zoeklijst .zrij { gap: 10px; padding: 7px 8px 7px 4px; border-radius: 8px; }
+  @media (hover: hover) { .zoeklijst button.zrij:hover:not(.aan) { background: var(--fill); } }
+  .zoeklijst .zdatum { width: 30px; }
+  .zoeklijst .zdow, .zoeklijst .zmnd { font-size: 11px; }
+  .zoeklijst .znr { font-size: 18px; }
+  .zoeklijst .zrij .rijtitel { font-size: 13.5px; line-height: 18px; }
+  .zoeklijst .zmeta { font-size: 12px; }
+  .zoeklijst .zrij .badge { font-size: 10.5px; padding: 1px 6px; border-radius: 4px; }
+  .zoeklijst .zreeks { min-height: 26px; margin: -6px 0 2px 57px; font-size: 12px; }
+  .zoeklijst .zreeks .icoon { width: 12px; height: 12px; }
+  .zoeklijst .zoekniets { font-size: 13px; }
+  .zoeklijst .zoekvoet { font-size: 12px; }
   .krij.gevonden { background: var(--selBg); box-shadow: 0 0 0 2px var(--accent); }
-  .zoekweek .krij .badge { min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; } /* de kolommen zijn smaller naast het paneel */
 }
 @media (min-width: 1440px) { body.desktop.agendatab .kop #agendazoek { flex-basis: 280px; } }
 /* iPad liggend: alles op vingermaat, en het weergaveknopje direct naast het zoekveld */
@@ -1536,16 +1534,14 @@ body.notitietab .titelknop, body.insttab .titelknop { cursor: default; }
   body.desktop.agendatab .kop #agendazoek { flex-basis: 300px; min-width: 180px; }
   body.desktop .kop .zoekwis { width: 32px; height: 32px; margin-right: -8px; }
   body.desktop .kop .zoekwis .icoon { width: 18px; height: 18px; }
-  .zoeksplit { --zpW: 380px; }
-  .zoekpaneel { max-height: calc(100vh - var(--kopH, 64px) - 28px - env(safe-area-inset-bottom, 0px)); }
-  .zoekpaneel .zrij { gap: 12px; padding: 10px; border-radius: 10px; }
-  .zoekpaneel .zdatum { width: 36px; }
-  .zoekpaneel .zdow, .zoekpaneel .zmnd { font-size: 12px; }
-  .zoekpaneel .znr { font-size: 22px; }
-  .zoekpaneel .zrij .rijtitel { font-size: 16px; line-height: 21px; }
-  .zoekpaneel .zmeta { font-size: 14px; }
-  .zoekpaneel .zrij .badge { font-size: 12px; padding: 2px 7px; border-radius: 6px; }
-  .zoekpaneel .zreeks { min-height: 34px; margin: -8px 0 2px 71px; font-size: 14px; }
-  .zoekpaneel .zreeks .icoon { width: 14px; height: 14px; }
-  .zoekpaneel .zoekkop { font-size: 13px; }
+  .zoeklijst .zrij { gap: 12px; padding: 10px; border-radius: 10px; }
+  .zoeklijst .zdatum { width: 36px; }
+  .zoeklijst .zdow, .zoeklijst .zmnd { font-size: 12px; }
+  .zoeklijst .znr { font-size: 22px; }
+  .zoeklijst .zrij .rijtitel { font-size: 16px; line-height: 21px; }
+  .zoeklijst .zmeta { font-size: 14px; }
+  .zoeklijst .zrij .badge { font-size: 12px; padding: 2px 7px; border-radius: 6px; }
+  .zoeklijst .zreeks { min-height: 34px; margin: -8px 0 2px 71px; font-size: 14px; }
+  .zoeklijst .zreeks .icoon { width: 14px; height: 14px; }
+  .zoeklijst .zoekkop { font-size: 13px; }
 }

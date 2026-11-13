@@ -288,14 +288,7 @@ function render() {
   if (geenData && ST.laden) { main.innerHTML = '<div class="laden">Agenda laden…</div>'; return; }
   if (geenData && ST.fout) { main.innerHTML = meldingHtml('Agenda niet beschikbaar', ST.fout, 'Opnieuw proberen'); $('#inhoud .knop').onclick = () => laad(); return; }
   // De agenda kies je in de weekkiezer (tik op de titel) of op de desktop in de zijbalk
-  const html = ST.tab === 'week' ? weekHtml(events) : vooruitblikHtml(events);
-  if (zoekt()) {
-    // Desktop: de resultaten in een paneel rechts van de week; het paneel blijft op dezelfde plek gescrold
-    const oud = $('#inhoud .zoekpaneel');
-    const y = oud ? oud.scrollTop : 0;
-    main.innerHTML = `<div class="zoeksplit"><div class="zoekweek">${html}</div><aside class="zoekpaneel" aria-label="Zoekresultaten">${zoekHtml()}</aside></div>`;
-    $('#inhoud .zoekpaneel').scrollTop = y;
-  } else main.innerHTML = html;
+  main.innerHTML = ST.tab === 'week' ? weekHtml(events) : vooruitblikHtml(events);
   if (ST.naarVandaag) scrollNaarVandaag();
 }
 

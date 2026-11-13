@@ -1,8 +1,8 @@
 // Agenda, zoeken
 // Zoeken in de afspraken: op titel en locatie, zonder op hoofdletters of accenten te letten.
 // iPhone en iPad staand: het vergrootglas in de kop opent een zoekveld op de plek van de schakelaar, met de resultaten
-// in plaats van de week. iPad liggend en Mac: het zoekveld staat in de werkbalk, de resultaten in een paneel rechts;
-// een tik op een resultaat zet de week op die afspraak, met een rand eromheen.
+// in plaats van de week. iPad liggend en Mac: het zoekveld staat in de werkbalk, de resultaten in een lijst er direct
+// onder; een tik op een resultaat sluit de lijst en zet de week op die afspraak, met een rand eromheen.
 // Gewoon script (geen module): het deelt de bovenste laag met de andere bestanden; de volgorde staat in index.html.
 'use strict';
 
@@ -10,6 +10,7 @@ const ZOEK = {
   open: false, // telefoon en tablet: het zoekveld staat open
   q: '',
   gekozen: null, // desktop: de afspraak die in de week een rand krijgt
+  lijst: false, // desktop: de lijst onder het zoekveld staat open
   uitgeklapt: new Set(), // reeksen die je hebt uitgeklapt, per groep ('komend|…' of 'geweest|…')
   geladen: null,
   cache: null,
@@ -165,6 +166,31 @@ function zoekHtml() {
   return `<div class="zoekres">${sectie('Komend', r.komend, 'komend')}${sectie('Geweest', r.geweest, 'geweest')}${voet}</div>`;
 }
 
+// Desktop: de resultaten in een lijst direct onder het zoekveld, zoals de suggesties onder het zoekveld in Notities
+const zoeklijstEl = document.createElement('div');
+zoeklijstEl.className = 'zoekvoorstel zoeklijst';
+zoeklijstEl.id = 'zoeklijst';
+zoeklijstEl.setAttribute('role', 'region');
+zoeklijstEl.setAttribute('aria-label', 'Zoekresultaten');
+zoeklijstEl.hidden = true;
+document.body.appendChild(zoeklijstEl);
+function tekenZoeklijst() {
+  if (!(zoekt() && isDesktop() && ZOEK.lijst)) { zoeklijstEl.hidden = true; return; }
+  const y = zoeklijstEl.hidden ? 0 : zoeklijstEl.scrollTop;
+  zoeklijstEl.innerHTML = zoekHtml();
+  plaatsZoeklijst();
+  zoeklijstEl.hidden = false;
+  zoeklijstEl.scrollTop = y;
+}
+function plaatsZoeklijst() {
+  const r = $('#agendazoek').getBoundingClientRect();
+  const breed = Math.min(Math.max(r.width, matchMedia('(pointer: coarse)').matches ? 420 : 360), innerWidth - 24);
+  zoeklijstEl.style.left = `${Math.max(12, Math.min(r.left, innerWidth - breed - 12))}px`;
+  zoeklijstEl.style.top = `${r.bottom + 8}px`;
+  zoeklijstEl.style.width = `${breed}px`;
+  zoeklijstEl.style.maxHeight = `${Math.max(200, innerHeight - r.bottom - 24)}px`;
+}
+
 // De kop: het vergrootglas, het zoekveld en Annuleer
 function zetZoekKop() {
   const agenda = ST.tab === 'week' || ST.tab === 'forecast';
@@ -174,6 +200,7 @@ function zetZoekKop() {
   const veld = $('#agzoek');
   if (document.activeElement !== veld && veld.value !== ZOEK.q) veld.value = ZOEK.q;
   $('#zoekwis').hidden = !ZOEK.q;
+  tekenZoeklijst();
 }
 
 /* ------------------------------------------------------------------ */
@@ -207,6 +234,7 @@ function sluitZoeken({ naarVandaag = true } = {}) {
   if (!ZOEK.open && !ZOEK.q) return;
   clearTimeout(_zoekTimer);
   ZOEK.open = false;
+  ZOEK.lijst = false;
   zetZoekterm('');
   $('#agzoek').value = '';
   $('#agzoek').blur();
@@ -224,11 +252,13 @@ function zoekenDichtBijNavigeren() {
   $('#agzoek').blur();
 }
 
-// Desktop: de week naar de gekozen afspraak; tik je er nog eens op, dan opent hij
+// Desktop: de lijst dicht en de week naar de gekozen afspraak; tik je er nog eens op, dan opent hij
 function kiesTreffer(e) {
   if (!isDesktop()) { openDetail(e); return; }
   const week = startOfWeek(e.start).getTime();
-  if (ZOEK.gekozen === e.id && ST.tab === 'week' && startOfWeek(ST.anker).getTime() === week) { openDetail(e); return; }
+  ZOEK.lijst = false;
+  $('#agzoek').blur();
+  if (ZOEK.gekozen === e.id && ST.tab === 'week' && startOfWeek(ST.anker).getTime() === week) { tekenZoeklijst(); openDetail(e); return; }
   ZOEK.gekozen = e.id;
   ST.tab = 'week';
   LS.set('ag_tab', 'week');
@@ -250,19 +280,23 @@ $('#zoekwis').addEventListener('click', (ev) => {
   $('#agzoek').focus();
   render();
 });
-$('#agzoek').addEventListener('input', (ev) => { zetZoekterm(ev.target.value); zoekTekenStraks(); });
+$('#agzoek').addEventListener('input', (ev) => { zetZoekterm(ev.target.value); ZOEK.lijst = true; zoekTekenStraks(); });
+$('#agzoek').addEventListener('focus', () => { if (isDesktop() && ZOEK.q.trim() && !ZOEK.lijst) { ZOEK.lijst = true; tekenZoeklijst(); } });
+window.addEventListener('resize', () => { if (!zoeklijstEl.hidden) plaatsZoeklijst(); });
 $('#agzoek').addEventListener('keydown', (ev) => {
   if (ev.key === 'Enter') { ev.preventDefault(); if (!isDesktop()) ev.target.blur(); } // het toetsenbord weg, de resultaten in beeld
   else if (ev.key === 'Escape') { ev.preventDefault(); sluitZoeken({ naarVandaag: false }); }
 });
 document.addEventListener('click', (ev) => {
-  const reeks = ev.target.closest('#inhoud [data-reeks]');
+  // Desktop: een tik buiten het zoekveld en de lijst sluit de lijst; de rand in de week blijft staan
+  if (!zoeklijstEl.hidden && !ev.target.closest('#zoeklijst, #agendazoek')) { ZOEK.lijst = false; zoeklijstEl.hidden = true; }
+  const reeks = ev.target.closest('#inhoud [data-reeks], #zoeklijst [data-reeks]');
   if (reeks) {
     const k = reeks.dataset.reeks;
     if (ZOEK.uitgeklapt.has(k)) ZOEK.uitgeklapt.delete(k); else ZOEK.uitgeklapt.add(k);
     render();
     return;
   }
-  const rij = ev.target.closest('#inhoud [data-zoek]');
+  const rij = ev.target.closest('#inhoud [data-zoek], #zoeklijst [data-zoek]');
   if (rij && ZOEK.treffers && ZOEK.treffers.has(rij.dataset.zoek)) kiesTreffer(ZOEK.treffers.get(rij.dataset.zoek));
 });

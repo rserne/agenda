@@ -1409,27 +1409,39 @@ test('zoeken, telefoon: het vergrootglas opent een zoekveld; Komend en Geweest, 
   assert.deepEqual(p.fouten, []);
 });
 
-test('zoeken, desktop: resultaten in een paneel; een tik zet de week op de afspraak, met een rand, ook als hij vast is', async ({ browser, url }) => {
+test('zoeken, desktop: resultaten in een lijst onder het zoekveld; een tik zet de week op de afspraak, met een rand, ook als hij vast is', async ({ browser, url }) => {
   const p = await nieuwePagina(browser, MAC);
   await p.goto(url); await wacht(800);
+  const lijst = p.locator('#zoeklijst');
   assert.equal(await p.locator('#zoekknop').isVisible(), false, 'op de desktop staat het zoekveld altijd in de werkbalk');
   assert.equal(await p.locator('#agendazoek').isVisible(), true);
-  assert.equal(await p.locator('.zoekpaneel').count(), 0);
+  assert.equal(await lijst.isVisible(), false);
   await p.locator('#agzoek').click(); await p.keyboard.type('architectuur'); await wacht(1000);
-  assert.equal(await p.locator('.zoekpaneel').count(), 1);
+  assert.equal(await lijst.isVisible(), true);
+  const veld = await p.locator('#agendazoek').boundingBox(), vak = await lijst.boundingBox();
+  assert.ok(vak.y >= veld.y + veld.height && vak.y - (veld.y + veld.height) < 16, 'de lijst staat direct onder het zoekveld');
+  assert.ok(Math.abs(vak.x - veld.x) < 1, 'en begint op dezelfde plek');
   assert.equal(await p.locator('#inhoud .krij.gevonden').count(), 0);
-  await p.locator('.zoekpaneel .zrij').nth(1).click(); await wacht(800); // Geweest: donderdag 29 oktober
+  await lijst.locator('.zrij').nth(1).click(); await wacht(800); // Geweest: donderdag 29 oktober
+  assert.equal(await lijst.isVisible(), false, 'na een tik gaat de lijst dicht');
   assert.equal(await p.locator('#titel').innerText(), 'Week 44');
   assert.match(await p.locator('#inhoud .krij.gevonden').innerText(), /Architectuuroverleg/);
   assert.equal(await p.locator('#schakelaar [data-filter="notable"]').getAttribute('aria-selected'), 'true', 'zichtbaar bij Opvallend, al is het een vast overleg');
-  assert.equal(await p.locator('.zoekpaneel .zrij.aan').count(), 1);
-  // Nog een tik opent de afspraak
-  await p.locator('.zoekpaneel .zrij').nth(1).click(); await wacht(700);
+  // Een tik in het zoekveld opent de lijst weer, met het gekozen resultaat gekleurd; een tik ernaast sluit hem
+  await p.locator('#agzoek').click(); await wacht(300);
+  assert.equal(await lijst.isVisible(), true);
+  assert.equal(await lijst.locator('.zrij.aan').count(), 1);
+  await p.locator('#inhoud .kolomkop').first().click(); await wacht(300);
+  assert.equal(await lijst.isVisible(), false);
+  assert.equal(await p.locator('#inhoud .krij.gevonden').count(), 1, 'de rand blijft staan');
+  // De afspraak met de rand opent zoals altijd
+  await p.locator('#inhoud .krij.gevonden').click(); await wacht(700);
   assert.match(await p.locator('.paneel').innerText(), /Architectuuroverleg/);
   await p.keyboard.press('Escape'); await wacht(500);
   // Escape in het zoekveld maakt het leeg; de week blijft staan
   await p.locator('#agzoek').click(); await p.keyboard.press('Escape'); await wacht(400);
-  assert.equal(await p.locator('.zoekpaneel').count(), 0);
+  assert.equal(await lijst.isVisible(), false);
+  assert.equal(await p.locator('#agzoek').inputValue(), '');
   assert.equal(await p.locator('#inhoud .krij.gevonden').count(), 0);
   assert.equal(await p.locator('#titel').innerText(), 'Week 44');
   assert.deepEqual(p.fouten, []);

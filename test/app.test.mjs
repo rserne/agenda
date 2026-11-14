@@ -84,11 +84,11 @@ test('telefoon: in de Vooruitblik gaat doortrekken naar de volgende zeven dagen'
   await p.goto(url); await wacht(1200);
   await p.locator('#weergaveknop').tap(); await wacht(300);
   await p.locator('.weergavemenu [data-weergave="forecast"]').tap(); await wacht(800);
-  assert.equal(await p.locator('#datumregel').innerText(), '4–10 november');
+  assert.equal(await p.locator('#datumregel').innerText(), '4–10 nov');
   await p.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight)); await wacht(300);
   await veeg(p, 200, 650, 300);
   assert.equal(await p.locator('#titel').innerText(), 'Vooruitblik');
-  assert.equal(await p.locator('#datumregel').innerText(), '11–17 november');
+  assert.equal(await p.locator('#datumregel').innerText(), '11–17 nov');
 });
 
 test('telefoon: het weergaveknopje wisselt tussen Week en Vooruitblik, en Agenda onthoudt de keuze', async ({ browser, url }) => {
@@ -113,7 +113,7 @@ test('telefoon: het weergaveknopje wisselt tussen Week en Vooruitblik, en Agenda
   assert.equal(await p.locator('#titel').innerText(), 'Week 46');
   await p.locator('#tabbalk [data-tab="agenda"]').tap(); await wacht(700);
   assert.equal(await p.locator('#titel').innerText(), 'Week 45');
-  assert.equal(await p.locator('#datumregel').innerText(), '2–8 november');
+  assert.equal(await p.locator('#datumregel').innerText(), '2–8 nov');
   assert.deepEqual(p.fouten, []);
 });
 
@@ -1459,11 +1459,11 @@ test('kop, telefoon: het label in 15 pt in de accentkleur, de datums als titel i
       titel: d.textContent, titelPt: s(d).fontSize, titelGewicht: s(d).fontWeight, heel: t.scrollWidth <= t.clientWidth && d.scrollWidth <= d.clientWidth };
   });
   let k = await kop();
-  assert.deepEqual([k.label, k.labelPt, k.labelGewicht, k.titel, k.titelPt, k.titelGewicht, k.heel], ['Week 45', '15px', '600', '2–8 november', '28px', '700', true]);
+  assert.deepEqual([k.label, k.labelPt, k.labelGewicht, k.titel, k.titelPt, k.titelGewicht, k.heel], ['Week 45', '15px', '600', '2–8 nov', '28px', '700', true]);
   assert.equal(k.labelKleur, k.accent, 'het label in de accentkleur');
   await p.evaluate(() => { ST.tab = 'forecast'; ST.fcStart = new Date(2026, 10, 28); laad(); }); await wacht(600);
   k = await kop();
-  assert.deepEqual([k.label, k.titel, k.heel], ['Vooruitblik', '28 nov – 4 dec', true], 'over twee maanden: korte maandnamen');
+  assert.deepEqual([k.label, k.titel, k.heel], ['Vooruitblik', '28 nov – 4 dec', true], 'de maand in drie letters, ook over twee maanden');
   // Notities houdt de grote titel
   await p.locator('#tabbalk [data-tab="notities"]').tap(); await wacht(500);
   assert.ok(parseFloat(await p.evaluate(() => getComputedStyle(document.querySelector('#titel')).fontSize)) >= 30, 'Notities houdt de grote titel');

@@ -238,11 +238,11 @@ function renderKop() {
   const { start } = periode();
   const agenda = ST.tab === 'week' || ST.tab === 'forecast';
   $('#titel').textContent = ST.tab === 'week' ? `Week ${isoWeek(start)}` : { forecast: 'Vooruitblik', notities: 'Notities', instellingen: 'Instellingen' }[ST.tab];
-  // Telefoon: de datums zijn de titel (28 pt); loopt de week over twee maanden, dan korte maandnamen, anders past het niet
+  // Telefoon: de datums zijn de titel (28 pt), met de maand in drie letters: rustiger, en het past altijd
   const eind = addDays(start, 6);
-  $('#datumregel').textContent = !isDesktop() && start.getMonth() !== eind.getMonth()
-    ? `${start.getDate()} ${MONTHS_SHORT[start.getMonth()]} – ${eind.getDate()} ${MONTHS_SHORT[eind.getMonth()]}`
-    : rangeLong(start, eind);
+  $('#datumregel').textContent = isDesktop() ? rangeLong(start, eind)
+    : start.getMonth() === eind.getMonth() ? `${start.getDate()}–${eind.getDate()} ${MONTHS_SHORT[eind.getMonth()]}`
+      : `${start.getDate()} ${MONTHS_SHORT[start.getMonth()]} – ${eind.getDate()} ${MONTHS_SHORT[eind.getMonth()]}`;
   document.body.classList.toggle('vooruitblik', ST.tab === 'forecast');
   document.body.classList.toggle('agendatab', agenda);
   document.body.classList.toggle('notitietab', ST.tab === 'notities'); // geen weekkeuze, schakelaar en pijlen; wel zoeken

@@ -108,8 +108,9 @@
     --separator: rgba(84, 84, 88, 0.65);
     --accent: #86C3E1;
     --feestTekst: #8FD3A2; /* 12:1 op --bg */
-    --externTile: #B9A2E0;
-    --internTile: #A7B3C3;
+    /* Tegels in het donker: een zachte vulling met lichte tekst, zodat ze niet feller zijn dan de rest van het scherm */
+    --externTile: rgba(194, 166, 242, 0.24);
+    --internTile: rgba(163, 178, 198, 0.2);
     --regularTile: #1C1C1E;
     --vastRand: rgba(255, 255, 255, 0.34);
     --regularTileText: rgba(255, 255, 255, 0.78);
@@ -141,9 +142,9 @@
     --statusYes: #30D158;
     --statusNo: #FF453A;
     --statusMaybe: #FF9F0A;
-    --tileText: #1E1D24;
-    --tileBadgeBg: rgba(0, 0, 0, 0.12);
-    --tileBadgeLijn: rgba(0, 0, 0, 0.4);
+    --tileText: #F2F2F7;
+    --tileBadgeBg: rgba(255, 255, 255, 0.16);
+    --tileBadgeLijn: rgba(255, 255, 255, 0.35);
     --onAccent: #1E1D24;
     --ringFull: #EB8479;
     --volRgb: 240 104 88;

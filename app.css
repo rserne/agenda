@@ -29,9 +29,8 @@
   --weekendText: rgba(60, 60, 67, 0.82); /* ook op de blauwe balk van de gekozen week minstens 4,5:1 */
   --separator: rgba(60, 60, 67, 0.29);
   --accent: #1F72A0; /* 5,3:1 op wit */
-  /* Feestdagen: een eigenschap van de dag, geen afspraak. Zachte achtergrond achter de datum, de naam als label. */
-  --feestTekst: #9C4317; /* 5,7:1 op --feestDatumBg, 5,2:1 op --feestLabelBg */
-  --feestDatumBg: #FBEEE2;
+  /* Feestdagen: een eigenschap van de dag, geen afspraak. De datum in de feestdagkleur, de naam als label. */
+  --feestTekst: #9C4317; /* 5,9:1 op --bg, 5,2:1 op --feestLabelBg */
   --feestLabelBg: #F7E3D1;
   /* Afspraken: extern paars, intern grafiet, vast lichtgrijs. Blauw blijft voor vrij en aan te tikken, geel voor overlap,
      rood voor bezet en te laat; zo heeft elke kleur één betekenis. */
@@ -108,8 +107,7 @@
     --weekendText: rgba(235, 235, 245, 0.72);
     --separator: rgba(84, 84, 88, 0.65);
     --accent: #86C3E1;
-    --feestTekst: #F2B17A; /* 8,3:1 op --feestDatumBg, 7,3:1 op --feestLabelBg */
-    --feestDatumBg: #2A2420;
+    --feestTekst: #F2B17A; /* 11:1 op --bg, 7,3:1 op --feestLabelBg */
     --feestLabelBg: #3A2C22;
     --externTile: #B9A2E0;
     --internTile: #A7B3C3;
@@ -1559,21 +1557,17 @@ body.notitietab .titelknop, body.insttab .titelknop { cursor: default; }
 }
 
 /* ================================================================ Feestdagen
-   Een feestdag is een eigenschap van de dag, geen afspraak: de datum krijgt een zachte achtergrond en de accentkleur
-   van de feestdag (vandaag gaat voor), de naam staat als klein label bovenaan de afspraken. Op een vrije feestdag
+   Een feestdag is een eigenschap van de dag, geen afspraak: de datum krijgt de feestdagkleur (vandaag gaat voor), de naam staat als klein label bovenaan de afspraken. Op een vrije feestdag
    staan de vaste overleggen in dezelfde kleur, want die gaan vrijwel zeker niet door. */
 .feestlabel { align-self: flex-start; display: inline-block; max-width: 100%; padding: 2px 7px; border-radius: 6px; background: var(--feestLabelBg); color: var(--feestTekst); font-size: 11px; font-weight: 600; line-height: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dagkop + .feestlabel { margin: 0 0 6px 4px; }
-.vbdatum.feest { align-self: flex-start; padding: 4px 0 5px; border-radius: 10px; background: var(--feestDatumBg); }
 .vbdatum.feest .dow, .vbdatum.feest .nr, .vbdatum.feest .mnd { color: var(--feestTekst); }
-.dagkop.feest { margin-left: -2px; margin-right: -2px; padding-left: 18px; border-radius: 10px; background: var(--feestDatumBg); }
 .dagkop.feest .nr, .dagkop.feest .dow, .dagkop.feest .mnd { color: var(--feestTekst); }
 .vbrest.feest, .rij.rest.feest, .krij.rest.feest { color: var(--feestTekst); }
 .zfeest { display: flex; align-items: center; gap: 5px; color: var(--secondary); font-size: 13px; }
 .zfeest .icoon { width: 15px; height: 15px; flex-shrink: 0; color: var(--secondary); }
 @media (min-width: 1200px) {
-  .dagkolom.feest .kolomkop { border-radius: 10px; background: var(--feestDatumBg); padding-left: 8px; padding-right: 8px; }
   .dagkolom.feest .kolomkop .nr, .dagkolom.feest .kolomkop .dow, .dagkolom.feest .kolomkop .mnd { color: var(--feestTekst); }
-  .kolomkop + .feestlabel { margin: 4px 0 6px; }
+  .kolomkop + .feestlabel { margin: 0 0 6px; }
   .zoeklijst .zfeest { font-size: 11px; }
 }

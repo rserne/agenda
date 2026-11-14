@@ -1,6 +1,6 @@
 // Agenda, feestdagen
 // De elf officiële Nederlandse feestdagen, uitgerekend in de app zelf: geen koppeling, geen link, ook offline.
-// De datum krijgt de feestdagkleur; de naam staat in de week rechts in de dagkop, in de Vooruitblik als label;
+// De datum krijgt de feestdagkleur; de naam staat in de week rechts in de dagkop, in de Vooruitblik op een regel boven de dag;
 // bij een zoekresultaat op die dag staat de naam erbij.
 // Op een vrije feestdag stelt de app geen vrije tijden voor (Vrij en Nieuwe afspraak).
 // Vrij zijn alle feestdagen, behalve Goede Vrijdag, en Bevrijdingsdag alleen in een lustrumjaar (2025, 2030, …).
@@ -52,11 +52,6 @@ const FEESTICOON = lijn('<rect x="4" y="5" width="16" height="16" rx="2"/><path 
 function feestdagInKop(d) {
   const f = feestdag(d);
   return f ? `<span class="kfeest">${f.naam}</span>` : '';
-}
-// Vooruitblik: het label bovenaan de afspraken van de dag
-function feestdagHtml(d) {
-  const f = feestdag(d);
-  return f ? `<span class="feestlabel">${f.naam}</span>` : '';
 }
 // De datum krijgt de kleur van de feestdag, behalve vandaag: dan gaat de markering van vandaag voor
 const feestKlasse = (d, isVandaag) => (feestdag(d) && !isVandaag ? ' feest' : '');

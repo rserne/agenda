@@ -29,10 +29,9 @@
   --weekendText: rgba(60, 60, 67, 0.82); /* ook op de blauwe balk van de gekozen week minstens 4,5:1 */
   --separator: rgba(60, 60, 67, 0.29);
   --accent: #1F72A0; /* 5,3:1 op wit */
-  /* Feestdagen: een eigenschap van de dag, geen afspraak. De datum in de feestdagkleur, de naam als label.
+  /* Feestdagen: een eigenschap van de dag, geen afspraak. De datum en de naam in de feestdagkleur.
      Groen: de enige tint die nog vrij is, ver van blauw (vrij), geel (overlap), rood (bezet) en paars (extern). */
-  --feestTekst: #2A6E3F; /* 5,5:1 op --bg, 5,1:1 op --feestLabelBg */
-  --feestLabelBg: #DCEFE1;
+  --feestTekst: #2A6E3F; /* 5,5:1 op --bg */
   /* Afspraken: extern paars, intern grafiet, vast lichtgrijs. Blauw blijft voor vrij en aan te tikken, geel voor overlap,
      rood voor bezet en te laat; zo heeft elke kleur één betekenis. */
   --externTile: #E2D5F6;
@@ -108,8 +107,7 @@
     --weekendText: rgba(235, 235, 245, 0.72);
     --separator: rgba(84, 84, 88, 0.65);
     --accent: #86C3E1;
-    --feestTekst: #8FD3A2; /* 12:1 op --bg, 7,7:1 op --feestLabelBg */
-    --feestLabelBg: #1F3326;
+    --feestTekst: #8FD3A2; /* 12:1 op --bg */
     --externTile: #B9A2E0;
     --internTile: #A7B3C3;
     --regularTile: #1C1C1E;
@@ -1558,8 +1556,10 @@ body.notitietab .titelknop, body.insttab .titelknop { cursor: default; }
 }
 
 /* ================================================================ Feestdagen
-   Een feestdag is een eigenschap van de dag, geen afspraak: de datum krijgt de feestdagkleur (vandaag gaat voor), de naam staat in de week rechts in de dagkop, in de Vooruitblik als klein label bovenaan de afspraken. */
-.feestlabel { align-self: flex-start; display: inline-block; max-width: 100%; padding: 2px 7px; border-radius: 6px; background: var(--feestLabelBg); color: var(--feestTekst); font-size: 11px; font-weight: 600; line-height: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+   Een feestdag is een eigenschap van de dag, geen afspraak: de datum krijgt de feestdagkleur (vandaag gaat voor), de naam staat in de week rechts in de dagkop, in de Vooruitblik op een eigen regel boven de dag. Zo blijven de
+   kaarten en tegels op één lijn met de datum. */
+.vbdag.metfeest { flex-wrap: wrap; row-gap: 2px; }
+.vbfeest { flex-basis: 100%; color: var(--feestTekst); font-size: 13px; font-weight: 600; line-height: 18px; }
 .kfeest { margin-left: auto; padding-left: 10px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--feestTekst); font-size: 15px; font-weight: 600; }
 .vbdatum.feest .dow, .vbdatum.feest .nr, .vbdatum.feest .mnd { color: var(--feestTekst); }
 .dagkop.feest .nr, .dagkop.feest .dow, .dagkop.feest .mnd { color: var(--feestTekst); }
@@ -1573,6 +1573,7 @@ body.notitietab .titelknop, body.insttab .titelknop { cursor: default; }
   .zoeklijst .zfeest { font-size: 11px; }
 }
 @media (min-width: 1200px) and (pointer: coarse) {
+  .vbfeest { font-size: 15px; line-height: 20px; }
   .kolomkop .kfeest { font-size: 14px; }
   .dagkolom.smal .kfeest { font-size: 12px; line-height: 15px; }
 }

@@ -211,10 +211,9 @@ function vooruitblikHtml(events) {
     const items = [...tegels.map((e) => ({ t: e.start.getTime(), e })), ...vrij.map((f) => ({ t: f.start.getTime(), f }))].sort((a, b) => a.t - b.t);
     const ov = overlapVan(lijst);
     const punten = ST.filter !== 'free' ? puntenBlokHtml(d) : ''; // de actiepunten als balk boven de afspraken
-    html += `<section class="vbdag">
+    html += `<section class="vbdag${feestdag(d) ? ' metfeest' : ''}">${feestdag(d) ? `<div class="vbfeest">${feestdag(d).naam}</div>` : ''}
       <div class="vbdatum${isVandaag ? ' vandaag' : ''}${feestKlasse(d, isVandaag)}"><span class="dow">${DAYS_SHORT[d.getDay()].toUpperCase()}</span><span class="nr">${d.getDate()}</span>${i === 0 || d.getDate() === 1 ? `<span class="mnd">${MONTHS_SHORT[d.getMonth()]}</span>` : ''}</div>
       <div class="vbinhoud">
-        ${feestdagHtml(d)}
         ${!heleDag.length && !getimed.length && !vrij.length && !punten ? `<div class="vbleeg">${isVandaag ? (afgelopen ? 'Geen afspraken meer vandaag' : 'Geen afspraken vandaag') : 'Geen afspraken'}</div>` : ''}
         ${punten}
         ${heleDag.map((e) => `<button class="vbheledag" data-id="${esc(e.id)}"><span class="t">${esc(e.title)}</span><span class="h">hele dag</span></button>`).join('')}

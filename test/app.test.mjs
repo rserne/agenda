@@ -1497,9 +1497,15 @@ test('feestdagen: de elf officiële dagen kloppen, vrij behalve Goede Vrijdag en
   // In de week: de naam onder de dagkop
   await p.evaluate(() => { ST.anker = new Date(2026, 11, 21); laad(); }); await wacht(900);
   assert.deepEqual(await p.locator('#inhoud .dagkop .kfeest').allInnerTexts(), ['Eerste Kerstdag', 'Tweede Kerstdag'], 'de naam in de dagkop');
-  assert.equal(await p.locator('#inhoud .feestlabel').count(), 0, 'geen apart label meer in de week');
+  assert.equal(await p.locator('#inhoud .dagkop + .kaart').count() >= 2, true, 'de kaart volgt direct op de dagkop');
   assert.equal(await p.locator('#inhoud .dagkop.feest').count(), 2, 'de datum van een feestdag krijgt de feestdagkleur');
   assert.match(await p.locator('#inhoud .dagkop', { hasText: 'Zaterdag' }).innerText(), /26/, 'een zaterdag met een feestdag krijgt een eigen kop');
+  // Vooruitblik: de naam op een regel boven de dag; de datum en de eerste afspraak blijven op één lijn
+  await p.evaluate(() => { ST.tab = 'forecast'; ST.filter = 'all'; ST.fcStart = new Date(2026, 11, 24); laad(); }); await wacht(800);
+  assert.deepEqual(await p.locator('#inhoud .vbfeest').allInnerTexts(), ['Eerste Kerstdag', 'Tweede Kerstdag']);
+  const kerst = p.locator('#inhoud .vbdag.metfeest').first();
+  const [datum, inhoud] = await Promise.all([kerst.locator('.vbdatum').boundingBox(), kerst.locator('.vbinhoud').boundingBox()]);
+  assert.ok(Math.abs(datum.y - inhoud.y) < 1, 'datum en afspraken beginnen op dezelfde hoogte');
   assert.deepEqual(p.fouten, []);
 });
 

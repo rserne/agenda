@@ -1513,19 +1513,17 @@ test('feestdagen, desktop: de naam onder de kolomkop; bij Vrij geen vrije tijden
   assert.deepEqual(p.fouten, []);
 });
 
-test('feestdagen: vandaag gaat voor op de feestdagkleur, het label blijft; vaste overleggen op een vrije feestdag in de feestdagkleur', async ({ browser, url }) => {
+test('feestdagen: vandaag gaat voor op de feestdagkleur, het label blijft; vaste overleggen in de gewone kleur', async ({ browser, url }) => {
   const p = await nieuwePagina(browser, TELEFOON, { klok: '2026-12-25T08:00:00Z' });
   await p.goto(url); await wacht(900);
   const kop = p.locator('#inhoud .dagkop', { hasText: 'Vrijdag' });
   assert.match(await kop.getAttribute('class'), /\bvandaag\b/);
   assert.doesNotMatch(await kop.getAttribute('class'), /\bfeest\b/);
   assert.equal(await p.locator('#inhoud .feestlabel').first().innerText(), 'Eerste Kerstdag');
-  // In de Vooruitblik: '+ N vaste overleggen' in de feestdagkleur, alleen op een vrije feestdag
   await p.evaluate(() => { ST.tab = 'forecast'; ST.fcStart = new Date(2026, 11, 25); laad(); }); await wacht(700);
   const rest = p.locator('#inhoud .vbdag').first().locator('.vbrest');
   assert.equal(await rest.count(), 1, 'op 25 december staat er een vast overleg');
-  assert.match(await rest.getAttribute('class'), /\bfeest\b/);
-  assert.equal(await p.evaluate(() => vastFeest(new Date(2027, 2, 26))), '', 'Goede Vrijdag: vaste overleggen gaan gewoon door');
+  assert.equal(await rest.evaluate((r) => getComputedStyle(r).color), await p.evaluate(() => { const x = document.createElement('div'); x.style.color = 'var(--secondary)'; document.body.append(x); const c = getComputedStyle(x).color; x.remove(); return c; }));
   assert.deepEqual(p.fouten, []);
 });
 

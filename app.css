@@ -1557,13 +1557,11 @@ body.notitietab .titelknop, body.insttab .titelknop { cursor: default; }
 }
 
 /* ================================================================ Feestdagen
-   Een feestdag is een eigenschap van de dag, geen afspraak: de datum krijgt de feestdagkleur (vandaag gaat voor), de naam staat als klein label bovenaan de afspraken. Op een vrije feestdag
-   staan de vaste overleggen in dezelfde kleur, want die gaan vrijwel zeker niet door. */
+   Een feestdag is een eigenschap van de dag, geen afspraak: de datum krijgt de feestdagkleur (vandaag gaat voor), de naam staat als klein label bovenaan de afspraken. */
 .feestlabel { align-self: flex-start; display: inline-block; max-width: 100%; padding: 2px 7px; border-radius: 6px; background: var(--feestLabelBg); color: var(--feestTekst); font-size: 11px; font-weight: 600; line-height: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dagkop + .feestlabel { margin: 0 0 6px 4px; }
 .vbdatum.feest .dow, .vbdatum.feest .nr, .vbdatum.feest .mnd { color: var(--feestTekst); }
 .dagkop.feest .nr, .dagkop.feest .dow, .dagkop.feest .mnd { color: var(--feestTekst); }
-.vbrest.feest, .rij.rest.feest, .krij.rest.feest { color: var(--feestTekst); }
 .zfeest { display: flex; align-items: center; gap: 5px; color: var(--secondary); font-size: 13px; }
 .zfeest .icoon { width: 15px; height: 15px; flex-shrink: 0; color: var(--secondary); }
 @media (min-width: 1200px) {

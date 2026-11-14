@@ -100,7 +100,7 @@ function weekKolommenHtml(events) {
     let rijen = heleDag.map((e) => `<button class="heledagbalk" data-id="${esc(e.id)}"><span>${esc(e.title)}</span></button>`).join('');
     const ov = overlapVan(lijst);
     rijen += items.map((it) => (it.e ? kolomRij(it.e, ov) : kolomVrij(it.f))).join('');
-    if (verborgen > 0) rijen += `<div class="krij rest${vastFeest(d)}"><span class="stip"></span><span>${vastText(verborgen)}</span></div>`;
+    if (verborgen > 0) rijen += `<div class="krij rest"><span class="stip"></span><span>${vastText(verborgen)}</span></div>`;
     if (!rijen && !punten) rijen = smal ? '' : '<div class="krij rest leeg">Geen afspraken</div>';
     const isVandaag = sameDay(d, t);
     kolommen.push(`<section class="dagkolom${isVandaag ? ' vandaag' : ''}${feestKlasse(d, isVandaag)}${d < t ? ' voorbij' : ''}${i >= 5 ? ' weekend' : ''}${smal ? ' smal' : ''}">
@@ -148,7 +148,7 @@ function weekHtml(events) {
     let rijen = heleDag.map((e) => `<button class="rij heledag" data-id="${esc(e.id)}"><span class="rijtitel">${esc(e.title)}</span><span class="hint">hele dag</span></button>`).join('');
     const ov = overlapVan(lijst);
     rijen += items.map((it) => (it.e ? weekRij(it.e, ov) : vrijRij(it.f))).join('');
-    if (verborgen > 0) rijen += `<div class="rij rest${vastFeest(d)}"><span class="stip"></span><span>${vastText(verborgen)}</span></div>`;
+    if (verborgen > 0) rijen += `<div class="rij rest"><span class="stip"></span><span>${vastText(verborgen)}</span></div>`;
     if (!rijen && !punten(d)) rijen = '<div class="rij rest"><span>Geen afspraken</span></div>';
     // Zoals op de desktop: eerst het dagnummer, dan de dag; vandaag in de accentkleur, voorbije dagen grijs
     const isVandaag = sameDay(d, t);
@@ -219,7 +219,7 @@ function vooruitblikHtml(events) {
         ${punten}
         ${heleDag.map((e) => `<button class="vbheledag" data-id="${esc(e.id)}"><span class="t">${esc(e.title)}</span><span class="h">hele dag</span></button>`).join('')}
         ${items.length ? `<div class="tegels">${items.map((it) => (it.e ? tegel(it.e, d, ov) : vrijeTegel(it.f))).join('')}</div>` : ''}
-        ${verborgen > 0 ? `<div class="vbrest${vastFeest(d)}">+ ${vastText(verborgen)}</div>` : ''}
+        ${verborgen > 0 ? `<div class="vbrest">+ ${vastText(verborgen)}</div>` : ''}
       </div>
     </section>`;
   }

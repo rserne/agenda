@@ -55,5 +55,3 @@ function feestdagHtml(d) {
 }
 // De datum krijgt de kleur van de feestdag, behalve vandaag: dan gaat de markering van vandaag voor
 const feestKlasse = (d, isVandaag) => (feestdag(d) && !isVandaag ? ' feest' : '');
-// '+ 3 vaste overleggen' op een vrije feestdag: die gaan vrijwel zeker niet door
-const vastFeest = (d) => (vrijeFeestdag(d) ? ' feest' : '');

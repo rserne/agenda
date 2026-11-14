@@ -1558,7 +1558,7 @@ body.notitietab .titelknop, body.insttab .titelknop { cursor: default; }
 /* ================================================================ Feestdagen
    Een feestdag is een eigenschap van de dag, geen afspraak: de datum krijgt de feestdagkleur (vandaag gaat voor), de naam staat in de week rechts in de dagkop, in de Vooruitblik op een eigen regel boven de dag. Zo blijven de
    kaarten en tegels op één lijn met de datum. */
-.vbdag.metfeest { flex-wrap: wrap; row-gap: 2px; }
+.vbdag.metfeest { flex-wrap: wrap; row-gap: 8px; }
 .vbfeest { flex-basis: 100%; color: var(--feestTekst); font-size: 13px; font-weight: 600; line-height: 18px; }
 .kfeest { margin-left: auto; padding-left: 10px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--feestTekst); font-size: 15px; font-weight: 600; }
 .vbdatum.feest .dow, .vbdatum.feest .nr, .vbdatum.feest .mnd { color: var(--feestTekst); }

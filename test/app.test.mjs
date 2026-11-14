@@ -1496,7 +1496,8 @@ test('feestdagen: de elf officiële dagen kloppen, vrij behalve Goede Vrijdag en
   assert.deepEqual(await p.evaluate(() => [freeSlots([], new Date(2026, 11, 25)).length, freeSlots([], new Date(2027, 2, 26)).length > 0]), [0, true]);
   // In de week: de naam onder de dagkop
   await p.evaluate(() => { ST.anker = new Date(2026, 11, 21); laad(); }); await wacht(900);
-  assert.deepEqual(await p.locator('#inhoud .feestdag').allInnerTexts(), ['Eerste Kerstdag', 'Tweede Kerstdag']);
+  assert.deepEqual(await p.locator('#inhoud .feestlabel').allInnerTexts(), ['Eerste Kerstdag', 'Tweede Kerstdag']);
+  assert.equal(await p.locator('#inhoud .dagkop.feest').count(), 2, 'de datum van een feestdag krijgt de feestdagkleur');
   assert.match(await p.locator('#inhoud .dagkop', { hasText: 'Zaterdag' }).innerText(), /26/, 'een zaterdag met een feestdag krijgt een eigen kop');
   assert.deepEqual(p.fouten, []);
 });
@@ -1509,6 +1510,22 @@ test('feestdagen, desktop: de naam onder de kolomkop; bij Vrij geen vrije tijden
   assert.equal(await kerst.count(), 1);
   assert.equal(await kerst.locator('.kvrij, [data-vrij]').count(), 0);
   assert.ok(await p.locator('#inhoud .dagkolom', { hasText: 'Donderdag' }).locator('[data-vrij]').count() > 0, 'de dag ervoor wel');
+  assert.deepEqual(p.fouten, []);
+});
+
+test('feestdagen: vandaag gaat voor op de feestdagkleur, het label blijft; vaste overleggen op een vrije feestdag in de feestdagkleur', async ({ browser, url }) => {
+  const p = await nieuwePagina(browser, TELEFOON, { klok: '2026-12-25T08:00:00Z' });
+  await p.goto(url); await wacht(900);
+  const kop = p.locator('#inhoud .dagkop', { hasText: 'Vrijdag' });
+  assert.match(await kop.getAttribute('class'), /\bvandaag\b/);
+  assert.doesNotMatch(await kop.getAttribute('class'), /\bfeest\b/);
+  assert.equal(await p.locator('#inhoud .feestlabel').first().innerText(), 'Eerste Kerstdag');
+  // In de Vooruitblik: '+ N vaste overleggen' in de feestdagkleur, alleen op een vrije feestdag
+  await p.evaluate(() => { ST.tab = 'forecast'; ST.fcStart = new Date(2026, 11, 25); laad(); }); await wacht(700);
+  const rest = p.locator('#inhoud .vbdag').first().locator('.vbrest');
+  assert.equal(await rest.count(), 1, 'op 25 december staat er een vast overleg');
+  assert.match(await rest.getAttribute('class'), /\bfeest\b/);
+  assert.equal(await p.evaluate(() => vastFeest(new Date(2027, 2, 26))), '', 'Goede Vrijdag: vaste overleggen gaan gewoon door');
   assert.deepEqual(p.fouten, []);
 });
 

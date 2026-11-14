@@ -100,10 +100,10 @@ function weekKolommenHtml(events) {
     let rijen = heleDag.map((e) => `<button class="heledagbalk" data-id="${esc(e.id)}"><span>${esc(e.title)}</span></button>`).join('');
     const ov = overlapVan(lijst);
     rijen += items.map((it) => (it.e ? kolomRij(it.e, ov) : kolomVrij(it.f))).join('');
-    if (verborgen > 0) rijen += `<div class="krij rest"><span class="stip"></span><span>${vastText(verborgen)}</span></div>`;
+    if (verborgen > 0) rijen += `<div class="krij rest${vastFeest(d)}"><span class="stip"></span><span>${vastText(verborgen)}</span></div>`;
     if (!rijen && !punten) rijen = smal ? '' : '<div class="krij rest leeg">Geen afspraken</div>';
     const isVandaag = sameDay(d, t);
-    kolommen.push(`<section class="dagkolom${isVandaag ? ' vandaag' : ''}${d < t ? ' voorbij' : ''}${i >= 5 ? ' weekend' : ''}${smal ? ' smal' : ''}">
+    kolommen.push(`<section class="dagkolom${isVandaag ? ' vandaag' : ''}${feestKlasse(d, isVandaag)}${d < t ? ' voorbij' : ''}${i >= 5 ? ' weekend' : ''}${smal ? ' smal' : ''}">
       <h2 class="kolomkop" aria-label="${isVandaag ? 'Vandaag, ' : ''}${DAYS_LONG[d.getDay()]} ${d.getDate()} ${MONTHS_LONG[d.getMonth()]}"><span class="nr num">${d.getDate()}</span><span class="dow">${smal ? cap(DAYS_SHORT[d.getDay()]) : cap(DAYS_LONG[d.getDay()])}</span>${d.getDate() === 1 && i > 0 ? `<span class="mnd">${MONTHS_SHORT[d.getMonth()]}</span>` : ''}</h2>
       ${feestdagHtml(d)}${punten}${rijen ? `<div class="kaart">${rijen}</div>` : ''}
     </section>`);
@@ -148,12 +148,12 @@ function weekHtml(events) {
     let rijen = heleDag.map((e) => `<button class="rij heledag" data-id="${esc(e.id)}"><span class="rijtitel">${esc(e.title)}</span><span class="hint">hele dag</span></button>`).join('');
     const ov = overlapVan(lijst);
     rijen += items.map((it) => (it.e ? weekRij(it.e, ov) : vrijRij(it.f))).join('');
-    if (verborgen > 0) rijen += `<div class="rij rest"><span class="stip"></span><span>${vastText(verborgen)}</span></div>`;
+    if (verborgen > 0) rijen += `<div class="rij rest${vastFeest(d)}"><span class="stip"></span><span>${vastText(verborgen)}</span></div>`;
     if (!rijen && !punten(d)) rijen = '<div class="rij rest"><span>Geen afspraken</span></div>';
     // Zoals op de desktop: eerst het dagnummer, dan de dag; vandaag in de accentkleur, voorbije dagen grijs
     const isVandaag = sameDay(d, t);
     const kop = `<span class="nr num">${d.getDate()}</span><span class="dow">${cap(DAYS_LONG[d.getDay()])}</span>${d.getDate() === 1 && !eerste ? `<span class="mnd">${MONTHS_LONG[d.getMonth()]}</span>` : ''}`;
-    html += `<h2 data-dag="${d.getTime()}" class="dagkop${eerste ? ' eerste' : ''}${isVandaag ? ' vandaag' : ''}${d < t ? ' voorbij' : ''}" aria-label="${isVandaag ? 'Vandaag, ' : ''}${DAYS_LONG[d.getDay()]} ${d.getDate()} ${MONTHS_LONG[d.getMonth()]}">${kop}</h2>${feestdagHtml(d)}${punten(d)}${rijen ? `<div class="kaart">${rijen}</div>` : ''}`;
+    html += `<h2 data-dag="${d.getTime()}" class="dagkop${eerste ? ' eerste' : ''}${isVandaag ? ' vandaag' : ''}${feestKlasse(d, isVandaag)}${d < t ? ' voorbij' : ''}" aria-label="${isVandaag ? 'Vandaag, ' : ''}${DAYS_LONG[d.getDay()]} ${d.getDate()} ${MONTHS_LONG[d.getMonth()]}">${kop}</h2>${feestdagHtml(d)}${punten(d)}${rijen ? `<div class="kaart">${rijen}</div>` : ''}`;
     eerste = false;
   }
   return html + legendaWeek();
@@ -212,14 +212,14 @@ function vooruitblikHtml(events) {
     const ov = overlapVan(lijst);
     const punten = ST.filter !== 'free' ? puntenBlokHtml(d) : ''; // de actiepunten als balk boven de afspraken
     html += `<section class="vbdag">
-      <div class="vbdatum${isVandaag ? ' vandaag' : ''}"><span class="dow">${DAYS_SHORT[d.getDay()].toUpperCase()}</span><span class="nr">${d.getDate()}</span>${i === 0 || d.getDate() === 1 ? `<span class="mnd">${MONTHS_SHORT[d.getMonth()]}</span>` : ''}</div>
+      <div class="vbdatum${isVandaag ? ' vandaag' : ''}${feestKlasse(d, isVandaag)}"><span class="dow">${DAYS_SHORT[d.getDay()].toUpperCase()}</span><span class="nr">${d.getDate()}</span>${i === 0 || d.getDate() === 1 ? `<span class="mnd">${MONTHS_SHORT[d.getMonth()]}</span>` : ''}</div>
       <div class="vbinhoud">
         ${feestdagHtml(d)}
         ${!heleDag.length && !getimed.length && !vrij.length && !punten ? `<div class="vbleeg">${isVandaag ? (afgelopen ? 'Geen afspraken meer vandaag' : 'Geen afspraken vandaag') : 'Geen afspraken'}</div>` : ''}
         ${punten}
         ${heleDag.map((e) => `<button class="vbheledag" data-id="${esc(e.id)}"><span class="t">${esc(e.title)}</span><span class="h">hele dag</span></button>`).join('')}
         ${items.length ? `<div class="tegels">${items.map((it) => (it.e ? tegel(it.e, d, ov) : vrijeTegel(it.f))).join('')}</div>` : ''}
-        ${verborgen > 0 ? `<div class="vbrest">+ ${vastText(verborgen)}</div>` : ''}
+        ${verborgen > 0 ? `<div class="vbrest${vastFeest(d)}">+ ${vastText(verborgen)}</div>` : ''}
       </div>
     </section>`;
   }

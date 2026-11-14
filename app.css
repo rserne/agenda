@@ -1545,3 +1545,19 @@ body.notitietab .titelknop, body.insttab .titelknop { cursor: default; }
   .zoeklijst .zreeks .icoon { width: 14px; height: 14px; }
   .zoeklijst .zoekkop { font-size: 13px; }
 }
+
+/* ================================================================ Feestdagen
+   De naam onder de dagkop, met een vlaggetje; rustig, zonder de kleuren die al iets betekenen. */
+.feestdag { display: flex; align-items: center; gap: 6px; padding: 0 4px 8px; color: var(--label); font-size: 14px; }
+.feestdag .icoon, .zfeest .icoon { width: 13px; height: 13px; flex-shrink: 0; color: var(--secondary); }
+.zfeest { display: flex; align-items: center; gap: 5px; color: var(--secondary); font-size: 13px; }
+.vbinhoud > .feestdag { padding: 2px 2px 0; }
+@media (min-width: 1200px) {
+  .dagkolom > .feestdag { padding: 0 2px 6px; font-size: 12px; gap: 5px; }
+  .dagkolom > .feestdag span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dagkolom > .feestdag .icoon { width: 12px; height: 12px; }
+  .zoeklijst .zfeest { font-size: 11px; }
+}
+@media (min-width: 1200px) and (pointer: coarse) {
+  .dagkolom > .feestdag { font-size: 14px; }
+}

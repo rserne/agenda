@@ -137,6 +137,7 @@ function zoekRij(e, woorden) {
     <span class="rijtekst" aria-hidden="true">
       <span class="rijtitel">${markeer(e.title || 'Zonder titel', woorden)}</span>
       <span class="zmeta"><span class="num">${tijd}</span>${e.location ? `<span class="zplek">${I.speld}<span>${esc(e.location)}</span></span>` : ''}</span>
+      ${feestdag(d) ? `<span class="zfeest">${VLAG}<span>${feestdag(d).naam}</span></span>` : ''}
       ${badgesHtml(e)}
     </span>
   </button>`;

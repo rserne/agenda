@@ -87,7 +87,7 @@ function weekKolommenHtml(events) {
     const lijst = eventsForDay(events, d);
     const punten = ST.filter !== 'free' ? puntenBlokHtml(d) : ''; // actiepunten bij Opvallend en Alles, als balk boven de kaart
     // Een leeg weekend krijgt een smalle kolom: de werkdagen hebben de ruimte harder nodig
-    const smal = i >= 5 && !lijst.length && !punten;
+    const smal = i >= 5 && !lijst.length && !punten && !feestdag(d);
     breedtes.push(smal ? 'minmax(64px, 0.35fr)' : 'minmax(0, 1fr)');
     const heleDag = lijst.filter((e) => e.allDay);
     const getimed = lijst.filter((e) => !e.allDay);
@@ -105,7 +105,7 @@ function weekKolommenHtml(events) {
     const isVandaag = sameDay(d, t);
     kolommen.push(`<section class="dagkolom${isVandaag ? ' vandaag' : ''}${d < t ? ' voorbij' : ''}${i >= 5 ? ' weekend' : ''}${smal ? ' smal' : ''}">
       <h2 class="kolomkop" aria-label="${isVandaag ? 'Vandaag, ' : ''}${DAYS_LONG[d.getDay()]} ${d.getDate()} ${MONTHS_LONG[d.getMonth()]}"><span class="nr num">${d.getDate()}</span><span class="dow">${smal ? cap(DAYS_SHORT[d.getDay()]) : cap(DAYS_LONG[d.getDay()])}</span>${d.getDate() === 1 && i > 0 ? `<span class="mnd">${MONTHS_SHORT[d.getMonth()]}</span>` : ''}</h2>
-      ${punten}${rijen ? `<div class="kaart">${rijen}</div>` : ''}
+      ${feestdagHtml(d)}${punten}${rijen ? `<div class="kaart">${rijen}</div>` : ''}
     </section>`);
   }
   return `<div class="weekraster" style="grid-template-columns:${breedtes.join(' ')}">${kolommen.join('')}</div>${legendaWeek()}`;
@@ -120,7 +120,7 @@ function weekHtml(events) {
   // Lege weekenddagen: samen onder één kop ('21–22 Weekend'), met 'Geen afspraken' eronder, net als een lege werkdag
   const metPunten = ST.filter !== 'free'; // actiepunten bij Opvallend en Alles, niet bij Vrij
   const punten = (d) => (metPunten ? puntenBlokHtml(d) : ''); // als balk boven de dag, zoals in Vooruitblik
-  const leegWeekend = [5, 6].filter((i) => !eventsForDay(events, addDays(start, i)).length && !punten(addDays(start, i)));
+  const leegWeekend = [5, 6].filter((i) => !eventsForDay(events, addDays(start, i)).length && !punten(addDays(start, i)) && !feestdag(addDays(start, i)));
   const weekendBlok = (dagen) => {
     const [a, b] = dagen.map((i) => addDays(start, i));
     const nr = b ? `${a.getDate()}–${b.getDate()}` : `${a.getDate()}`;
@@ -153,7 +153,7 @@ function weekHtml(events) {
     // Zoals op de desktop: eerst het dagnummer, dan de dag; vandaag in de accentkleur, voorbije dagen grijs
     const isVandaag = sameDay(d, t);
     const kop = `<span class="nr num">${d.getDate()}</span><span class="dow">${cap(DAYS_LONG[d.getDay()])}</span>${d.getDate() === 1 && !eerste ? `<span class="mnd">${MONTHS_LONG[d.getMonth()]}</span>` : ''}`;
-    html += `<h2 data-dag="${d.getTime()}" class="dagkop${eerste ? ' eerste' : ''}${isVandaag ? ' vandaag' : ''}${d < t ? ' voorbij' : ''}" aria-label="${isVandaag ? 'Vandaag, ' : ''}${DAYS_LONG[d.getDay()]} ${d.getDate()} ${MONTHS_LONG[d.getMonth()]}">${kop}</h2>${punten(d)}${rijen ? `<div class="kaart">${rijen}</div>` : ''}`;
+    html += `<h2 data-dag="${d.getTime()}" class="dagkop${eerste ? ' eerste' : ''}${isVandaag ? ' vandaag' : ''}${d < t ? ' voorbij' : ''}" aria-label="${isVandaag ? 'Vandaag, ' : ''}${DAYS_LONG[d.getDay()]} ${d.getDate()} ${MONTHS_LONG[d.getMonth()]}">${kop}</h2>${feestdagHtml(d)}${punten(d)}${rijen ? `<div class="kaart">${rijen}</div>` : ''}`;
     eerste = false;
   }
   return html + legendaWeek();
@@ -214,6 +214,7 @@ function vooruitblikHtml(events) {
     html += `<section class="vbdag">
       <div class="vbdatum${isVandaag ? ' vandaag' : ''}"><span class="dow">${DAYS_SHORT[d.getDay()].toUpperCase()}</span><span class="nr">${d.getDate()}</span>${i === 0 || d.getDate() === 1 ? `<span class="mnd">${MONTHS_SHORT[d.getMonth()]}</span>` : ''}</div>
       <div class="vbinhoud">
+        ${feestdagHtml(d)}
         ${!heleDag.length && !getimed.length && !vrij.length && !punten ? `<div class="vbleeg">${isVandaag ? (afgelopen ? 'Geen afspraken meer vandaag' : 'Geen afspraken vandaag') : 'Geen afspraken'}</div>` : ''}
         ${punten}
         ${heleDag.map((e) => `<button class="vbheledag" data-id="${esc(e.id)}"><span class="t">${esc(e.title)}</span><span class="h">hele dag</span></button>`).join('')}

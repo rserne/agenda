@@ -1447,6 +1447,48 @@ test('zoeken, desktop: resultaten in een lijst onder het zoekveld; een tik zet d
   assert.deepEqual(p.fouten, []);
 });
 
+/* -------------------------------------------------------------- feestdagen */
+
+test('feestdagen: de elf officiële dagen kloppen, vrij behalve Goede Vrijdag en 5 mei buiten een lustrumjaar', async ({ browser, url }) => {
+  const p = await nieuwePagina(browser, TELEFOON);
+  await p.goto(url); await wacht(600);
+  const lijst = (jaar) => p.evaluate((j) => {
+    const uit = [];
+    for (let d = new Date(j, 0, 1); d.getFullYear() === j; d.setDate(d.getDate() + 1)) {
+      const f = feestdag(d);
+      if (f) uit.push(`${d.getDate()}-${d.getMonth() + 1} ${f.naam}${f.vrij ? '' : ' (werkdag)'}`);
+    }
+    return uit;
+  }, jaar);
+  // Zoals op rijksoverheid.nl
+  assert.deepEqual(await lijst(2026), ['1-1 Nieuwjaarsdag', '3-4 Goede Vrijdag (werkdag)', '5-4 Eerste Paasdag', '6-4 Tweede Paasdag', '27-4 Koningsdag',
+    '5-5 Bevrijdingsdag (werkdag)', '14-5 Hemelvaartsdag', '24-5 Eerste Pinksterdag', '25-5 Tweede Pinksterdag', '25-12 Eerste Kerstdag', '26-12 Tweede Kerstdag']);
+  assert.deepEqual(await lijst(2027), ['1-1 Nieuwjaarsdag', '26-3 Goede Vrijdag (werkdag)', '28-3 Eerste Paasdag', '29-3 Tweede Paasdag', '27-4 Koningsdag',
+    '5-5 Bevrijdingsdag (werkdag)', '6-5 Hemelvaartsdag', '16-5 Eerste Pinksterdag', '17-5 Tweede Pinksterdag', '25-12 Eerste Kerstdag', '26-12 Tweede Kerstdag']);
+  const j2025 = await lijst(2025);
+  assert.ok(j2025.includes('26-4 Koningsdag'), 'valt 27 april op zondag, dan de zaterdag ervoor');
+  assert.ok(j2025.includes('5-5 Bevrijdingsdag') && j2025.includes('20-4 Eerste Paasdag'), 'in een lustrumjaar is 5 mei vrij');
+  assert.ok((await lijst(2030)).includes('5-5 Bevrijdingsdag'));
+  // Vrij stelt op een vrije feestdag niets voor, op Goede Vrijdag wel
+  assert.deepEqual(await p.evaluate(() => [freeSlots([], new Date(2026, 11, 25)).length, freeSlots([], new Date(2027, 2, 26)).length > 0]), [0, true]);
+  // In de week: de naam onder de dagkop
+  await p.evaluate(() => { ST.anker = new Date(2026, 11, 21); laad(); }); await wacht(900);
+  assert.deepEqual(await p.locator('#inhoud .feestdag').allInnerTexts(), ['Eerste Kerstdag', 'Tweede Kerstdag']);
+  assert.match(await p.locator('#inhoud .dagkop', { hasText: 'Zaterdag' }).innerText(), /26/, 'een zaterdag met een feestdag krijgt een eigen kop');
+  assert.deepEqual(p.fouten, []);
+});
+
+test('feestdagen, desktop: de naam onder de kolomkop; bij Vrij geen vrije tijden op Eerste Kerstdag', async ({ browser, url }) => {
+  const p = await nieuwePagina(browser, MAC);
+  await p.goto(url); await wacht(600);
+  await p.evaluate(() => { ST.anker = new Date(2026, 11, 21); ST.filter = 'free'; laad(); }); await wacht(900);
+  const kerst = p.locator('#inhoud .dagkolom', { hasText: 'Eerste Kerstdag' });
+  assert.equal(await kerst.count(), 1);
+  assert.equal(await kerst.locator('.kvrij, [data-vrij]').count(), 0);
+  assert.ok(await p.locator('#inhoud .dagkolom', { hasText: 'Donderdag' }).locator('[data-vrij]').count() > 0, 'de dag ervoor wel');
+  assert.deepEqual(p.fouten, []);
+});
+
 /* -------------------------------------------------------------- uitvoeren */
 
 const { chromium } = await laadPlaywright();

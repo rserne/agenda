@@ -136,6 +136,7 @@ function eventsForDay(events, day) {
 
 // Vrije blokken op een werkdag, vanaf FREE_MIN minuten. Voor vandaag alleen wat nog komt.
 function freeSlots(list, day) {
+  if (vrijeFeestdag(day)) return []; // op een vrije feestdag stellen we niets voor
   const ws = new Date(day); ws.setHours(WORK_START, 0, 0, 0);
   const we = new Date(day); we.setHours(WORK_END, 0, 0, 0);
   let from = ws.getTime();

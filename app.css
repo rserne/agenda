@@ -29,9 +29,10 @@
   --weekendText: rgba(60, 60, 67, 0.82); /* ook op de blauwe balk van de gekozen week minstens 4,5:1 */
   --separator: rgba(60, 60, 67, 0.29);
   --accent: #1F72A0; /* 5,3:1 op wit */
-  /* Feestdagen: een eigenschap van de dag, geen afspraak. De datum in de feestdagkleur, de naam als label. */
-  --feestTekst: #9C4317; /* 5,9:1 op --bg, 5,2:1 op --feestLabelBg */
-  --feestLabelBg: #F7E3D1;
+  /* Feestdagen: een eigenschap van de dag, geen afspraak. De datum in de feestdagkleur, de naam als label.
+     Groen: de enige tint die nog vrij is, ver van blauw (vrij), geel (overlap), rood (bezet) en paars (extern). */
+  --feestTekst: #2A6E3F; /* 5,5:1 op --bg, 5,1:1 op --feestLabelBg */
+  --feestLabelBg: #DCEFE1;
   /* Afspraken: extern paars, intern grafiet, vast lichtgrijs. Blauw blijft voor vrij en aan te tikken, geel voor overlap,
      rood voor bezet en te laat; zo heeft elke kleur één betekenis. */
   --externTile: #E2D5F6;
@@ -107,8 +108,8 @@
     --weekendText: rgba(235, 235, 245, 0.72);
     --separator: rgba(84, 84, 88, 0.65);
     --accent: #86C3E1;
-    --feestTekst: #F2B17A; /* 11:1 op --bg, 7,3:1 op --feestLabelBg */
-    --feestLabelBg: #3A2C22;
+    --feestTekst: #8FD3A2; /* 12:1 op --bg, 7,7:1 op --feestLabelBg */
+    --feestLabelBg: #1F3326;
     --externTile: #B9A2E0;
     --internTile: #A7B3C3;
     --regularTile: #1C1C1E;

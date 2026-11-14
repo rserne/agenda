@@ -70,6 +70,8 @@
   --statusMaybe: #C93400;
   --tileText: #1E1D24;
   --tileBadgeBg: rgba(0, 0, 0, 0.08);
+  --externTileBadge: var(--tileBadgeBg); /* het organisatielabel in een externe tegel */
+  --externTileBadgeText: var(--tileText);
   --tileBadgeLijn: rgba(0, 0, 0, 0.32);
   --onAccent: #FFFFFF;
   --ringFull: #D04F42;
@@ -144,6 +146,8 @@
     --statusMaybe: #FF9F0A;
     --tileText: #F2F2F7;
     --tileBadgeBg: rgba(255, 255, 255, 0.16);
+    --externTileBadge: rgba(194, 166, 242, 0.28); /* paars, zoals het label in de week en het detailscherm */
+    --externTileBadgeText: #E3D6FA; /* 4,6:1 tot 5,8:1, afhankelijk van de achtergrond */
     --tileBadgeLijn: rgba(255, 255, 255, 0.35);
     --onAccent: #1E1D24;
     --ringFull: #EB8479;
@@ -392,6 +396,7 @@ button.vbpunten:active { background: var(--fill); }
 .tegel .orgregel { display: flex; align-items: center; gap: 4px; min-width: 0; }
 .tegel .orgregel .b { background: var(--tileBadgeBg); border-radius: 5px; padding: 1px 5px; font-size: 11px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .tegel .orgregel .m { font-size: 11px; font-weight: 700; }
+.tegel.ext .orgregel .b { background: var(--externTileBadge); color: var(--externTileBadgeText); }
 .tegel .te { align-self: flex-end; }
 .tegel.vrij { background: var(--freeTileBg); border: 1.5px dashed var(--freeTileBorder); color: var(--accent); cursor: pointer; }
 .tegel.vrij .tit { font-weight: 600; }

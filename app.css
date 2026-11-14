@@ -210,6 +210,12 @@ body.vooruitblik .kop { background: var(--fcBg); }
 .titelknop .icoon { width: 22px; height: 22px; color: var(--accent); margin-top: 4px; }
 .datumregel { color: var(--secondary); font-size: 15px; font-weight: 600; margin-top: 1px; display: inline-block; }
 @media (max-width: 380px) { .titel { font-size: 30px; } }
+/* Telefoon en iPad staand, Week en Vooruitblik: boven het label met de weergave ('Week 46 ⌄', 'Vooruitblik ⌄') in de
+   accentkleur, zoals Subheadline in iOS; daaronder de datums als titel, zoals Title 1 (28 pt vet), over de volle breedte */
+body.agendatab:not(.desktop) .titelknop { gap: 3px; min-height: 36px; }
+body.agendatab:not(.desktop) .titel { color: var(--accent); font-size: 15px; font-weight: 600; line-height: 20px; letter-spacing: -0.2px; }
+body.agendatab:not(.desktop) .titelknop .icoon { width: 15px; height: 15px; margin-top: 1px; }
+body.agendatab:not(.desktop) .datumregel { display: block; width: 100%; margin-top: 0; text-align: left; color: var(--label); font-size: 28px; font-weight: 700; line-height: 34px; letter-spacing: -0.4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* Capsule: terug, vandaag, verder */
 .capsule { display: flex; height: 36px; border-radius: 18px; padding: 0 2px; flex-shrink: 0; }
@@ -1038,8 +1044,7 @@ body.notitietab .zoekbalk { display: flex; }
    met Annuleer erachter; de resultaten staan dan op de plek van de week. Desktop: het veld staat in de werkbalk (verderop). */
 .zoekknop { display: none; flex-shrink: 0; width: 36px; height: 36px; border-radius: 18px; align-items: center; justify-content: center; color: var(--label); }
 .zoekknop .icoon { width: 19px; height: 19px; }
-body.agendatab:not(.desktop) .zoekknop { display: flex; margin-right: -6px; } /* een paar met het weergaveknopje */
-body.agendatab:not(.desktop) .kopregel { gap: 10px; } /* zo past 'Week 45' er nog naast */
+body.agendatab:not(.desktop) .zoekknop { display: flex; }
 body.zoekt .zoekknop { background: var(--selBg); color: var(--accent); }
 #agendazoek, .zoekannuleer { display: none; }
 body.zoekt #agendazoek { display: flex; }

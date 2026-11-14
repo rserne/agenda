@@ -4,7 +4,7 @@ Je week in één oogopslag, als web-app (PWA) voor iPhone, iPad en laptop. De ap
 
 - **Week:** per dag een lijst, met Opvallend, Alles en Vrij. De dagkop blijft bovenaan staan tijdens het scrollen. Op de telefoon trek je onderaan door naar de volgende week.
 - **Vooruitblik:** zeven dagen vanaf vandaag in tegels. Van vandaag staan alleen de afspraken die nog komen of nu bezig zijn; wat al voorbij is, verdwijnt vanzelf. Op de telefoon trek je onderaan door naar de volgende zeven dagen.
-- **Weekkiezer:** tik op de titel. Elke werkdag kleurt mee met hoe vol hij is (een heatmap): grijs bij een rustige dag, geel vanaf drie uur en rood vanaf zes uur aan afspraken (`MID_HOURS`, `FULL_HOURS`).
+- **Weekkiezer:** tik op de titel; op de iPhone en de iPad staand is dat het label in de accentkleur, 'Week 46 ⌄' of 'Vooruitblik ⌄', met de datums eronder als grote titel (28 pt vet; loopt de week over twee maanden, dan met korte maandnamen). Elke werkdag kleurt mee met hoe vol hij is (een heatmap): grijs bij een rustige dag, geel vanaf drie uur en rood vanaf zes uur aan afspraken (`MID_HOURS`, `FULL_HOURS`).
 - **Detailscherm:** locatie, Teams-link, organisator en deelnemers per organisatie, notities uit de uitnodiging, je eigen notitie, en mailen naar één of alle deelnemers.
 - **Notities:** een eigen tab met je notities, bij een afspraak of los, met labels. Bovenin zoek je, daaronder filter je op label.
 - **Zoeken:** in je afspraken, op titel en locatie, verdeeld over Komend en Geweest.

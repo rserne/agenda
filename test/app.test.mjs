@@ -1447,6 +1447,29 @@ test('zoeken, desktop: resultaten in een lijst onder het zoekveld; een tik zet d
   assert.deepEqual(p.fouten, []);
 });
 
+/* -------------------------------------------------------------- kop op de telefoon */
+
+test('kop, telefoon: het label in 15 pt in de accentkleur, de datums als titel in 28 pt vet; niets afgekapt', async ({ browser, url }) => {
+  const p = await nieuwePagina(browser, { ...TELEFOON, viewport: { width: 375, height: 812 } });
+  await p.goto(url); await wacht(800);
+  const kop = () => p.evaluate(() => {
+    const t = document.querySelector('#titel'), d = document.querySelector('#datumregel');
+    const s = (el) => getComputedStyle(el);
+    return { label: t.textContent, labelPt: s(t).fontSize, labelGewicht: s(t).fontWeight, labelKleur: s(t).color, accent: s(document.querySelector('.titelknop .icoon')).color,
+      titel: d.textContent, titelPt: s(d).fontSize, titelGewicht: s(d).fontWeight, heel: t.scrollWidth <= t.clientWidth && d.scrollWidth <= d.clientWidth };
+  });
+  let k = await kop();
+  assert.deepEqual([k.label, k.labelPt, k.labelGewicht, k.titel, k.titelPt, k.titelGewicht, k.heel], ['Week 45', '15px', '600', '2–8 november', '28px', '700', true]);
+  assert.equal(k.labelKleur, k.accent, 'het label in de accentkleur');
+  await p.evaluate(() => { ST.tab = 'forecast'; ST.fcStart = new Date(2026, 10, 28); laad(); }); await wacht(600);
+  k = await kop();
+  assert.deepEqual([k.label, k.titel, k.heel], ['Vooruitblik', '28 nov – 4 dec', true], 'over twee maanden: korte maandnamen');
+  // Notities houdt de grote titel
+  await p.locator('#tabbalk [data-tab="notities"]').tap(); await wacht(500);
+  assert.ok(parseFloat(await p.evaluate(() => getComputedStyle(document.querySelector('#titel')).fontSize)) >= 30, 'Notities houdt de grote titel');
+  assert.deepEqual(p.fouten, []);
+});
+
 /* -------------------------------------------------------------- feestdagen */
 
 test('feestdagen: de elf officiële dagen kloppen, vrij behalve Goede Vrijdag en 5 mei buiten een lustrumjaar', async ({ browser, url }) => {

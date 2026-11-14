@@ -1496,18 +1496,25 @@ test('feestdagen: de elf officiële dagen kloppen, vrij behalve Goede Vrijdag en
   assert.deepEqual(await p.evaluate(() => [freeSlots([], new Date(2026, 11, 25)).length, freeSlots([], new Date(2027, 2, 26)).length > 0]), [0, true]);
   // In de week: de naam onder de dagkop
   await p.evaluate(() => { ST.anker = new Date(2026, 11, 21); laad(); }); await wacht(900);
-  assert.deepEqual(await p.locator('#inhoud .feestlabel').allInnerTexts(), ['Eerste Kerstdag', 'Tweede Kerstdag']);
+  assert.deepEqual(await p.locator('#inhoud .dagkop .kfeest').allInnerTexts(), ['Eerste Kerstdag', 'Tweede Kerstdag'], 'de naam in de dagkop');
+  assert.equal(await p.locator('#inhoud .feestlabel').count(), 0, 'geen apart label meer in de week');
   assert.equal(await p.locator('#inhoud .dagkop.feest').count(), 2, 'de datum van een feestdag krijgt de feestdagkleur');
   assert.match(await p.locator('#inhoud .dagkop', { hasText: 'Zaterdag' }).innerText(), /26/, 'een zaterdag met een feestdag krijgt een eigen kop');
   assert.deepEqual(p.fouten, []);
 });
 
-test('feestdagen, desktop: de naam onder de kolomkop; bij Vrij geen vrije tijden op Eerste Kerstdag', async ({ browser, url }) => {
+test('feestdagen, desktop: de naam in de kolomkop, kaarten op één lijn; bij Vrij geen vrije tijden op Eerste Kerstdag', async ({ browser, url }) => {
   const p = await nieuwePagina(browser, MAC);
   await p.goto(url); await wacht(600);
   await p.evaluate(() => { ST.anker = new Date(2026, 11, 21); ST.filter = 'free'; laad(); }); await wacht(900);
   const kerst = p.locator('#inhoud .dagkolom', { hasText: 'Eerste Kerstdag' });
   assert.equal(await kerst.count(), 1);
+  assert.equal(await kerst.locator('.kolomkop .kfeest').innerText(), 'Eerste Kerstdag', 'de naam in de kolomkop');
+  // Alle kaarten beginnen op dezelfde hoogte, ook onder een feestdag
+  const tops = await p.locator('#inhoud .dagkolom:not(.smal) > .kaart').evaluateAll((k) => [...new Set(k.map((x) => Math.round(x.getBoundingClientRect().top)))]);
+  assert.equal(tops.length, 1, `kaarten op één lijn: ${tops}`);
+  // Een lege zaterdag met een feestdag blijft een smalle kolom, met de naam in de kop
+  assert.match(await p.locator('#inhoud .dagkolom', { hasText: 'Tweede Kerstdag' }).getAttribute('class'), /\bsmal\b/);
   assert.equal(await kerst.locator('.kvrij, [data-vrij]').count(), 0);
   assert.ok(await p.locator('#inhoud .dagkolom', { hasText: 'Donderdag' }).locator('[data-vrij]').count() > 0, 'de dag ervoor wel');
   assert.deepEqual(p.fouten, []);
@@ -1519,7 +1526,7 @@ test('feestdagen: vandaag gaat voor op de feestdagkleur, het label blijft; vaste
   const kop = p.locator('#inhoud .dagkop', { hasText: 'Vrijdag' });
   assert.match(await kop.getAttribute('class'), /\bvandaag\b/);
   assert.doesNotMatch(await kop.getAttribute('class'), /\bfeest\b/);
-  assert.equal(await p.locator('#inhoud .feestlabel').first().innerText(), 'Eerste Kerstdag');
+  assert.equal(await kop.locator('.kfeest').innerText(), 'Eerste Kerstdag');
   await p.evaluate(() => { ST.tab = 'forecast'; ST.fcStart = new Date(2026, 11, 25); laad(); }); await wacht(700);
   const rest = p.locator('#inhoud .vbdag').first().locator('.vbrest');
   assert.equal(await rest.count(), 1, 'op 25 december staat er een vast overleg');

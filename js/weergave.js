@@ -87,7 +87,7 @@ function weekKolommenHtml(events) {
     const lijst = eventsForDay(events, d);
     const punten = ST.filter !== 'free' ? puntenBlokHtml(d) : ''; // actiepunten bij Opvallend en Alles, als balk boven de kaart
     // Een leeg weekend krijgt een smalle kolom: de werkdagen hebben de ruimte harder nodig
-    const smal = i >= 5 && !lijst.length && !punten && !feestdag(d);
+    const smal = i >= 5 && !lijst.length && !punten; // ook een feestdag: de naam past op twee regels in de kop
     breedtes.push(smal ? 'minmax(64px, 0.35fr)' : 'minmax(0, 1fr)');
     const heleDag = lijst.filter((e) => e.allDay);
     const getimed = lijst.filter((e) => !e.allDay);
@@ -104,8 +104,8 @@ function weekKolommenHtml(events) {
     if (!rijen && !punten) rijen = smal ? '' : '<div class="krij rest leeg">Geen afspraken</div>';
     const isVandaag = sameDay(d, t);
     kolommen.push(`<section class="dagkolom${isVandaag ? ' vandaag' : ''}${feestKlasse(d, isVandaag)}${d < t ? ' voorbij' : ''}${i >= 5 ? ' weekend' : ''}${smal ? ' smal' : ''}">
-      <h2 class="kolomkop" aria-label="${isVandaag ? 'Vandaag, ' : ''}${DAYS_LONG[d.getDay()]} ${d.getDate()} ${MONTHS_LONG[d.getMonth()]}"><span class="nr num">${d.getDate()}</span><span class="dow">${smal ? cap(DAYS_SHORT[d.getDay()]) : cap(DAYS_LONG[d.getDay()])}</span>${d.getDate() === 1 && i > 0 ? `<span class="mnd">${MONTHS_SHORT[d.getMonth()]}</span>` : ''}</h2>
-      ${feestdagHtml(d)}${punten}${rijen ? `<div class="kaart">${rijen}</div>` : ''}
+      <h2 class="kolomkop" aria-label="${isVandaag ? 'Vandaag, ' : ''}${DAYS_LONG[d.getDay()]} ${d.getDate()} ${MONTHS_LONG[d.getMonth()]}"><span class="nr num">${d.getDate()}</span><span class="dow">${smal ? cap(DAYS_SHORT[d.getDay()]) : cap(DAYS_LONG[d.getDay()])}</span>${d.getDate() === 1 && i > 0 ? `<span class="mnd">${MONTHS_SHORT[d.getMonth()]}</span>` : ''}${feestdagInKop(d)}</h2>
+      ${punten}${rijen ? `<div class="kaart">${rijen}</div>` : ''}
     </section>`);
   }
   return `<div class="weekraster" style="grid-template-columns:${breedtes.join(' ')}">${kolommen.join('')}</div>${legendaWeek()}`;
@@ -152,8 +152,8 @@ function weekHtml(events) {
     if (!rijen && !punten(d)) rijen = '<div class="rij rest"><span>Geen afspraken</span></div>';
     // Zoals op de desktop: eerst het dagnummer, dan de dag; vandaag in de accentkleur, voorbije dagen grijs
     const isVandaag = sameDay(d, t);
-    const kop = `<span class="nr num">${d.getDate()}</span><span class="dow">${cap(DAYS_LONG[d.getDay()])}</span>${d.getDate() === 1 && !eerste ? `<span class="mnd">${MONTHS_LONG[d.getMonth()]}</span>` : ''}`;
-    html += `<h2 data-dag="${d.getTime()}" class="dagkop${eerste ? ' eerste' : ''}${isVandaag ? ' vandaag' : ''}${feestKlasse(d, isVandaag)}${d < t ? ' voorbij' : ''}" aria-label="${isVandaag ? 'Vandaag, ' : ''}${DAYS_LONG[d.getDay()]} ${d.getDate()} ${MONTHS_LONG[d.getMonth()]}">${kop}</h2>${feestdagHtml(d)}${punten(d)}${rijen ? `<div class="kaart">${rijen}</div>` : ''}`;
+    const kop = `<span class="nr num">${d.getDate()}</span><span class="dow">${cap(DAYS_LONG[d.getDay()])}</span>${d.getDate() === 1 && !eerste ? `<span class="mnd">${MONTHS_LONG[d.getMonth()]}</span>` : ''}${feestdagInKop(d)}`;
+    html += `<h2 data-dag="${d.getTime()}" class="dagkop${eerste ? ' eerste' : ''}${isVandaag ? ' vandaag' : ''}${feestKlasse(d, isVandaag)}${d < t ? ' voorbij' : ''}" aria-label="${isVandaag ? 'Vandaag, ' : ''}${DAYS_LONG[d.getDay()]} ${d.getDate()} ${MONTHS_LONG[d.getMonth()]}">${kop}</h2>${punten(d)}${rijen ? `<div class="kaart">${rijen}</div>` : ''}`;
     eerste = false;
   }
   return html + legendaWeek();

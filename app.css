@@ -1558,15 +1558,21 @@ body.notitietab .titelknop, body.insttab .titelknop { cursor: default; }
 }
 
 /* ================================================================ Feestdagen
-   Een feestdag is een eigenschap van de dag, geen afspraak: de datum krijgt de feestdagkleur (vandaag gaat voor), de naam staat als klein label bovenaan de afspraken. */
+   Een feestdag is een eigenschap van de dag, geen afspraak: de datum krijgt de feestdagkleur (vandaag gaat voor), de naam staat in de week rechts in de dagkop, in de Vooruitblik als klein label bovenaan de afspraken. */
 .feestlabel { align-self: flex-start; display: inline-block; max-width: 100%; padding: 2px 7px; border-radius: 6px; background: var(--feestLabelBg); color: var(--feestTekst); font-size: 11px; font-weight: 600; line-height: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.dagkop + .feestlabel { margin: 0 0 6px 4px; }
+.kfeest { margin-left: auto; padding-left: 10px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--feestTekst); font-size: 15px; font-weight: 600; }
 .vbdatum.feest .dow, .vbdatum.feest .nr, .vbdatum.feest .mnd { color: var(--feestTekst); }
 .dagkop.feest .nr, .dagkop.feest .dow, .dagkop.feest .mnd { color: var(--feestTekst); }
 .zfeest { display: flex; align-items: center; gap: 5px; color: var(--secondary); font-size: 13px; }
 .zfeest .icoon { width: 15px; height: 15px; flex-shrink: 0; color: var(--secondary); }
 @media (min-width: 1200px) {
   .dagkolom.feest .kolomkop .nr, .dagkolom.feest .kolomkop .dow, .dagkolom.feest .kolomkop .mnd { color: var(--feestTekst); }
-  .kolomkop + .feestlabel { margin: 0 0 6px; }
+  .kolomkop .kfeest { padding-left: 4px; font-size: 12px; }
+  .dagkolom.smal .kolomkop { flex-wrap: wrap; row-gap: 0; }
+  .dagkolom.smal .kfeest { flex-basis: 100%; margin-left: 0; padding-left: 0; white-space: normal; font-size: 11px; line-height: 13px; }
   .zoeklijst .zfeest { font-size: 11px; }
+}
+@media (min-width: 1200px) and (pointer: coarse) {
+  .kolomkop .kfeest { font-size: 14px; }
+  .dagkolom.smal .kfeest { font-size: 12px; line-height: 15px; }
 }

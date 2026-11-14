@@ -1,6 +1,6 @@
 // Agenda, feestdagen
 // De elf officiële Nederlandse feestdagen, uitgerekend in de app zelf: geen koppeling, geen link, ook offline.
-// De datum krijgt een zachte achtergrond, de naam staat als label bovenaan de afspraken (week en Vooruitblik);
+// De datum krijgt de feestdagkleur; de naam staat in de week rechts in de dagkop, in de Vooruitblik als label;
 // bij een zoekresultaat op die dag staat de naam erbij.
 // Op een vrije feestdag stelt de app geen vrije tijden voor (Vrij en Nieuwe afspraak).
 // Vrij zijn alle feestdagen, behalve Goede Vrijdag, en Bevrijdingsdag alleen in een lustrumjaar (2025, 2030, …).
@@ -48,7 +48,12 @@ const vrijeFeestdag = (d) => !!(feestdag(d) || {}).vrij;
 
 // Bij een zoekresultaat op een feestdag: een kalender met ster (een vlag betekent in Outlook 'opvolgen')
 const FEESTICOON = lijn('<rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/><path d="M12.00 11.50L12.97 14.07L15.71 14.19L13.57 15.91L14.29 18.56L12.00 17.05L9.71 18.56L10.43 15.91L8.29 14.19L11.03 14.07z" fill="currentColor" stroke="none"/>', 1.8);
-// Het label bovenaan de afspraken van de dag
+// In de dagkop (week): de naam rechts op de regel van de datum, zodat de kaarten op één lijn blijven
+function feestdagInKop(d) {
+  const f = feestdag(d);
+  return f ? `<span class="kfeest">${f.naam}</span>` : '';
+}
+// Vooruitblik: het label bovenaan de afspraken van de dag
 function feestdagHtml(d) {
   const f = feestdag(d);
   return f ? `<span class="feestlabel">${f.naam}</span>` : '';

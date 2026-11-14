@@ -45,9 +45,9 @@ function feestdagenVan(jaar) {
 const feestdag = (d) => feestdagenVan(d.getFullYear()).get(feestSleutel(d)) || null;
 const vrijeFeestdag = (d) => !!(feestdag(d) || {}).vrij;
 
-// De regel onder de dagkop
-const VLAG = lijn('<path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/>', 2);
+// De regel onder de dagkop, met een kalender met ster (een vlag betekent in Outlook 'opvolgen')
+const FEESTICOON = lijn('<rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/><path d="M12.00 11.50L12.97 14.07L15.71 14.19L13.57 15.91L14.29 18.56L12.00 17.05L9.71 18.56L10.43 15.91L8.29 14.19L11.03 14.07z" fill="currentColor" stroke="none"/>', 1.8);
 function feestdagHtml(d) {
   const f = feestdag(d);
-  return f ? `<div class="feestdag">${VLAG}<span>${f.naam}</span></div>` : '';
+  return f ? `<div class="feestdag">${FEESTICOON}<span>${f.naam}</span></div>` : '';
 }

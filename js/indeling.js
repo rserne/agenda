@@ -203,4 +203,9 @@ function overlapVan(lijst) {
   return tekst;
 }
 const overlapt = (e, ov) => !!(ov && ov.has(e) && ov.get(e).inLijst);
-const overlapLabel = (e, ov) => (overlapt(e, ov) ? `<span class="overlaplabel">${esc(ov.get(e).lang)}</span>` : '');
+// In de week kort; wie er overlapt, staat in de title en in het detailscherm
+const overlapLabel = (e, ov) => {
+  if (!overlapt(e, ov)) return '';
+  const o = ov.get(e);
+  return `<span class="overlaplabel" title="${esc(o.lang)}">${o.tijd ? `Overlap om ${o.tijd}` : 'Overlap'}</span>`;
+};

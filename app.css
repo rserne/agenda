@@ -226,6 +226,23 @@ body.agendatab:not(.desktop) .titel { color: var(--accent); font-size: 15px; fon
 body.agendatab:not(.desktop) .titelknop .icoon { width: 15px; height: 15px; margin-top: 1px; }
 body.agendatab:not(.desktop) .datumregel { display: block; width: 100%; margin-top: 0; text-align: left; color: var(--label); font-size: 28px; font-weight: 700; line-height: 34px; letter-spacing: -0.4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
+/* Telefoon, Week en Vooruitblik: bij het scrollen klapt de kop in (bediening.js). De schakelaar schuift weg en de datums
+   worden kleiner; de marge onder de kop is precies zo groot als wat er verdwijnt, zodat de inhoud blijft staan */
+@media (max-width: 767px) {
+  body.agendatab:not(.desktop) .kop { transition: margin-bottom .25s ease; }
+  body.agendatab:not(.desktop) .kop .kolom { transition: gap .25s ease; }
+  body.agendatab:not(.desktop):not(.zoekt) .balkregel { max-height: var(--barH); transition: max-height .25s ease, opacity .2s ease, visibility 0s; }
+  body.agendatab:not(.desktop) .datumregel { transition: font-size .25s ease, line-height .25s ease; }
+  body.kopklein.agendatab:not(.desktop):not(.zoekt) .kop { margin-bottom: calc(var(--barH) + 14px + 8px); }
+  body.kopklein.agendatab:not(.desktop):not(.zoekt) .kop .kolom { gap: 0; }
+  body.kopklein.agendatab:not(.desktop):not(.zoekt) .balkregel { max-height: 0; opacity: 0; overflow: hidden; visibility: hidden; transition: max-height .25s ease, opacity .2s ease, visibility 0s .25s; }
+  body.kopklein.agendatab:not(.desktop):not(.zoekt) .datumregel { font-size: 20px; line-height: 26px; letter-spacing: -0.2px; }
+  body.kopdirect .kop, body.kopdirect .kop * { transition: none !important; }
+}
+@media (max-width: 767px) and (prefers-reduced-motion: reduce) {
+  .kop, .kop * { transition: none !important; }
+}
+
 /* Capsule: terug, vandaag, verder */
 .capsule { display: flex; height: 36px; border-radius: 18px; padding: 0 2px; flex-shrink: 0; }
 .capsule button { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--label); border-radius: 18px; }
@@ -629,7 +646,7 @@ button.drij:active { opacity: 0.6; }
   .tegel.overlapt .tegelvoet .te { align-self: flex-end; }
 }
 @media (min-width: 1200px) {
-  .krij .overlaplabel { font-size: 11.5px; line-height: 15px; margin-top: 2px; }
+  .krij .overlaplabel { font-size: 12px; line-height: 16px; margin-top: 2px; }
 }
 
 /* ================================================================ Nieuwe afspraak */
@@ -1218,10 +1235,10 @@ body.notitietab .titelknop, body.insttab .titelknop { cursor: default; }
   button.krij:hover { background: var(--fill); }
   .krij .stip { width: 3px; height: auto; border-radius: 2px; margin: 0; flex-shrink: 0; }
   .krij .rijtekst { gap: 1px; }
-  .ktijd { display: flex; align-items: center; gap: 4px; color: var(--secondary); font-size: 11px; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .ktijd { display: flex; align-items: center; gap: 4px; color: var(--secondary); font-size: 12px; font-weight: 500; font-variant-numeric: tabular-nums; }
   .ktijd .speld { width: 11px; height: 11px; margin: 0; }
   .krij .rijtitel {
-    font-size: 12.5px; line-height: 16px; -webkit-line-clamp: 3; overflow-wrap: break-word; -webkit-hyphens: auto; hyphens: auto;
+    font-size: 13.5px; line-height: 18px; -webkit-line-clamp: 3; overflow-wrap: break-word; -webkit-hyphens: auto; hyphens: auto;
     /* Alleen lange woorden afbreken (zoals 'Resultaatterugkoppeling'), en nooit vlak na het begin of vlak voor het eind */
     hyphenate-limit-chars: 12 5 5; -webkit-hyphenate-limit-before: 5; -webkit-hyphenate-limit-after: 5;
   }

@@ -10,6 +10,33 @@
 // Telefoon, Week en Vooruitblik: onderaan de lijst verder omhoog trekken en loslaten gaat naar de volgende week,
 // of naar de volgende zeven dagen, net als de pijl › (het omgekeerde van 'trek om te verversen'). De lijst schuift mee met weerstand; onderin verschijnt een pijl
 // met tekst, en zodra je ver genoeg bent, kleurt de pijl blauw en staat er dat je kunt loslaten.
+// Telefoon: scroll je omlaag, dan schuift de schakelaar weg en worden de datums kleiner, zoals in de apps van Apple.
+// Een stukje terug omhoog of bovenaan klapt de kop weer uit. Een marge onder de kop vult het verschil op, zodat de
+// inhoud niet verspringt. Zelf naar een dag springen (vandaag, wisselen van filter) laat de kop zoals hij is.
+const KOP_IN = 30, KOP_UIT = 10;
+const KOP = { y: 0, wend: 0, h: 0 }; // wend: waar de huidige richting begon; h: hoogte van de pagina
+function zetKopKlein(klein, direct) {
+  const b = document.body;
+  if (b.classList.contains('kopklein') === klein) return;
+  if (direct) b.classList.add('kopdirect');
+  b.classList.toggle('kopklein', klein);
+  if (direct) { void b.offsetHeight; b.classList.remove('kopdirect'); }
+}
+function volgKop() {
+  // Verend voorbij het eind (iOS) telt niet als terug omhoog
+  const h = document.documentElement.scrollHeight;
+  const y = Math.max(0, Math.min(window.scrollY, h - window.innerHeight));
+  if (y < KOP_UIT) { zetKopKlein(false); kopSprong(); return; }
+  // Andere inhoud (week, filter, doortrekken): de pagina is anders van hoogte; dat is geen scrollen
+  if (h !== KOP.h) { kopSprong(); return; }
+  if ((y - KOP.y) * (KOP.y - KOP.wend) < 0) KOP.wend = KOP.y; // andere richting
+  KOP.y = y;
+  if (y - KOP.wend > 24 && y > KOP_IN) zetKopKlein(true);
+  else if (y - KOP.wend < -48) zetKopKlein(false);
+}
+// Na een sprong van de app zelf: vanaf hier opnieuw meten
+function kopSprong() { KOP.y = KOP.wend = Math.max(0, window.scrollY); KOP.h = document.documentElement.scrollHeight; }
+
 const TREK_DREMPEL = 70;
 function koppelDoortrekken() {
   let y0 = null, trek = 0;
@@ -176,6 +203,7 @@ function koppel() {
   const zetKop = () => document.documentElement.style.setProperty('--kopH', `${kop.offsetHeight}px`);
   if ('ResizeObserver' in window) new ResizeObserver(zetKop).observe(kop);
   zetKop();
+  window.addEventListener('scroll', volgKop, { passive: true });
 
   // Van telefoon- naar desktopopmaak (venster groter of kleiner): opnieuw tekenen
   DESKTOP.addEventListener('change', () => { panelen.slice().forEach((p) => p.sluit()); render(); });

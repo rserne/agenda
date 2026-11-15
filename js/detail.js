@@ -179,7 +179,6 @@ function detailVoetHtml(e, mailTo) {
   return `<div class="dvoet">
           ${mailTo.length ? `<a class="groteknop" href="${mailLink(mailTo, e.title)}">${I.mail}${mailTo.length === 1 ? 'Mail de deelnemer' : `Mail alle deelnemers (${mailTo.length})`}</a>` : ''}
           <a class="groteknop" ${outlookOpenAttr(e)}>${I.extern}Openen in Outlook</a>
-          <p class="voetnoot">Accepteren, misschien of weigeren doe je in Outlook.</p>
         </div>`;
 }
 

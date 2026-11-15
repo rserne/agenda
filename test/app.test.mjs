@@ -1540,6 +1540,66 @@ test('feestdagen: vandaag gaat voor op de feestdagkleur, het label blijft; vaste
   assert.deepEqual(p.fouten, []);
 });
 
+test('kop, telefoon: omlaag scrollen klapt de kop in, terug omhoog klapt hem uit; de inhoud verspringt niet', async ({ browser, url }) => {
+  const p = await nieuwePagina(browser, { ...TELEFOON, viewport: { width: 390, height: 844 } });
+  await p.goto(url); await wacht(1000);
+  const stand = () => p.evaluate(() => {
+    const kaart = document.querySelectorAll('#inhoud .dagkop')[3].nextElementSibling;
+    const s = document.querySelector('#schakelaar');
+    return { klein: document.body.classList.contains('kopklein'), schakelaar: getComputedStyle(s).visibility === 'visible' && s.getBoundingClientRect().height > 40,
+      datum: getComputedStyle(document.querySelector('#datumregel')).fontSize, kop: document.querySelector('#kop').offsetHeight,
+      kaart: Math.round(kaart.getBoundingClientRect().top + window.scrollY), y: Math.round(window.scrollY) };
+  });
+  const scroll = async (dy) => { for (let i = 0; i < 6; i++) { await p.evaluate((d) => window.scrollBy(0, d), dy / 6); await wacht(40); } await wacht(400); };
+  // Naar vandaag springen laat de kop groot: de schakelaar blijft bereikbaar
+  let s = await stand();
+  assert.ok(s.y > 30 && !s.klein && s.schakelaar, `na het openen: ${JSON.stringify(s)}`);
+  const voor = s;
+  await scroll(120);
+  s = await stand();
+  assert.ok(s.klein && !s.schakelaar, `omlaag: ingeklapt (${JSON.stringify(s)})`);
+  assert.equal(s.datum, '20px');
+  assert.ok(voor.kop - s.kop >= 60, `de kop wordt ${voor.kop - s.kop}px lager`);
+  assert.equal(s.kaart, voor.kaart, 'de inhoud blijft op zijn plek in de pagina');
+  assert.equal(await p.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--kopH').trim()), `${s.kop}px`, 'de dagkoppen plakken onder de lage kop');
+  // Een klein stukje omhoog doet nog niets, een groter stuk klapt de kop uit
+  await scroll(-20);
+  assert.ok((await stand()).klein, 'een klein stukje omhoog: nog ingeklapt');
+  await scroll(-60);
+  s = await stand();
+  assert.ok(!s.klein && s.schakelaar && s.datum === '28px', `terug omhoog: uitgeklapt (${JSON.stringify(s)})`);
+  assert.equal(s.kaart, voor.kaart);
+  // Zoeken toont het zoekveld, ook als de kop was ingeklapt
+  await scroll(150);
+  assert.ok((await stand()).klein);
+  await p.locator('#zoekknop').tap(); await wacht(400);
+  assert.ok(await p.locator('#agendazoek').isVisible(), 'het zoekveld staat in beeld');
+  assert.deepEqual(p.fouten, []);
+});
+
+test('week: de overlapregel is kort; de namen staan in het detailscherm', async ({ browser, url }) => {
+  const p = await nieuwePagina(browser, TELEFOON);
+  await p.goto(url); await wacht(1000);
+  await p.locator('[data-filter]:visible', { hasText: 'Alles' }).first().tap(); await wacht(400);
+  const labels = await p.locator('#inhoud .overlaplabel').allInnerTexts();
+  assert.ok(labels.length > 0, 'er is minstens één overlap in de voorbeeldweek');
+  for (const l of labels) assert.match(l, /^Overlap( om \d{2}:\d{2})?$/);
+  const titel = await p.locator('#inhoud .overlaplabel').first().getAttribute('title');
+  assert.match(titel, /^Overlap met /);
+  // Detailscherm: geen uitlegregel meer onder de knoppen
+  await p.locator('#inhoud [data-id]').first().tap(); await wacht(500);
+  assert.equal(await p.locator('.paneel.detail .dvoet .voetnoot').count(), 0);
+  assert.deepEqual(p.fouten, []);
+});
+
+test('Mac: de tekst in de weekkaarten is een stap groter', async ({ browser, url }) => {
+  const p = await nieuwePagina(browser, MAC);
+  await p.goto(url); await wacht(1000);
+  const m = await p.evaluate(() => ({ tijd: getComputedStyle(document.querySelector('.krij .ktijd')).fontSize, titel: getComputedStyle(document.querySelector('.krij .rijtitel')).fontSize }));
+  assert.deepEqual(m, { tijd: '12px', titel: '13.5px' });
+  assert.deepEqual(p.fouten, []);
+});
+
 /* -------------------------------------------------------------- uitvoeren */
 
 const { chromium } = await laadPlaywright();

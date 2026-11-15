@@ -269,6 +269,7 @@ function render() {
   const notitab = ST.tab === 'notities' && !!$('#inhoud .notitab');
   if (!notitab) zoekbalkThuis(); // het zoekveld van de notities terug in de kop, voordat de inhoud opnieuw wordt opgebouwd
   document.body.classList.toggle('desktop', isDesktop());
+  volgKop();
   renderKop();
   renderZijbalk();
   const main = $('#inhoud');
@@ -318,6 +319,7 @@ function scrollNaarDag(kop) {
   const tekort = doel + window.innerHeight - document.documentElement.scrollHeight;
   if (tekort > 0) main.style.minHeight = `${main.offsetHeight + tekort}px`;
   window.scrollTo(0, doel);
+  kopSprong();
 }
 
 // Telefoon, weekweergave: wisselen tussen Opvallend, Alles en Vrij laat de dag waar je naar kijkt op dezelfde
@@ -344,6 +346,7 @@ function behoudDag(teken) {
   const tekort = doel + window.innerHeight - document.documentElement.scrollHeight;
   if (tekort > 0) main.style.minHeight = `${main.offsetHeight + tekort}px`;
   window.scrollTo(0, Math.max(0, doel));
+  kopSprong();
 }
 
 function meldingHtml(titel, tekst, knop) {

@@ -370,6 +370,10 @@ main.kolom.trekt { transition: none; }
 .vbpunten .agtekst { font-size: 15px; line-height: 20px; font-weight: 400; display: block; white-space: nowrap; text-overflow: ellipsis; }
 .vbpunten .agvink { width: 16px; height: 16px; margin-top: 2px; }
 button.vbpunten:active { background: var(--fill); }
+/* Vooruitblik: daar is elke afspraak een tegel, en een box om de actiepunten zou er een lijken (in het donker bijna precies
+   een interne afspraak). Daarom losse regels, op elk scherm. In de week wel een box: daar staan de afspraken per dag in een kaart */
+.vbinhoud > .vbpunten { width: auto; max-width: 100%; align-self: flex-start; margin-bottom: 0; padding: 2px 0; border-radius: 0; background: none; transition: opacity 0.15s; }
+.vbinhoud > button.vbpunten:active { background: none; opacity: 0.5; }
 /* Het overzicht van een dag: grote rondjes om af te vinken */
 .dagpunt { align-items: flex-start; padding: 6px 0; }
 .dagpunt .puntvink { width: 26px; height: 26px; margin-top: 1px; }
@@ -1222,11 +1226,20 @@ body.notitietab .titelknop, body.insttab .titelknop { cursor: default; }
   /* Echte rand in plaats van een schaduwrand: die viel bovenaan weg onder de plakkende kolomkop */
   .dagkolom .kaart { padding: 3px; border-radius: 11px; border: 0.5px solid var(--cardBorder); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04); }
   /* Weekkolommen: de balk met actiepunten compact, net boven de kaart */
-  body.desktop .vbpunten { background: var(--fill); } /* de achtergrond is hier bijna wit; een witte balk zou wegvallen */
+  body.desktop .dagkolom .vbpunten { background: var(--fill); } /* de achtergrond is hier bijna wit; een witte balk zou wegvallen */
+  /* Vooruitblik: hooguit twee tegels breed, de tekst zo groot als in de tegels; de rondjes op één lijn met de tegels */
+  body.desktop .vbinhoud > .vbpunten { max-width: min(100% + 8px, 598px); margin: -3px 0 0 -8px; padding: 3px 8px; border-radius: 7px; }
+  body.desktop .vbinhoud > .vbpunten .agpunten { gap: 4px; }
+  body.desktop .vbinhoud > .vbpunten .agpunt { gap: 7px; }
+  body.desktop .vbinhoud > .vbpunten .agtekst { font-size: 13px; line-height: 17px; }
+  body.desktop .vbinhoud > .vbpunten .agvink { width: 12px; height: 12px; margin-top: 2.5px; }
+  body.desktop .vbinhoud > .vbpunten .aglaat { margin-top: 1px; font-size: 11px; }
+  body.desktop .vbinhoud > .vbpunten .agmeer { padding-left: 19px; font-size: 12px; }
+  @media (hover: hover) { body.desktop .vbinhoud > .vbpunten:hover { background: var(--fill); } }
   .dagkolom .vbpunten { margin-bottom: 8px; padding: 8px 10px; border-radius: 10px; }
   .dagkolom .vbpunten .agpunten { gap: 4px; }
   .dagkolom .vbpunten .agpunt { gap: 6px; }
-  .dagkolom .vbpunten .agtekst { font-size: 13px; line-height: 17px; }
+  .dagkolom .vbpunten .agtekst { font-size: 13px; line-height: 17px; white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; } /* smalle kolom: twee regels */
   .dagkolom .vbpunten .agvink { width: 12px; height: 12px; margin-top: 2.5px; }
   .dagkolom .vbpunten .aglaat { margin-top: 1px; font-size: 11px; }
   .dagkolom .vbpunten .agmeer { padding-left: 18px; font-size: 12px; }
@@ -1446,6 +1459,9 @@ body.notitietab .titelknop, body.insttab .titelknop { cursor: default; }
   .dagkolom .vbpunten .agtekst { font-size: 14px; line-height: 18px; }
   .dagkolom .vbpunten .agvink { width: 14px; height: 14px; margin-top: 2px; }
   .dagkolom .vbpunten .aglaat { font-size: 12px; }
+  body.desktop .vbinhoud > .vbpunten .agtekst { font-size: 14px; line-height: 18px; }
+  body.desktop .vbinhoud > .vbpunten .agvink { width: 14px; height: 14px; margin-top: 2px; }
+  body.desktop .vbinhoud > .vbpunten .aglaat { font-size: 12px; }
   .krij .overlaplabel { font-size: 13px; line-height: 17px; }
   .krij .badge { font-size: 12px; }
   .heledagbalk { font-size: 14px; padding: 6px 10px; }

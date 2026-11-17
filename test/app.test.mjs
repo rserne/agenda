@@ -1600,6 +1600,38 @@ test('Mac: de tekst in de weekkaarten is een stap groter', async ({ browser, url
   assert.deepEqual(p.fouten, []);
 });
 
+test('actiepunten: in de Vooruitblik losse regels zonder box, in de week een box; op de Mac zo groot als de tegels', async ({ browser, url }) => {
+  const zaai = (p) => p.evaluate(async () => {
+    await laadNotities();
+    const n = maakNotitie(); wijzigNotitie(n, { tekst: 'Overleg pilot', punten: [
+      { id: 'a', tekst: 'Offerte sturen', klaar: false, deadline: '2026-11-04' },
+      { id: 'b', tekst: 'Nagaan of de koppeling met het roostersysteem ook werkt voor deeltijdopleidingen', klaar: false, deadline: '2026-11-06' }] });
+    render();
+  });
+  const stijl = (p, sel) => p.evaluate((s) => { const b = document.querySelector(s); const t = b.querySelector('.agtekst');
+    return { achtergrond: getComputedStyle(b).backgroundColor, breed: b.getBoundingClientRect().width, tekst: getComputedStyle(t).fontSize, regels: Math.round(t.getBoundingClientRect().height / parseFloat(getComputedStyle(t).lineHeight)) }; }, sel);
+  const leeg = 'rgba(0, 0, 0, 0)';
+  for (const [naam, dev] of [['telefoon', TELEFOON], ['iPad', IPAD], ['Mac', MAC]]) {
+    const p = await nieuwePagina(browser, dev);
+    await p.goto(url); await wacht(900);
+    await zaai(p); await wacht(300);
+    const week = await stijl(p, naam === 'telefoon' ? '#inhoud h2.dagkop + .vbpunten' : '#inhoud .dagkolom .vbpunten');
+    assert.notEqual(week.achtergrond, leeg, `${naam}: in de week een box`);
+    await p.evaluate(() => kiesTab('forecast')); await wacht(600);
+    const vb = await stijl(p, '#inhoud .vbinhoud > .vbpunten');
+    assert.equal(vb.achtergrond, leeg, `${naam}: in de Vooruitblik geen box`);
+    if (naam === 'Mac') {
+      assert.equal(vb.tekst, '13px');
+      assert.ok(vb.breed <= 598, `hooguit twee tegels breed (${vb.breed})`);
+      await p.evaluate(() => kiesTab('week')); await wacht(600);
+      const lang = await stijl(p, '#inhoud .dagkolom:nth-child(5) .vbpunten');
+      assert.equal(lang.regels, 2, 'in de smalle kolom twee regels');
+    }
+    assert.deepEqual(p.fouten, []);
+    await p.close();
+  }
+});
+
 /* -------------------------------------------------------------- uitvoeren */
 
 const { chromium } = await laadPlaywright();

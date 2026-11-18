@@ -1010,7 +1010,7 @@ test('actiepunten in de agenda: een balk boven de dag, vandaag ook wat te laat i
   }); await wacht(400);
   // Als balk direct onder de dag, boven de afspraken
   const vandaag = p.locator('#inhoud h2.dagkop.vandaag + .vbpunten');
-  assert.deepEqual(await vandaag.locator('.agtekst').allInnerTexts(), ['Offerte sturen', 'Planning delen']);
+  assert.deepEqual(await vandaag.locator('.agtekst').allInnerTexts(), ['2 acties n.a.v. Overleg pilot'], 'één regel per notitie');
   assert.deepEqual(await vandaag.locator('.aglaat').allInnerTexts(), ['Gisteren'], 'te laat staat er los achter');
   // Een tik op de balk opent het overzicht van de dag; daar vink je af
   await vandaag.tap(); await wacht(700);
@@ -1019,7 +1019,7 @@ test('actiepunten in de agenda: een balk boven de dag, vandaag ook wat te laat i
   await p.locator('.paneel.dagpunten [data-dagvink$="|a"]').tap(); await wacht(700);
   assert.deepEqual(await p.locator('.paneel.dagpunten .dagtekst .t1').allInnerTexts(), ['Planning delen']);
   await p.keyboard.press('Escape'); await wacht(600);
-  assert.deepEqual(await p.locator('#inhoud h2.dagkop.vandaag + .vbpunten .agtekst').allInnerTexts(), ['Planning delen']);
+  assert.deepEqual(await p.locator('#inhoud h2.dagkop.vandaag + .vbpunten .agtekst').allInnerTexts(), ['1 actie n.a.v. Overleg pilot']);
   // Bij Vrij niet
   await p.locator('[data-filter="free"]:visible').first().tap(); await wacht(300);
   assert.equal(await p.locator('#inhoud .vbpunten').count(), 0);
@@ -1630,6 +1630,32 @@ test('actiepunten: in de Vooruitblik losse regels zonder box, in de week een box
     assert.deepEqual(p.fouten, []);
     await p.close();
   }
+});
+
+test('actiepunten in de agenda: per notitie één regel, een los actiepunt met zijn eigen tekst; het overzicht per notitie', async ({ browser, url }) => {
+  const p = await nieuwePagina(browser, TELEFOON);
+  await p.goto(url); await wacht(1000);
+  await p.evaluate(async () => {
+    await laadNotities();
+    const a = maakNotitie(); wijzigNotitie(a, { tekst: 'Verslag', afspraak: { id: 'x1', titel: 'Zaak voorbeeld', start: new Date(2026, 9, 29, 10, 30).getTime(), end: new Date(2026, 9, 29, 11).getTime() }, punten: [
+      { id: 'a', tekst: 'Vraag een', klaar: false, deadline: '2026-11-06' },
+      { id: 'b', tekst: 'Vraag twee', klaar: false, deadline: '2026-11-06' },
+      { id: 'c', tekst: 'Vraag drie', klaar: false, deadline: '2026-11-06' }] });
+    const b = maakNotitie(); wijzigNotitie(b, { tekst: '', punten: [{ id: 'd', tekst: 'Offerte sturen', klaar: false, deadline: '2026-11-06' }] });
+    const c = maakNotitie(); wijzigNotitie(c, { tekst: '', punten: [{ id: 'e', tekst: 'Zaal reserveren', klaar: false, deadline: '2026-11-06' }] });
+    kiesTab('forecast');
+  }); await wacht(700);
+  const blok = p.locator('#inhoud .vbpunten').first();
+  assert.deepEqual(await blok.locator('.agtekst').allInnerTexts(), ['3 acties n.a.v. Zaak voorbeeld', 'Offerte sturen', 'Zaal reserveren']);
+  await blok.tap(); await wacht(700);
+  // Een kopje per notitie met de datum van het overleg; de losse punten samen in één kaart zonder kopje
+  assert.deepEqual(await p.locator('.paneel.dagpunten .dagbron').allInnerTexts(), ['Zaak voorbeeld · 29 okt']);
+  assert.equal(await p.locator('.paneel.dagpunten .puntenkaart').count(), 2);
+  assert.deepEqual(await p.locator('.paneel.dagpunten .puntenkaart').nth(1).locator('.t1').allInnerTexts(), ['Offerte sturen', 'Zaal reserveren']);
+  // Een tik op het kopje opent de notitie
+  await p.locator('.paneel.dagpunten .dagbron').tap(); await wacht(800);
+  assert.ok(await p.locator('.paneel.notitie').isVisible() || await p.locator('#nottekst').isVisible(), 'de notitie staat open');
+  assert.deepEqual(p.fouten, []);
 });
 
 /* -------------------------------------------------------------- uitvoeren */

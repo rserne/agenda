@@ -22,17 +22,30 @@ function agendaPunten(d) {
   }));
   return uit.sort((a, b) => Number(b.laat) - Number(a.laat) || String(a.p.deadline).localeCompare(String(b.p.deadline)) || a.n.gemaakt - b.n.gemaakt);
 }
-// Eén blok met de actiepunten van de dag, als eerste in de dag: een rondje en de tekst, hooguit drie, daarna '+ 2'.
-// soort: rij (week op de telefoon), krij (week op iPad en Mac) of tegel (Vooruitblik). Een tik opent het overzicht van
-// die dag, waar je afvinkt; in de agenda zelf zijn de rondjes te klein om precies te tikken.
+// De punten van een dag per notitie, in de volgorde van de lijst (wat te laat is eerst)
+function puntGroepen(lijst) {
+  const m = new Map();
+  lijst.forEach((x) => { if (!m.has(x.n.id)) m.set(x.n.id, { n: x.n, items: [] }); m.get(x.n.id).items.push(x); });
+  return [...m.values()];
+}
+// Een los actiepunt: een notitie met alleen dat punt, die naar het punt heet. Dan is de tekst zelf de beste naam.
+const losPunt = (g) => g.items.length === 1 && notitieKop(g.n)[0] === g.items[0].p.tekst.trim();
+
+// Eén blok met de actiepunten van de dag, als eerste in de dag: één regel per notitie ('3 acties n.a.v. Overleg pilot'),
+// een los actiepunt met zijn eigen tekst; hooguit drie regels, daarna '+ 2'. Wat je precies moet doen, staat in het
+// overzicht van die dag; een tik opent dat. In de agenda zelf zijn de rondjes te klein om precies te tikken.
 const AGENDA_MAX = 3;
-// De actiepunten van een dag als rustige balk boven de afspraken, in Week en Vooruitblik op elk scherm
 function puntenBlokHtml(d) {
   const lijst = agendaPunten(d);
   if (!lijst.length) return '';
-  const items = lijst.slice(0, AGENDA_MAX).map(({ p, laat }) => `<span class="agpunt${laat ? ' laat' : ''}"><span class="agvink"></span>
-      <span class="agtekst">${esc(p.tekst.trim())}</span>${laat ? `<span class="aglaat">${esc(deadlineTekst(p.deadline))}</span>` : ''}</span>`).join('') // te laat: los erachter, zodat afkappen het niet wegneemt
-    + (lijst.length > AGENDA_MAX ? `<span class="agmeer">+ ${lijst.length - AGENDA_MAX}</span>` : '');
+  const groepen = puntGroepen(lijst);
+  const items = groepen.slice(0, AGENDA_MAX).map((g) => {
+    const laat = g.items.find((x) => x.laat);
+    const k = g.items.length;
+    const tekst = losPunt(g) ? g.items[0].p.tekst.trim() : `${k === 1 ? '1 actie' : `${k} acties`} n.a.v. ${notitieKop(g.n)[0]}`;
+    return `<span class="agpunt${laat ? ' laat' : ''}"><span class="agvink"></span>
+      <span class="agtekst">${esc(tekst)}</span>${laat ? `<span class="aglaat">${esc(deadlineTekst(laat.p.deadline))}</span>` : ''}</span>`; // te laat: los erachter, zodat afkappen het niet wegneemt
+  }).join('') + (groepen.length > AGENDA_MAX ? `<span class="agmeer">+ ${groepen.length - AGENDA_MAX}</span>` : '');
   const label = `${lijst.length === 1 ? '1 actiepunt' : `${lijst.length} actiepunten`}${sameDay(d, vandaag()) ? ' vandaag' : ''}`;
   return `<button class="vbpunten" data-agdag="${ymd(d)}" aria-label="${label}"><span class="agpunten">${items}</span></button>`;
 }
@@ -46,21 +59,27 @@ function openDagPunten(d) {
   const datum = cap(`${DAYS_LONG[d.getDay()]} ${d.getDate()} ${MONTHS_LONG[d.getMonth()]}`);
   let gedaan = new Set();
   const teken = () => {
-    const lijst = agendaPunten(d);
-    const rijen = lijst.map(({ n, p, laat }) => {
-      const [titel] = notitieKop(n);
-      const bron = titel === p.tekst.trim() ? '' : titel;
-      return `<div class="punt dagpunt${laat ? ' laat' : ''}">
+    const rij = ({ n, p, laat }) => `<div class="punt dagpunt${laat ? ' laat' : ''}">
         <button type="button" class="puntvink" data-dagvink="${n.id}|${p.id}" aria-label="${esc(p.tekst.trim())} afvinken">${I.vink}</button>
-        <button type="button" class="dagtekst" data-dagnotitie="${n.id}"><span class="t1">${esc(p.tekst.trim())}</span>${laat || bron ? `<span class="t2">${laat ? `<span class="tddatum laat">${esc(deadlineTekst(p.deadline))}</span>` : ''}${esc(bron)}</span>` : ''}</button>
+        <button type="button" class="dagtekst" data-dagnotitie="${n.id}"><span class="t1">${esc(p.tekst.trim())}</span>${laat ? `<span class="t2"><span class="tddatum laat">${esc(deadlineTekst(p.deadline))}</span></span>` : ''}</button>
       </div>`;
-    }).join('');
-    $('.formkaart', el).innerHTML = rijen || '<p class="nleeg dagleeg">Alles afgevinkt</p>';
+    // Per notitie een kopje met de kaart eronder; losse actiepunten samen in één kaart zonder kopje
+    const delen = [];
+    puntGroepen(agendaPunten(d)).forEach((g) => {
+      if (losPunt(g) && delen.length && !delen[delen.length - 1].n) { delen[delen.length - 1].items.push(...g.items); return; }
+      delen.push({ n: losPunt(g) ? null : g.n, items: [...g.items] });
+    });
+    const kop = (n) => {
+      const a = n.afspraak && n.afspraak.start ? new Date(n.afspraak.start) : null;
+      return `<button type="button" class="dagbron" data-dagnotitie="${n.id}">${esc(notitieKop(n)[0])}${a ? `<span class="dagbrondatum"> · ${a.getDate()} ${MONTHS_SHORT[a.getMonth()]}</span>` : ''}</button>`;
+    };
+    $('.dagdelen', el).innerHTML = delen.map((x) => `${x.n ? kop(x.n) : ''}<div class="formkaart puntenkaart">${x.items.map(rij).join('')}</div>`).join('')
+      || '<div class="formkaart puntenkaart"><p class="nleeg dagleeg">Alles afgevinkt</p></div>';
   };
   el.innerHTML = `${paneelGreepHtml()}
     <div class="detailinhoud">
       <div class="dkop"><div class="dkopinhoud"><h2 class="dtitel">Actiepunten</h2><div class="dmeta"><div>${datum}</div></div></div></div>
-      <div class="formkaart puntenkaart"></div>
+      <div class="dagdelen"></div>
     </div>`;
   teken();
   const p = openPaneel(el, { greepSelector: '.detailgreep', naSluiten: () => behoudDag(render) });

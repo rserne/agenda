@@ -1658,6 +1658,29 @@ test('actiepunten in de agenda: per notitie één regel, een los actiepunt met z
   assert.deepEqual(p.fouten, []);
 });
 
+test('actiepunten op de Mac: pictogram in de agenda, het venster zo hoog als de inhoud, kleinere rondjes', async ({ browser, url }) => {
+  const p = await nieuwePagina(browser, MAC);
+  await p.goto(url); await wacht(900);
+  await p.evaluate(async () => {
+    await laadNotities();
+    const n = maakNotitie(); wijzigNotitie(n, { tekst: 'Overleg pilot', punten: [{ id: 'a', tekst: 'Offerte sturen', klaar: false, deadline: '2026-11-06' }] });
+    kiesTab('forecast');
+  }); await wacht(600);
+  const m = await p.evaluate(() => {
+    const b = document.querySelector('#inhoud .vbinhoud > .vbpunten');
+    const tegel = b.parentElement.querySelector('.tegel');
+    return { pictogram: !!b.querySelector('.agvink svg'), hoog: b.getBoundingClientRect().height, links: Math.round(b.getBoundingClientRect().left), tegel: tegel ? Math.round(tegel.getBoundingClientRect().left) : null };
+  });
+  assert.ok(m.pictogram, 'het pictogram van Actiepunten, geen rondje');
+  assert.ok(m.hoog >= 24, `klikgebied ${m.hoog}px`);
+  if (m.tegel !== null) assert.equal(m.links, m.tegel, 'lijnt links uit met de tegels');
+  await p.locator('#inhoud .vbpunten').first().click(); await wacht(600);
+  const v = await p.evaluate(() => ({ hoog: document.querySelector('.paneel.dagpunten').getBoundingClientRect().height, rondje: getComputedStyle(document.querySelector('.paneel.dagpunten .puntvink')).width }));
+  assert.ok(v.hoog < 400, `het venster is ${v.hoog}px hoog`);
+  assert.equal(v.rondje, '18px');
+  assert.deepEqual(p.fouten, []);
+});
+
 /* -------------------------------------------------------------- uitvoeren */
 
 const { chromium } = await laadPlaywright();

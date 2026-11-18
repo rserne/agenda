@@ -32,7 +32,8 @@ function puntGroepen(lijst) {
 const losPunt = (g) => g.items.length === 1 && notitieKop(g.n)[0] === g.items[0].p.tekst.trim();
 
 // Eén blok met de actiepunten van de dag, als eerste in de dag: één regel per notitie ('3 acties n.a.v. Overleg pilot'),
-// een los actiepunt met zijn eigen tekst; hooguit drie regels, daarna '+ 2'. Wat je precies moet doen, staat in het
+// een los actiepunt met zijn eigen tekst; hooguit drie regels, daarna '+ 2'. Voorop het pictogram van Actiepunten, geen
+// rondje: een rondje belooft dat je kunt afvinken, en deze regel staat voor meer punten. Wat je precies moet doen, staat in het
 // overzicht van die dag; een tik opent dat. In de agenda zelf zijn de rondjes te klein om precies te tikken.
 const AGENDA_MAX = 3;
 function puntenBlokHtml(d) {
@@ -43,7 +44,7 @@ function puntenBlokHtml(d) {
     const laat = g.items.find((x) => x.laat);
     const k = g.items.length;
     const tekst = losPunt(g) ? g.items[0].p.tekst.trim() : `${k === 1 ? '1 actie' : `${k} acties`} n.a.v. ${notitieKop(g.n)[0]}`;
-    return `<span class="agpunt${laat ? ' laat' : ''}"><span class="agvink"></span>
+    return `<span class="agpunt${laat ? ' laat' : ''}"><span class="agvink">${I.actiepunt}</span>
       <span class="agtekst">${esc(tekst)}</span>${laat ? `<span class="aglaat">${esc(deadlineTekst(laat.p.deadline))}</span>` : ''}</span>`; // te laat: los erachter, zodat afkappen het niet wegneemt
   }).join('') + (groepen.length > AGENDA_MAX ? `<span class="agmeer">+ ${groepen.length - AGENDA_MAX}</span>` : '');
   const label = `${lijst.length === 1 ? '1 actiepunt' : `${lijst.length} actiepunten`}${sameDay(d, vandaag()) ? ' vandaag' : ''}`;

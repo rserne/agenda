@@ -1678,6 +1678,10 @@ test('actiepunten op de Mac: pictogram in de agenda, het venster zo hoog als de 
   const v = await p.evaluate(() => ({ hoog: document.querySelector('.paneel.dagpunten').getBoundingClientRect().height, rondje: getComputedStyle(document.querySelector('.paneel.dagpunten .puntvink')).width }));
   assert.ok(v.hoog < 400, `het venster is ${v.hoog}px hoog`);
   assert.equal(v.rondje, '18px');
+  // Het rondje staat op één lijn met de eerste regel tekst
+  const lijn = await p.evaluate(() => { const r = (s) => { const b = document.querySelector(s).getBoundingClientRect(); return b.top + 11; };
+    const v = document.querySelector('.paneel.dagpunten .puntvink').getBoundingClientRect(); return Math.round(Math.abs(v.top + v.height / 2 - r('.paneel.dagpunten .dagtekst .t1'))); });
+  assert.ok(lijn <= 1, `het rondje staat ${lijn}px naast de eerste regel`);
   assert.deepEqual(p.fouten, []);
 });
 

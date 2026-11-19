@@ -64,7 +64,7 @@ function openDagPunten(d) {
         <button type="button" class="puntvink" data-dagvink="${n.id}|${p.id}" aria-label="${esc(p.tekst.trim())} afvinken">${I.vink}</button>
         <button type="button" class="dagtekst" data-dagnotitie="${n.id}"><span class="t1">${esc(p.tekst.trim())}</span>${laat ? `<span class="t2"><span class="tddatum laat">${esc(deadlineTekst(p.deadline))}</span></span>` : ''}</button>
       </div>`;
-    // Per notitie een kopje met de kaart eronder; losse actiepunten samen in één kaart zonder kopje
+    // Per notitie een kaart met de naam bovenaan; losse actiepunten samen in één kaart zonder naam
     const delen = [];
     puntGroepen(agendaPunten(d)).forEach((g) => {
       if (losPunt(g) && delen.length && !delen[delen.length - 1].n) { delen[delen.length - 1].items.push(...g.items); return; }
@@ -74,7 +74,8 @@ function openDagPunten(d) {
       const a = n.afspraak && n.afspraak.start ? new Date(n.afspraak.start) : null;
       return `<button type="button" class="dagbron" data-dagnotitie="${n.id}">${esc(notitieKop(n)[0])}${a ? `<span class="dagbrondatum"> · ${a.getDate()} ${MONTHS_SHORT[a.getMonth()]}</span>` : ''}</button>`;
     };
-    $('.dagdelen', el).innerHTML = delen.map((x) => `${x.n ? kop(x.n) : ''}<div class="formkaart puntenkaart">${x.items.map(rij).join('')}</div>`).join('')
+    // Eén kaart per notitie: bovenaan de naam van de notitie, de acties eronder
+    $('.dagdelen', el).innerHTML = delen.map((x) => `<div class="formkaart puntenkaart">${x.n ? kop(x.n) : ''}${x.items.map(rij).join('')}</div>`).join('')
       || '<div class="formkaart puntenkaart"><p class="nleeg dagleeg">Alles afgevinkt</p></div>';
   };
   el.innerHTML = `${paneelGreepHtml()}

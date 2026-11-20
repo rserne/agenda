@@ -125,11 +125,11 @@ function agendaBron() {
 }
 // Onderaan de zijbalk (desktop): één regel naar Instellingen, met welke agenda je ziet
 function instellingenRijHtml() {
-  // Kort: welke agenda je ziet, en bij de agenda-link wanneer die is bijgewerkt
+  // Kort: welke agenda je ziet, en bij de agenda-link alleen wanneer die is bijgewerkt (zo past het op één regel)
   let kort = 'Voorbeeldgegevens';
   if (BESTAND && BESTAND.link) {
     const d = new Date(BESTAND.gecontroleerd || BESTAND.datum);
-    kort = `Outlook-agenda · ${LINK_BEZIG ? 'bijwerken…' : BESTAND.linkFout ? 'bijwerken lukte niet' : sameDay(d, vandaag()) ? `bijgewerkt om ${hhmm(d)}` : `bijgewerkt ${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}`}`;
+    kort = LINK_BEZIG ? 'Bijwerken…' : BESTAND.linkFout ? 'Bijwerken lukte niet' : sameDay(d, vandaag()) ? `Bijgewerkt om ${hhmm(d)}` : `Bijgewerkt ${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}`;
   } else if (BESTAND) kort = esc(BESTAND.naam);
   return `<nav class="zblijst zbagenda zbinstellingen" aria-label="Instellingen">
     <button class="instrij" data-actie="instellingen">${I.instellingen}<span class="tekst"><span class="t1">Instellingen</span><span class="t2">${kort}</span></span>${I.verder}</button>

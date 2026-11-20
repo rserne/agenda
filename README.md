@@ -31,7 +31,7 @@ De lezer (`js/mailtijden.js`) werkt met vaste regels en draait op het toestel; e
 
 ## Waar de afspraken vandaan komen
 
-Wat de app nodig heeft, geef je op onder **Instellingen**: het tandwiel links onderin op iPhone en iPad, op de Mac onderaan de zijbalk (als venster). Van boven naar beneden:
+Wat de app nodig heeft, geef je op onder **Instellingen**: het tandwiel links onderin op iPhone en iPad, op de Mac onderaan de zijbalk (als venster). Daar staat onder 'Instellingen' ook kort wanneer de agenda is bijgewerkt ('Bijgewerkt om 11:15'). Van boven naar beneden:
 
 - **Cloudflare:** de koppeling met je Cloudflare Worker (de link met de sleutel erin). Daarmee haalt de app je Outlook-agenda op en houdt hij je notities en ruimtes gelijk op al je toestellen. Je ziet wanneer er voor het laatst is gesynchroniseerd, met **Nu synchroniseren** (haalt ook de agenda opnieuw op), **Koppeling wijzigen** en **Koppeling verwijderen**. De link zelf staat nergens leesbaar; hij blijft op het toestel (localStorage). Een eerder opgegeven agenda-link neemt de app vanzelf over.
 - **Agenda:** waar de afspraken vandaan komen.
